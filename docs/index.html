@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Run Event 86 - Carte des courses</title>
+  <title>Ou court le club ? — Run Event 86</title>
+  <meta name="description" content="Carte interactive des courses ou les membres du club Run Event 86 sont inscrits">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -16,15 +22,48 @@
 
   <div id="sidebar">
     <div id="sidebar-header">
-      <h1>Run Event 86</h1>
-      <div class="subtitle">Courses du club sur la carte</div>
+      <div class="header-content">
+        <img src="img/logo.jpg" alt="Run Event 86" class="club-logo" onerror="this.style.display='none'">
+        <div class="header-text">
+          <h1>Ou court le club ?</h1>
+          <div class="subtitle">Run Event 86</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="stats-bar">
+      <div class="stat">
+        <span class="stat-value" id="stat-races">--</span>
+        <span class="stat-label">courses</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-value" id="stat-members">--</span>
+        <span class="stat-label">inscriptions</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-value" id="stat-upcoming">--</span>
+        <span class="stat-label">a venir</span>
+      </div>
     </div>
 
     <div id="filters">
-      <label for="date-from">Du</label>
-      <input type="date" id="date-from">
-      <label for="date-to">au</label>
-      <input type="date" id="date-to">
+      <div class="filter-group">
+        <label for="date-from">Du</label>
+        <input type="date" id="date-from">
+      </div>
+      <div class="filter-group">
+        <label for="date-to">au</label>
+        <input type="date" id="date-to">
+      </div>
+    </div>
+
+    <div id="legend">
+      <span class="legend-item"><span class="legend-dot dot-this-week"></span>Cette semaine</span>
+      <span class="legend-item"><span class="legend-dot dot-this-month"></span>Ce mois</span>
+      <span class="legend-item"><span class="legend-dot dot-future"></span>A venir</span>
+      <span class="legend-item"><span class="legend-dot dot-past"></span>Passees</span>
     </div>
 
     <div id="race-list"></div>
@@ -33,23 +72,28 @@
       <span id="last-updated"></span>
       <a href="#" id="legal-link">Mentions legales</a>
     </div>
-
-    <div id="legal-modal" class="modal hidden">
-      <div class="modal-content">
-        <button class="modal-close" aria-label="Fermer">&times;</button>
-        <h2>Mentions legales</h2>
-        <p><strong>Editeur :</strong> Association Run Event 86, Vienne (86).</p>
-        <p><strong>Donnees personnelles :</strong> Ce site affiche uniquement le nombre de membres du club inscrits a des courses. Aucun nom ni donnee personnelle n'est publie sur ce site.</p>
-        <p>Les donnees sont collectees a partir de listes d'inscription publiques de plateformes de courses a pied, dans le but d'animer la vie du club.</p>
-        <p><strong>Droit d'opposition :</strong> Conformement au RGPD, vous pouvez exercer vos droits (acces, rectification, suppression, opposition) en contactant le club.</p>
-        <p><strong>Hebergement :</strong> GitHub Pages (GitHub, Inc.).</p>
-      </div>
-    </div>
   </div>
 
-  <button id="sidebar-toggle">✕</button>
+  <button id="sidebar-toggle" aria-label="Toggle sidebar">
+    <svg id="toggle-close" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+    <svg id="toggle-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:none"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
 
   <div id="map"></div>
+
+  <!-- Legal modal -->
+  <div id="legal-modal" class="modal hidden">
+    <div class="modal-content">
+      <button class="modal-close" aria-label="Fermer">&times;</button>
+      <h2>Mentions legales</h2>
+      <div class="modal-divider"></div>
+      <p><strong>Editeur</strong><br>Julien OLLIVIER, membre du club Run Event 86. Ce site est un projet personnel et n'est pas une initiative officielle du club.</p>
+      <p><strong>Donnees personnelles</strong><br>Ce site affiche uniquement le nombre de membres du club inscrits a des courses. Aucun nom ni donnee personnelle n'est publie sur ce site.</p>
+      <p>Les donnees sont collectees a partir de listes d'inscription publiques de plateformes de courses a pied, dans le but d'animer la vie du club.</p>
+      <p><strong>Droit d'opposition</strong><br>Conformement au RGPD, vous pouvez exercer vos droits (acces, rectification, suppression, opposition) en contactant l'editeur a <a href="mailto:runevent86@juulieen.fr">runevent86@juulieen.fr</a>.</p>
+      <p><strong>Hebergement</strong><br>GitHub Pages (GitHub, Inc.).</p>
+    </div>
+  </div>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

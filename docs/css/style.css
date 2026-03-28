@@ -1,162 +1,469 @@
+/* === Ou court le club ? — Run Event 86 === */
+
+:root {
+  --orange: #F57C20;
+  --orange-soft: rgba(245, 124, 32, 0.1);
+  --purple: #6B2D5B;
+
+  --bg: #ffffff;
+  --bg-hover: #f8f7f6;
+  --border: #eee;
+  --text: #1a1a1a;
+  --text-secondary: #777;
+  --text-dim: #aaa;
+
+  --sidebar-w: 380px;
+  --radius: 8px;
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  height: 100vh;
+html, body {
+  height: 100%;
   overflow: hidden;
 }
 
+body {
+  font-family: "DM Sans", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ---- Map ---- */
 #map {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   z-index: 1;
 }
 
-/* Sidebar */
+.leaflet-control-zoom a {
+  background: #fff !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  color: var(--orange) !important;
+}
+
+/* Clusters */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background: rgba(245, 124, 32, 0.2) !important;
+}
+
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background: var(--orange) !important;
+  color: #fff !important;
+  font-family: "Bebas Neue", sans-serif !important;
+  font-size: 14px !important;
+}
+
+/* ---- Sidebar ---- */
 #sidebar {
   position: absolute;
   top: 0;
   left: 0;
-  width: 380px;
+  width: var(--sidebar-w);
   height: 100vh;
-  background: #fff;
+  background: var(--bg);
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
-  transition: transform 0.3s ease;
+  box-shadow: 1px 0 8px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #sidebar.collapsed {
-  transform: translateX(-380px);
+  transform: translateX(calc(-1 * var(--sidebar-w)));
 }
 
+/* ---- Header ---- */
 #sidebar-header {
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #1a73e8, #0d47a1);
-  color: #fff;
+  padding: 18px 20px 14px;
+  border-bottom: 2px solid var(--border);
 }
 
-#sidebar-header h1 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: 4px;
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-#sidebar-header .subtitle {
-  font-size: 0.8rem;
-  opacity: 0.85;
+.club-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
+.header-text h1 {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 1.45rem;
+  color: var(--text);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  margin-bottom: 1px;
+}
+
+.header-text .subtitle {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--orange);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ---- Stats bar ---- */
+#stats-bar {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.stat-value {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 1.35rem;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+}
+
+/* ---- Filters ---- */
 #filters {
-  padding: 12px 20px;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
   display: flex;
   gap: 8px;
   align-items: center;
-  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
 }
 
 #filters label {
-  font-size: 0.8rem;
-  color: #555;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
 }
 
 #filters input[type="date"] {
-  padding: 4px 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-family: "DM Sans", system-ui, sans-serif;
+  color: var(--text);
+  transition: border-color 0.2s;
 }
 
+#filters input[type="date"]:focus {
+  outline: none;
+  border-color: var(--orange);
+}
+
+/* ---- Legend ---- */
+#legend {
+  display: flex;
+  gap: 14px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.06);
+}
+
+.dot-this-week { background: #E53935; }
+.dot-this-month { background: var(--orange); }
+.dot-future { background: var(--purple); }
+.dot-past { background: #bbb; }
+
+/* ---- Race list ---- */
 #race-list {
   flex: 1;
   overflow-y: auto;
-  padding: 8px 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+#race-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+#race-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
 }
 
 .race-card {
-  padding: 12px 20px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .race-card:hover {
-  background: #f5f8ff;
+  background: var(--bg-hover);
 }
 
 .race-card .race-name {
   font-weight: 600;
-  font-size: 0.95rem;
-  color: #1a1a1a;
-  margin-bottom: 4px;
+  font-size: 0.88rem;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.3;
 }
 
 .race-card .race-meta {
-  font-size: 0.8rem;
-  color: #666;
   display: flex;
-  gap: 12px;
+  gap: 6px;
   align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
 }
 
 .race-card .race-meta .date {
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.race-card .race-meta .location {
+  color: var(--text-secondary);
+}
+
+.race-card .race-meta .location::before {
+  content: "·";
+  margin-right: 6px;
 }
 
 .race-card .member-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: #e3f2fd;
-  color: #1565c0;
+  background: var(--orange-soft);
+  color: var(--orange);
   padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
-.race-card.past {
-  opacity: 0.5;
+/* Temporal left accent */
+.race-card[data-temp="this-week"] {
+  border-left: 4px solid #E53935;
+  padding-left: 16px;
+  background: rgba(229, 57, 53, 0.03);
 }
 
-#sidebar-footer {
-  padding: 10px 20px;
-  border-top: 1px solid #e0e0e0;
-  font-size: 0.7rem;
-  color: #999;
+.race-card[data-temp="this-month"] {
+  border-left: 4px solid var(--orange);
+  padding-left: 16px;
+  background: rgba(245, 124, 32, 0.03);
+}
+
+.race-card[data-temp="future"] {
+  border-left: 4px solid var(--purple);
+  padding-left: 16px;
+}
+
+.race-card[data-temp="past"] {
+  border-left: 4px solid #ddd;
+  padding-left: 16px;
+  opacity: 0.45;
+}
+
+.race-card[data-temp="past"]:hover {
+  opacity: 0.65;
+}
+
+/* Empty state */
+.empty-state {
+  padding: 48px 24px;
   text-align: center;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.empty-state .empty-icon {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  opacity: 0.4;
+}
+
+/* ---- Footer ---- */
+#sidebar-footer {
+  padding: 8px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 0.65rem;
+  color: var(--text-dim);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 #legal-link {
-  color: #999;
+  color: var(--text-dim);
   text-decoration: none;
 }
 
 #legal-link:hover {
-  color: #555;
-  text-decoration: underline;
+  color: var(--orange);
 }
 
-/* Legal modal */
+/* ---- Toggle ---- */
+#sidebar-toggle {
+  position: absolute;
+  top: 14px;
+  left: calc(var(--sidebar-w) + 6px);
+  z-index: 1001;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 5px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#sidebar-toggle:hover {
+  color: var(--orange);
+  border-color: var(--orange);
+}
+
+#sidebar.collapsed ~ #sidebar-toggle {
+  left: 14px;
+}
+
+/* ---- Markers ---- */
+.marker-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #fff;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 0.9rem;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.marker-past { background: #aaa; }
+.marker-this-week { background: #E53935; }
+.marker-this-month { background: var(--orange); }
+.marker-future { background: var(--purple); }
+
+/* ---- Popup ---- */
+.race-popup {
+  padding: 2px 0;
+  min-width: 180px;
+}
+
+.race-popup .popup-title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.race-popup .popup-meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.race-popup .popup-members-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  color: var(--orange);
+  background: var(--orange-soft);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.race-popup .popup-link {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.73rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.race-popup .popup-link:hover {
+  color: var(--orange);
+}
+
+/* ---- Modal ---- */
 .modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(3px);
   z-index: 2000;
   display: flex;
   align-items: center;
@@ -169,136 +476,75 @@ body {
 
 .modal-content {
   background: #fff;
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 24px 28px;
-  max-width: 500px;
+  max-width: 460px;
   width: 90%;
   max-height: 80vh;
   overflow-y: auto;
   position: relative;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
 .modal-content h2 {
-  font-size: 1.1rem;
-  margin-bottom: 16px;
-  color: #1a1a1a;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 0.03em;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.modal-divider {
+  height: 2px;
+  background: linear-gradient(90deg, var(--orange), var(--purple), transparent);
+  margin-bottom: 18px;
 }
 
 .modal-content p {
-  font-size: 0.85rem;
-  color: #444;
-  line-height: 1.5;
-  margin-bottom: 10px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.modal-content strong {
+  color: var(--text);
 }
 
 .modal-close {
   position: absolute;
-  top: 12px;
-  right: 16px;
+  top: 14px;
+  right: 18px;
   background: none;
   border: none;
   font-size: 1.3rem;
   cursor: pointer;
-  color: #999;
+  color: var(--text-dim);
 }
 
 .modal-close:hover {
-  color: #333;
+  color: var(--orange);
 }
 
-/* Toggle button */
-#sidebar-toggle {
-  position: absolute;
-  top: 12px;
-  left: 392px;
-  z-index: 1001;
-  background: #fff;
-  border: none;
-  border-radius: 0 8px 8px 0;
-  padding: 10px 8px;
-  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  font-size: 1.1rem;
-  transition: left 0.3s ease;
-}
-
-#sidebar.collapsed ~ #sidebar-toggle {
-  left: 12px;
-  border-radius: 8px;
-}
-
-/* Custom markers */
-.marker-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.8rem;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-}
-
-.marker-past { background: #9e9e9e; }
-.marker-this-week { background: #e53935; }
-.marker-this-month { background: #fb8c00; }
-.marker-future { background: #1e88e5; }
-
-/* Popup */
-.race-popup .popup-title {
-  font-weight: 700;
-  font-size: 1rem;
-  margin-bottom: 6px;
-}
-
-.race-popup .popup-meta {
-  font-size: 0.85rem;
-  color: #555;
-  margin-bottom: 8px;
-}
-
-.race-popup .popup-members-count {
-  font-size: 0.85rem;
-  color: #1565c0;
-  background: #e3f2fd;
-  padding: 4px 10px;
-  border-radius: 8px;
-  margin-bottom: 6px;
-  text-align: center;
-  font-weight: 600;
-}
-
-.race-popup .popup-link {
-  display: inline-block;
-  margin-top: 8px;
-  font-size: 0.8rem;
-  color: #1a73e8;
-  text-decoration: none;
-}
-
-.race-popup .popup-link:hover {
-  text-decoration: underline;
-}
-
-/* Mobile */
+/* ---- Mobile ---- */
 @media (max-width: 768px) {
+  :root {
+    --sidebar-w: 100%;
+  }
+
   #sidebar {
     position: fixed;
     top: auto;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 50vh;
+    height: 55vh;
     border-radius: 16px 16px 0 0;
-    transform: translateY(0);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
   }
 
   #sidebar.collapsed {
-    transform: translateY(calc(50vh - 48px));
+    transform: translateY(calc(55vh - 52px));
   }
 
   #sidebar-toggle {
@@ -309,20 +555,28 @@ body {
     border-radius: 16px 16px 0 0;
     cursor: pointer;
     padding: 12px 20px;
-    text-align: center;
   }
 
   #sidebar-header::before {
     content: "";
     display: block;
-    width: 40px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.5);
+    width: 32px;
+    height: 3px;
+    background: var(--border);
     border-radius: 2px;
     margin: 0 auto 8px;
   }
 
+  .club-logo {
+    width: 36px;
+    height: 36px;
+  }
+
+  .header-text h1 {
+    font-size: 1.2rem;
+  }
+
   #map {
-    height: 55vh;
+    height: 50vh;
   }
 }

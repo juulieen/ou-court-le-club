@@ -1,4 +1,4 @@
-// RunEvent86 - Interactive race map
+// RunEvent86 — "Ou court le club ?"
 (function () {
   "use strict";
 
@@ -6,24 +6,38 @@
   const MAP_ZOOM = 9;
 
   let map;
-  let markers = L.markerClusterGroup();
+  let markers = L.markerClusterGroup({
+    maxClusterRadius: 45,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+  });
   let allRaces = [];
   let markerMap = {};
 
   // --- Init ---
   function init() {
-    map = L.map("map", { zoomControl: false }).setView(MAP_CENTER, MAP_ZOOM);
+    map = L.map("map", {
+      zoomControl: false,
+      attributionControl: true,
+    }).setView(MAP_CENTER, MAP_ZOOM);
 
     L.control.zoom({ position: "topright" }).addTo(map);
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 18,
-    }).addTo(map);
+    // CartoDB Voyager — clean, modern tiles
+    L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+      {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        subdomains: "abcd",
+        maxZoom: 19,
+      }
+    ).addTo(map);
 
     map.addLayer(markers);
 
     setupSidebar();
+    setupLegalModal();
     loadData();
   }
 
@@ -34,13 +48,48 @@
       .then((data) => {
         allRaces = (data.races || []).filter((r) => r.member_count > 0);
         updateLastUpdated(data.last_updated);
+        updateStats(allRaces);
         renderAll();
       })
       .catch((err) => {
         console.error("Erreur chargement donnees:", err);
         document.getElementById("race-list").innerHTML =
-          '<div style="padding:20px;color:#999;text-align:center">Aucune donnee disponible</div>';
+          '<div class="empty-state"><div class="empty-icon">&#128683;</div>Impossible de charger les donnees</div>';
       });
+  }
+
+  // --- Stats ---
+  function updateStats(races) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const totalMembers = races.reduce((s, r) => s + r.member_count, 0);
+    const upcoming = races.filter(
+      (r) => r.date && new Date(r.date + "T00:00:00") >= today
+    ).length;
+
+    animateCounter("stat-races", races.length);
+    animateCounter("stat-members", totalMembers);
+    animateCounter("stat-upcoming", upcoming);
+  }
+
+  function animateCounter(id, target) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (target === 0) {
+      el.textContent = "0";
+      return;
+    }
+    let current = 0;
+    const step = Math.max(1, Math.floor(target / 20));
+    const interval = setInterval(() => {
+      current += step;
+      if (current >= target) {
+        current = target;
+        clearInterval(interval);
+      }
+      el.textContent = current;
+    }, 30);
   }
 
   // --- Temporal classification ---
@@ -64,10 +113,14 @@
 
   function getMarkerColor(temporality) {
     switch (temporality) {
-      case "past": return "#9e9e9e";
-      case "this-week": return "#e53935";
-      case "this-month": return "#fb8c00";
-      default: return "#1e88e5";
+      case "past":
+        return "#555";
+      case "this-week":
+        return "#E53935";
+      case "this-month":
+        return "#F57C20";
+      default:
+        return "#8A3D75";
     }
   }
 
@@ -97,8 +150,8 @@
       const icon = L.divIcon({
         className: "",
         html: `<div class="marker-icon ${getMarkerClass(temp)}">${race.member_count}</div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
+        iconSize: [34, 34],
+        iconAnchor: [17, 17],
       });
 
       const marker = L.marker([race.lat, race.lng], { icon });
@@ -122,18 +175,18 @@
 
     let membersHtml = "";
     if (race.member_count > 0) {
-      membersHtml = `<div class="popup-members-count">${race.member_count} membre${race.member_count > 1 ? "s" : ""} du club inscrit${race.member_count > 1 ? "s" : ""}</div>`;
+      membersHtml = `<div class="popup-members-count">${race.member_count} membre${race.member_count > 1 ? "s" : ""} inscrit${race.member_count > 1 ? "s" : ""}</div>`;
     }
 
     let linkHtml = "";
     if (race.url) {
-      linkHtml = `<a class="popup-link" href="${race.url}" target="_blank" rel="noopener">Voir sur ${race.platform}</a>`;
+      linkHtml = `<a class="popup-link" href="${race.url}" target="_blank" rel="noopener">Voir sur ${race.platform} &rarr;</a>`;
     }
 
     return `
       <div class="race-popup">
-        <div class="popup-title" style="border-left: 3px solid ${color}; padding-left: 8px">${race.name}</div>
-        <div class="popup-meta">${dateFormatted} — ${race.location}</div>
+        <div class="popup-title" style="border-left: 3px solid ${color}; padding-left: 10px">${race.name}</div>
+        <div class="popup-meta">${dateFormatted}${race.location ? " — " + race.location : ""}</div>
         ${membersHtml}
         ${linkHtml}
       </div>
@@ -159,12 +212,13 @@
     });
 
     if (sorted.length === 0) {
-      list.innerHTML = '<div style="padding:20px;color:#999;text-align:center">Aucune course trouvee</div>';
+      list.innerHTML =
+        '<div class="empty-state"><div class="empty-icon">&#128270;</div>Aucune course trouvee</div>';
       return;
     }
 
     list.innerHTML = sorted
-      .map((race) => {
+      .map((race, i) => {
         const temp = getTemporality(race.date);
         const dateFormatted = race.date
           ? new Date(race.date + "T00:00:00").toLocaleDateString("fr-FR", {
@@ -173,14 +227,12 @@
               year: "numeric",
             })
           : "?";
-        const isPast = temp === "past" ? " past" : "";
-
         return `
-        <div class="race-card${isPast}" data-id="${race.id}">
+        <div class="race-card" data-id="${race.id}" data-temp="${temp}">
           <div class="race-name">${race.name}</div>
           <div class="race-meta">
             <span class="date">${dateFormatted}</span>
-            <span>${race.location}</span>
+            <span class="location">${race.location || ""}</span>
             <span class="member-badge">${race.member_count} membre${race.member_count > 1 ? "s" : ""}</span>
           </div>
         </div>`;
@@ -205,18 +257,22 @@
     const sidebar = document.getElementById("sidebar");
     const toggle = document.getElementById("sidebar-toggle");
     const header = document.getElementById("sidebar-header");
+    const iconClose = document.getElementById("toggle-close");
+    const iconOpen = document.getElementById("toggle-open");
 
     toggle.addEventListener("click", () => {
       sidebar.classList.toggle("collapsed");
-      toggle.textContent = sidebar.classList.contains("collapsed") ? "☰" : "✕";
-      setTimeout(() => map.invalidateSize(), 350);
+      const collapsed = sidebar.classList.contains("collapsed");
+      iconClose.style.display = collapsed ? "none" : "block";
+      iconOpen.style.display = collapsed ? "block" : "none";
+      setTimeout(() => map.invalidateSize(), 400);
     });
 
     // Mobile: tap header to toggle
     header.addEventListener("click", () => {
       if (window.innerWidth <= 768) {
         sidebar.classList.toggle("collapsed");
-        setTimeout(() => map.invalidateSize(), 350);
+        setTimeout(() => map.invalidateSize(), 400);
       }
     });
 
@@ -230,7 +286,14 @@
     const el = document.getElementById("last-updated");
     if (el) {
       const d = new Date(ts);
-      el.textContent = "Mis a jour : " + d.toLocaleDateString("fr-FR") + " " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+      el.textContent =
+        "Maj " +
+        d.toLocaleDateString("fr-FR", {
+          day: "numeric",
+          month: "short",
+        }) +
+        " " +
+        d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
     }
   }
 
@@ -248,11 +311,11 @@
     modal.addEventListener("click", (e) => {
       if (e.target === modal) modal.classList.add("hidden");
     });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") modal.classList.add("hidden");
+    });
   }
 
   // --- Start ---
-  document.addEventListener("DOMContentLoaded", () => {
-    init();
-    setupLegalModal();
-  });
+  document.addEventListener("DOMContentLoaded", init);
 })();
