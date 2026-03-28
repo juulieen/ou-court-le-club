@@ -1,0 +1,35 @@
+# Configuration du club - copiez ce fichier en config.yml et adaptez
+#
+# cp config.example.yml config.yml
+
+club:
+  # Regex patterns pour matcher le nom du club dans les listes d'inscrits
+  patterns:
+    - "run\\s*'?\\s*event\\s*86"
+    - "runevent\\s*86"
+    - "runevent"
+    - "run\\s*'?\\s*event"
+
+  # Noms des membres connus (format: "NOM Prenom")
+  # Utilise comme fallback quand le champ club n'est pas rempli
+  known_members:
+    - "NOM Prenom"
+    - "DUPONT Jean"
+    # Ajoutez vos membres ici...
+
+races:
+  # Courses manuelles (optionnel) - pour les courses non decouvertes automatiquement
+  # Utile pour HelloAsso (participants prives) ou autres plateformes non supportees
+  #
+  # Exemple:
+  # - platform: manual
+  #   name: "Ma Course 2026"
+  #   date: "2026-05-02"
+  #   location: "Ville, Departement"
+  #   members:
+  #     - name: "NOM Prenom"
+  #       bib: "10km"
+
+settings:
+  map_center: [46.58, 0.34]   # Centre de la carte (lat, lng)
+  map_zoom: 9                   # Zoom par defaut

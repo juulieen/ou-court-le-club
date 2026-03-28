@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Run Event 86 - Carte des courses</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h1>Run Event 86</h1>
+      <div class="subtitle">Courses du club sur la carte</div>
+    </div>
+
+    <div id="filters">
+      <label for="date-from">Du</label>
+      <input type="date" id="date-from">
+      <label for="date-to">au</label>
+      <input type="date" id="date-to">
+    </div>
+
+    <div id="race-list"></div>
+
+    <div id="sidebar-footer">
+      <span id="last-updated"></span>
+      <a href="#" id="legal-link">Mentions legales</a>
+    </div>
+
+    <div id="legal-modal" class="modal hidden">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Fermer">&times;</button>
+        <h2>Mentions legales</h2>
+        <p><strong>Editeur :</strong> Association Run Event 86, Vienne (86).</p>
+        <p><strong>Donnees personnelles :</strong> Ce site affiche uniquement le nombre de membres du club inscrits a des courses. Aucun nom ni donnee personnelle n'est publie sur ce site.</p>
+        <p>Les donnees sont collectees a partir de listes d'inscription publiques de plateformes de courses a pied, dans le but d'animer la vie du club.</p>
+        <p><strong>Droit d'opposition :</strong> Conformement au RGPD, vous pouvez exercer vos droits (acces, rectification, suppression, opposition) en contactant le club.</p>
+        <p><strong>Hebergement :</strong> GitHub Pages (GitHub, Inc.).</p>
+      </div>
+    </div>
+  </div>
+
+  <button id="sidebar-toggle">✕</button>
+
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

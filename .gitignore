@@ -1,0 +1,36 @@
+# Config with personal data (member names)
+config.yml
+
+# Data files with personal data
+data/races.json
+data/scrape_cache.json
+
+# Geocoding & slug caches (no personal data, but regenerable)
+data/geocache.json
+data/njuko_slugs.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

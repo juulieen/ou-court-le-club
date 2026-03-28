@@ -1,0 +1,314 @@
+"""Orchestrator: load config, discover races, run scrapers, geocode, output JSON.
+
+Philosophy:
+- Find ALL registrations of club members across ALL platforms
+- Cache responses to avoid flooding APIs during development
+- Cron runs nightly — performance is not critical, completeness is
+- Be respectful: cache aggressively, moderate concurrency
+"""
+
+import json
+import shutil
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import asdict
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
+
+import yaml
+
+from .base import Member, RaceResult
+from .geocoder import geocode
+from .chronometrage import ChronometrageScraper
+from .chronometrage import discover_races as chronometrage_discover
+from .chronostart import ChronoStartScraper
+from .chronostart import discover_races as chronostart_discover
+from .endurancechrono import EnduranceChronoScraper
+from .endurancechrono import discover_races as endurancechrono_discover
+from .espacecompetition import EspaceCompetitionScraper
+from .espacecompetition import discover_races as espacecomp_discover
+from .listino import ListinoScraper
+from .listino import discover_races as listino_discover
+from .klikego import KlikegoScraper
+from .klikego import discover_races as klikego_discover
+from .njuko import NjukoScraper
+from .njuko import discover_races as njuko_discover
+from .onsinscrit import OnSinscritScraper
+from .onsinscrit import discover_races as onsinscrit_discover
+from .protiming import ProtimingScraper
+from .protiming import discover_races as protiming_discover
+from .sportips import SportipsScraper
+from .sportips import discover_races as sportips_discover
+from .threewsport import ThreeWSportScraper
+from .threewsport import discover_races as threewsport_discover
+from .timepulse import TimePulseScraper
+from .timepulse import discover_races as timepulse_discover
+from .runchrono import discover_races as runchrono_discover
+
+ROOT = Path(__file__).resolve().parent.parent
+CONFIG_PATH = ROOT / "config.yml"
+DATA_PATH = ROOT / "data" / "races.json"
+DOCS_DATA_PATH = ROOT / "docs" / "data" / "races.json"
+SCRAPE_CACHE_PATH = ROOT / "data" / "scrape_cache.json"
+
+SCRAPERS = {
+    "klikego": KlikegoScraper,
+    "njuko": NjukoScraper,
+    "onsinscrit": OnSinscritScraper,
+    "protiming": ProtimingScraper,
+    "chronometrage": ChronometrageScraper,
+    "chronostart": ChronoStartScraper,
+    "3wsport": ThreeWSportScraper,
+    "espace-competition": EspaceCompetitionScraper,
+    "sportips": SportipsScraper,
+    "timepulse": TimePulseScraper,
+    "endurancechrono": EnduranceChronoScraper,
+    "listino": ListinoScraper,
+}
+
+
+MAX_WORKERS = 6
+
+# Cache TTL: avoid re-scraping the same URL too often
+CACHE_TTL_EMPTY = 48       # 2 days for courses with 0 members
+CACHE_TTL_WITH_MEMBERS = 6  # 6h for courses with members (check for new registrations)
+
+
+# --- Config & data ---
+
+def load_config() -> dict:
+    return yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
+
+
+def load_existing_data() -> dict:
+    if DATA_PATH.exists():
+        return json.loads(DATA_PATH.read_text(encoding="utf-8"))
+    return {"last_updated": None, "races": []}
+
+
+def save_data(data: dict) -> None:
+    # Full version with member names (local only, gitignored)
+    DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+    DATA_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # Anonymized version for GitHub Pages (no personal data)
+    public_data = {
+        "last_updated": data["last_updated"],
+        "races": [
+            {k: v for k, v in race.items() if k != "members"}
+            for race in data.get("races", [])
+        ],
+    }
+    DOCS_DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+    DOCS_DATA_PATH.write_text(
+        json.dumps(public_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+
+# --- Scrape cache ---
+
+def load_scrape_cache() -> dict:
+    if SCRAPE_CACHE_PATH.exists():
+        try:
+            return json.loads(SCRAPE_CACHE_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {}
+
+
+def save_scrape_cache(cache: dict) -> None:
+    SCRAPE_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SCRAPE_CACHE_PATH.write_text(
+        json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+
+def should_scrape(url: str, cache: dict) -> bool:
+    entry = cache.get(url)
+    if not entry:
+        return True
+    last = entry.get("last_scraped", "")
+    if not last:
+        return True
+    try:
+        last_dt = datetime.fromisoformat(last)
+    except (ValueError, TypeError):
+        return True
+    member_count = entry.get("member_count", 0)
+    ttl = CACHE_TTL_WITH_MEMBERS if member_count > 0 else CACHE_TTL_EMPTY
+    return datetime.now(timezone.utc) - last_dt > timedelta(hours=ttl)
+
+
+# --- Scraping ---
+
+def process_manual_race(race_config: dict) -> RaceResult:
+    members_raw = race_config.get("members", [])
+    members = []
+    for m in members_raw:
+        if isinstance(m, dict):
+            members.append(Member(name=m.get("name", ""), bib=m.get("bib", "")))
+        elif isinstance(m, str):
+            members.append(Member(name=m))
+    name = race_config.get("name", "Course manuelle")
+    date = race_config.get("date", "")
+    return RaceResult(
+        id=f"manual-{name.lower().replace(' ', '-')}-{date}",
+        name=name, date=date,
+        location=race_config.get("location", ""),
+        platform="manual", members=members,
+        member_count=len(members),
+        last_scraped=datetime.now(timezone.utc).isoformat(),
+    )
+
+
+def scrape_race(rc: dict, patterns: list[str], known_members: list[str]) -> dict | None:
+    """Scrape a single race. Returns data dict or None."""
+    platform = rc.get("platform", "")
+
+    if platform == "manual":
+        race = process_manual_race(rc)
+    elif platform in SCRAPERS:
+        cls = SCRAPERS[platform]
+        scraper = cls(patterns, known_members=known_members)
+        try:
+            race = scraper.scrape(rc)
+        except Exception:
+            return None
+    else:
+        return None
+
+    if race:
+        return asdict(race)
+    return None
+
+
+def run():
+    config = load_config()
+    club = config.get("club", {})
+    patterns = club.get("patterns", [])
+    known_members = club.get("known_members", [])
+    races_config = list(config.get("races") or [])
+    existing = load_existing_data()
+    existing_by_id = {r["id"]: r for r in existing.get("races", [])}
+    scrape_cache = load_scrape_cache()
+
+    # --- Auto-discovery (all platforms, national) ---
+    discoveries = [
+        ("Klikego", klikego_discover),
+        ("Protiming", protiming_discover),
+        ("OnSinscrit", onsinscrit_discover),
+        ("Njuko", njuko_discover),
+        ("Chronometrage.com", chronometrage_discover),
+        ("Chrono-Start", chronostart_discover),
+        ("3wsport", threewsport_discover),
+        ("Espace-Competition", espacecomp_discover),
+        ("Sportips", sportips_discover),
+        ("TimePulse", timepulse_discover),
+        ("Endurance Chrono", endurancechrono_discover),
+        ("Listino", listino_discover),
+        ("RunChrono (local 86)", runchrono_discover),
+    ]
+
+    discovered = []
+    for label, discover_fn in discoveries:
+        print(f"=== Auto-decouverte {label} ===")
+        try:
+            found = discover_fn()
+            discovered.extend(found)
+        except Exception as e:
+            print(f"  Erreur: {e}")
+
+    # Merge: config takes priority, then discovered (deduplicated by URL)
+    config_urls = {rc.get("url", "").rstrip("/") for rc in races_config}
+    for disc in discovered:
+        disc_url = disc.get("url", "").rstrip("/")
+        if disc_url and disc_url not in config_urls:
+            races_config.append(disc)
+            config_urls.add(disc_url)
+
+    # --- Split: cached vs to-scrape ---
+    to_scrape = []
+    cached_results = []
+    for rc in races_config:
+        url = rc.get("url", "")
+        if should_scrape(url, scrape_cache):
+            to_scrape.append(rc)
+        else:
+            entry = scrape_cache.get(url, {})
+            if entry.get("member_count", 0) > 0 and entry.get("data"):
+                cached_results.append(entry["data"])
+
+    total = len(races_config)
+    cached = total - len(to_scrape)
+    print(f"\n=== {total} courses, {cached} en cache, {len(to_scrape)} a scraper ===")
+
+    # --- Scrape concurrently ---
+    results: list[dict] = list(cached_results)
+    found_count = len(cached_results)
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        future_to_rc = {
+            executor.submit(scrape_race, rc, patterns, known_members): rc
+            for rc in to_scrape
+        }
+        done = 0
+        for future in as_completed(future_to_rc):
+            done += 1
+            rc = future_to_rc[future]
+            platform = rc.get("platform", "")
+            name = rc.get("name", "?")
+            url = rc.get("url", "")
+
+            try:
+                data = future.result()
+            except Exception:
+                data = None
+
+            member_count = data.get("member_count", 0) if data else 0
+            scrape_cache[url] = {
+                "last_scraped": datetime.now(timezone.utc).isoformat(),
+                "member_count": member_count,
+                "data": data if member_count > 0 else None,
+            }
+
+            if data and member_count > 0:
+                results.append(data)
+                found_count += 1
+                print(f"  [{platform}] {name} -> {member_count} membre(s) !")
+
+            if done % 100 == 0:
+                print(f"  ... {done}/{len(to_scrape)} ({found_count} avec membres)")
+
+    print(f"  ... {done}/{len(to_scrape)} termine")
+    save_scrape_cache(scrape_cache)
+
+    # --- Geocode (BAN API is fast, Nominatim fallback for international) ---
+    for race in results:
+        if race.get("lat") is not None:
+            continue
+        prev = existing_by_id.get(race.get("id", ""))
+        if prev and prev.get("lat") and prev.get("lng"):
+            race["lat"] = prev["lat"]
+            race["lng"] = prev["lng"]
+            continue
+
+        # Try location field first, then race name as fallback
+        for query in [race.get("location", ""), race.get("name", "")]:
+            if not query:
+                continue
+            print(f"  Geocoding '{query}'...")
+            coords = geocode(query)
+            if coords:
+                race["lat"], race["lng"] = coords
+                break
+
+    # --- Save ---
+    output = {
+        "last_updated": datetime.now(timezone.utc).isoformat(),
+        "races": results,
+    }
+    save_data(output)
+    print(f"\n=== {len(results)} course(s) avec membres / {total} decouvertes ===")
+
+
+if __name__ == "__main__":
+    run()
