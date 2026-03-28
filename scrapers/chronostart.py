@@ -61,7 +61,12 @@ class ChronoStartScraper(BaseScraper):
         except Exception:
             return None
 
-        members = self._parse_table(resp.text)
+        # Chrono-Start events can have multiple courses (distances) behind a
+        # single listing ID.  The default page ("Tous les Listing") is
+        # unreliable and often only shows the first course.  We detect the
+        # sub-course dropdown (<select id="idEp">) and scrape each course
+        # individually to ensure we don't miss any participants.
+        members = self._scrape_all_courses(resp.text, event_id)
 
         return RaceResult(
             id=f"chronostart-{event_id}",
@@ -74,6 +79,60 @@ class ChronoStartScraper(BaseScraper):
             member_count=len(members),
             last_scraped=datetime.now(timezone.utc).isoformat(),
         )
+
+    def _scrape_all_courses(self, html: str, event_id: str) -> list[Member]:
+        """Scrape all sub-courses for a multi-distance event.
+
+        Chrono-Start events can have multiple courses (e.g. 6km, 14km, 33km)
+        under one listing ID.  The default "Tous les Listing" page is buggy
+        and often only returns participants from the first course.
+
+        This method detects the <select id="idEp"> dropdown, and if multiple
+        courses exist, fetches each one individually via ?c={id}&idEp={ep}.
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        select = soup.select_one("select#idEp")
+
+        if not select:
+            # No sub-course dropdown: single course, parse directly
+            return self._parse_table(html)
+
+        # Collect sub-course IDs (skip idEp=0 which is "Tous les Listing")
+        course_ids = []
+        for option in select.find_all("option"):
+            val = option.get("value", "")
+            if val and val != "0":
+                course_ids.append(val)
+
+        if not course_ids:
+            return self._parse_table(html)
+
+        # If only one real course, parse the current page
+        if len(course_ids) == 1:
+            return self._parse_table(html)
+
+        # Multiple courses: fetch each individually
+        all_members = []
+        seen = set()
+        session = self._get_session()
+
+        for ep_id in course_ids:
+            ep_url = f"{self.BASE_FR}/Inscription/course/listing?c={event_id}&idEp={ep_id}"
+            try:
+                if session:
+                    resp = session.get(ep_url, timeout=15)
+                else:
+                    resp = requests.get(ep_url, timeout=15)
+                resp.raise_for_status()
+            except Exception:
+                continue
+
+            for member in self._parse_table(resp.text):
+                if member.name not in seen:
+                    seen.add(member.name)
+                    all_members.append(member)
+
+        return all_members
 
     def _resolve_listing_id(self, event_page_url: str) -> str | None:
         """Fetch a chrono-start.com event page and extract the listing ID."""
