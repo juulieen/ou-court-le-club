@@ -6,6 +6,8 @@ Registration lists: chrono-start.fr/Inscription/Course/listing/c/{event_id}
   - Table #table_listing with Club column (index 7)
 """
 
+import html
+import json
 import re
 from datetime import datetime, timezone
 
@@ -252,6 +254,8 @@ def discover_races() -> list[dict]:
             title = event.get("title", {}).get("rendered", "")
             link = event.get("link", "")
             if title and link:
+                # WP API returns HTML entities in rendered titles
+                title = html.unescape(title)
                 event_links.append((title, link))
 
         total_pages = int(resp.headers.get("X-WP-TotalPages", 1))
@@ -278,7 +282,7 @@ def discover_races() -> list[dict]:
 
 
 def _resolve_event(title: str, event_page_url: str) -> dict | None:
-    """Fetch an event page and extract the listing ID."""
+    """Fetch an event page and extract the listing ID, date, and location."""
     try:
         resp = requests.get(event_page_url, timeout=8)
         resp.raise_for_status()
@@ -292,21 +296,75 @@ def _resolve_event(title: str, event_page_url: str) -> dict | None:
     event_id = match.group(1)
     listing_url = f"https://chrono-start.fr/Inscription/Course/listing/c/{event_id}"
 
-    # Try to extract date and location from the page
+    # Decode HTML entities in title (e.g. &rsquo; -> ')
+    clean_title = html.unescape(title)
+
     date_str = ""
     location = ""
     soup = BeautifulSoup(resp.text, "html.parser")
 
-    # Date often in meta or structured data
-    dm = re.search(r"(\d{2})/(\d{2})/(\d{4})", resp.text[:5000])
-    if dm:
-        date_str = f"{dm.group(3)}-{dm.group(2)}-{dm.group(1)}"
+    # Strategy 1: Extract from Event JSON-LD (most reliable)
+    for script in soup.select('script[type="application/ld+json"]'):
+        try:
+            data = json.loads(script.string)
+            if isinstance(data, dict) and data.get("@type") == "Event":
+                if not date_str and data.get("startDate"):
+                    # startDate is ISO format like "2026-06-14"
+                    date_str = data["startDate"][:10]
+                loc_data = data.get("location", {})
+                if not location and isinstance(loc_data, dict):
+                    location = loc_data.get("name") or loc_data.get("address") or ""
+        except (json.JSONDecodeError, TypeError):
+            continue
+
+    # Strategy 2: Extract date from MEC HTML (.mec-start-date-label)
+    if not date_str:
+        date_label = soup.select_one(".mec-start-date-label")
+        if date_label:
+            date_str = _parse_french_date(date_label.get_text(strip=True))
+
+    # Strategy 3: Extract date from dd/mm/yyyy pattern in page
+    if not date_str:
+        dm = re.search(r"(\d{2})/(\d{2})/(\d{4})", resp.text[:5000])
+        if dm:
+            date_str = f"{dm.group(3)}-{dm.group(2)}-{dm.group(1)}"
+
+    # Strategy 2b: Extract location from map markers JSON
+    if not location:
+        marker_match = re.search(
+            r'"name"\s*:\s*"([^"]+)".*?"address"\s*:\s*"([^"]*)"',
+            resp.text,
+        )
+        if marker_match:
+            location = marker_match.group(1)
 
     return {
         "platform": "chronostart",
         "url": listing_url,
-        "name": title,
+        "name": clean_title,
         "date": date_str,
         "location": location,
         "source": "chronostart-discovery",
     }
+
+
+# French month names -> month numbers for parsing "14 Juin 2026" style dates
+_FRENCH_MONTHS = {
+    "janvier": "01", "février": "02", "fevrier": "02", "mars": "03",
+    "avril": "04", "mai": "05", "juin": "06", "juillet": "07",
+    "août": "08", "aout": "08", "septembre": "09", "octobre": "10",
+    "novembre": "11", "décembre": "12", "decembre": "12",
+}
+
+
+def _parse_french_date(text: str) -> str:
+    """Parse a French date like '14 Juin 2026' into 'YYYY-MM-DD'."""
+    text = text.strip().lower()
+    match = re.match(r"(\d{1,2})\s+(\w+)\s+(\d{4})", text)
+    if not match:
+        return ""
+    day, month_name, year = match.groups()
+    month = _FRENCH_MONTHS.get(month_name, "")
+    if not month:
+        return ""
+    return f"{year}-{month}-{day.zfill(2)}"
