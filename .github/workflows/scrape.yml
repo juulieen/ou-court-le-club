@@ -27,8 +27,30 @@ jobs:
           CONFIG_YML: ${{ secrets.CONFIG_YML }}
         run: echo "$CONFIG_YML" > config.yml
 
+      - name: Restore data caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/geocache.json
+            data/scrape_cache.json
+            data/njuko_slugs.json
+            data/races.json
+          key: scraper-data-${{ github.run_id }}
+          restore-keys: |
+            scraper-data-
+
       - name: Run scrapers
         run: python -m scrapers.main
+
+      - name: Save data caches
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/geocache.json
+            data/scrape_cache.json
+            data/njuko_slugs.json
+            data/races.json
+          key: scraper-data-${{ github.run_id }}
 
       # Note: save_data() in main.py generates two versions:
       # - data/races.json (full, with member names — gitignored)
