@@ -4,7 +4,7 @@ Carte interactive des courses ou les membres du club **[Run Event 86](https://ww
 
 **[Voir la carte](https://juulieen.github.io/ou-court-le-club/)**
 
-![Screenshot](docs/img/screenshot.png)
+[![Voir la carte](docs/img/screenshot.png)](https://juulieen.github.io/ou-court-le-club/)
 
 ## Comment ca marche ?
 
