@@ -40,30 +40,15 @@ body {
   z-index: 1;
 }
 
-.leaflet-control-zoom a {
-  background: #fff !important;
-  color: var(--text) !important;
-  border-color: var(--border) !important;
+
+/* MapLibre overrides */
+.maplibregl-ctrl-group button {
+  background: #fff;
+  border-color: var(--border);
 }
 
-.leaflet-control-zoom a:hover {
-  color: var(--orange) !important;
-}
-
-/* Clusters */
-.marker-cluster-small,
-.marker-cluster-medium,
-.marker-cluster-large {
-  background: rgba(245, 124, 32, 0.2) !important;
-}
-
-.marker-cluster-small div,
-.marker-cluster-medium div,
-.marker-cluster-large div {
-  background: var(--orange) !important;
-  color: #fff !important;
-  font-family: "Bebas Neue", sans-serif !important;
-  font-size: 14px !important;
+.maplibregl-ctrl-group button:hover {
+  background: #f8f8f8;
 }
 
 /* ---- Sidebar ---- */
@@ -392,27 +377,24 @@ body {
   left: 14px;
 }
 
-/* ---- Markers ---- */
-.marker-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  color: #fff;
-  font-family: "Bebas Neue", sans-serif;
-  font-size: 0.9rem;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+/* ---- Popup (MapLibre GL) ---- */
+.maplibregl-popup-content {
+  border-radius: var(--radius) !important;
+  padding: 14px 16px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+  font-family: "DM Sans", system-ui, sans-serif !important;
 }
 
-.marker-past { background: #aaa; }
-.marker-this-week { background: #E53935; }
-.marker-this-month { background: var(--orange); }
-.marker-future { background: var(--purple); }
+.maplibregl-popup-close-button {
+  font-size: 18px;
+  padding: 4px 8px;
+  color: var(--text-dim);
+}
 
-/* ---- Popup ---- */
+.maplibregl-popup-close-button:hover {
+  color: var(--orange);
+  background: transparent;
+}
 .race-popup {
   padding: 2px 0;
   min-width: 180px;
