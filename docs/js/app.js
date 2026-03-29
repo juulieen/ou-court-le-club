@@ -32,7 +32,9 @@
 
   // --- Data loading ---
   function loadData() {
-    fetch("data/races.json")
+    // Cache-bust daily: the scraper runs at 6h UTC, so use the current date as version
+    const today = new Date().toISOString().slice(0, 10);
+    fetch(`data/races.json?v=${today}`)
       .then((r) => r.json())
       .then((data) => {
         allRaces = (data.races || []).filter((r) => r.member_count > 0);
