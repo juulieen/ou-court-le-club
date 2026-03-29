@@ -8,6 +8,7 @@ Philosophy:
 """
 
 import json
+import re
 import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict
@@ -291,8 +292,25 @@ def run():
             race["lng"] = prev["lng"]
             continue
 
-        # Try location field first, then race name as fallback
-        for query in [race.get("location", ""), race.get("name", "")]:
+        # Try location field first, then race name as fallback,
+        # then cleaned race name (strip event type prefixes and year)
+        queries = [race.get("location", ""), race.get("name", "")]
+        name = race.get("name", "")
+        if name:
+            cleaned = name
+            # Strip leading event type words and articles repeatedly
+            prefix_re = re.compile(
+                r"^(marathon|semi[- ]?marathon|trail|course|foul[ée]es?|cross|"
+                r"corrida|rando[- ]?trail|les?|la|du|de|des|l'|d')\s+",
+                re.IGNORECASE,
+            )
+            while prefix_re.search(cleaned):
+                cleaned = prefix_re.sub("", cleaned, count=1).strip()
+            # Strip trailing year
+            cleaned = re.sub(r"\s+\d{4}$", "", cleaned).strip()
+            if cleaned and cleaned.lower() != name.lower():
+                queries.append(cleaned)
+        for query in queries:
             if not query:
                 continue
             print(f"  Geocoding '{query}'...")
