@@ -372,8 +372,17 @@ def _validate_slug(slug: str) -> dict | None:
     address = data.get("address", {})
     if isinstance(address, dict):
         city = address.get("city", "")
+        country = address.get("country", "")
         if city:
             location = city
+        elif country and country != "FR":
+            location = country
+    if not location:
+        event_obj = data.get("event", {})
+        if isinstance(event_obj, dict):
+            addr2 = event_obj.get("address", {})
+            if isinstance(addr2, dict):
+                location = addr2.get("city", "")
 
     return {
         "platform": "njuko",
