@@ -15,6 +15,48 @@ CACHE_PATH = Path(__file__).resolve().parent.parent / "data" / "geocache.json"
 BAN_URL = "https://api-adresse.data.gouv.fr/search"
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 
+# Manual corrections for locations that BAN/Nominatim geocode incorrectly.
+# BAN often matches race names to street names (e.g. "marathon" -> "Rue de Marathon").
+# Keys are lowercase. Values are (lat, lng) or None (= ungeocodable).
+OVERRIDES: dict[str, tuple[float, float] | None] = {
+    # Marathon de Nantes — BAN returns "Rue de Marathon" in Rennes
+    "abalone marathon de nantes 2023": (47.24, -1.56),
+    "abalone marathon de nantes 2024": (47.24, -1.56),
+    "abalone marathon de nantes 2025": (47.24, -1.56),
+    "nantes": (47.24, -1.56),
+    # Marathon de la Mer — Boulogne-sur-Mer, not Bordeaux/Rennes
+    "marathon de la mer - ed.2026": (50.73, 1.61),
+    "marathon de la mer": (50.73, 1.61),
+    # Route du Louvre — Lens (Pas-de-Calais), not a road in Sarthe
+    "la route du louvre": (50.44, 2.82),
+    "route du louvre": (50.44, 2.82),
+    "la route du louvre - dimanche 10 mai 2026": (50.44, 2.82),
+    # ENDORUN PARIS — Paris, not "Rue de Paris" in Brest
+    "endorun paris 2025": (48.85, 2.41),
+    "endorun paris": (48.85, 2.41),
+    # Grands Trails d'Auvergne — Aubusson-d'Auvergne, not Saint-Nazaire
+    "grands trails d'auvergne 2026": (45.75, 3.60),
+    # Course des Crêtes — Espelette (Pays Basque), not Corsica
+    "la course des cretes 2026": (43.34, -1.45),
+    "course des cretes": (43.34, -1.45),
+    # BEERUN — Joué-sur-Erdre (Loire-Atlantique), not Corsica
+    "beerun 2025": (47.51, -1.43),
+    "beerun": (47.51, -1.43),
+    # 10 Miles des Baines — Capbreton (Landes), not the Alps
+    "10 miles des baines 2026": (43.64, -1.42),
+    # Luchon Aneto Trail — Pyrénées, not Corsica
+    "luchon aneto trail 2025": (42.79, 0.59),
+    "luchon aneto": (42.79, 0.59),
+    # Choc des Guerriers — L'Isle-d'Espagnac (Charente), not Burgundy
+    "choc des guerriers 2025": (45.66, 0.20),
+    # Course des Pères Noël — Saint-Benoît 86 (near Poitiers)
+    "st benoit": (46.55, 0.35),
+    "la course des pères noel de st benoit le 20 décembre 2025": (46.55, 0.35),
+    # Half on the Head — Ireland, not in France
+    "half on the head 2026": None,
+    "on the head": None,
+}
+
 
 def _load_cache() -> dict:
     if CACHE_PATH.exists():
@@ -30,11 +72,16 @@ def _save_cache(cache: dict) -> None:
 def geocode(location: str) -> tuple[float, float] | None:
     """Geocode a location string, using cache when available.
 
-    Tries BAN (French government API) first, then Nominatim for international.
+    Priority: OVERRIDES > cache > BAN API > Nominatim.
     Returns (lat, lng) or None if geocoding fails.
     """
-    cache = _load_cache()
     key = location.strip().lower()
+
+    # Manual overrides take priority (fixes for BAN/Nominatim errors)
+    if key in OVERRIDES:
+        return OVERRIDES[key]
+
+    cache = _load_cache()
 
     if key in cache:
         entry = cache[key]
