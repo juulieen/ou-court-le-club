@@ -53,13 +53,20 @@
     </div>
 
     <div id="filters">
-      <div class="filter-group">
-        <label for="date-from">Du</label>
-        <input type="date" id="date-from">
+      <div class="filter-toggles">
+        <button class="filter-btn active" data-filter="all">Toutes</button>
+        <button class="filter-btn" data-filter="upcoming">À venir</button>
+        <button class="filter-btn" data-filter="past">Passées</button>
       </div>
-      <div class="filter-group">
-        <label for="date-to">au</label>
-        <input type="date" id="date-to">
+      <div class="filter-dates">
+        <div class="filter-group">
+          <label for="date-from">Du</label>
+          <input type="date" id="date-from">
+        </div>
+        <div class="filter-group">
+          <label for="date-to">au</label>
+          <input type="date" id="date-to">
+        </div>
       </div>
     </div>
 

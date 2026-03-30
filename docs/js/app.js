@@ -392,17 +392,29 @@
   }
 
   // --- Rendering ---
+  let activeFilter = "all"; // "all", "upcoming", "past"
+
   function renderAll() {
     const dateFrom = document.getElementById("date-from").value;
     const dateTo = document.getElementById("date-to").value;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().slice(0, 10);
 
     let filtered = allRaces.filter((r) => {
+      // Quick filter buttons
+      if (activeFilter === "upcoming" && r.date && r.date < todayStr) return false;
+      if (activeFilter === "past" && r.date && r.date >= todayStr) return false;
+      // Date range filters
       if (dateFrom && r.date < dateFrom) return false;
       if (dateTo && r.date > dateTo) return false;
       return true;
     });
 
     const filteredGroups = groupEditions(filtered);
+
+    // Update stats to reflect current filter
+    updateStats(filtered);
 
     // Update map source
     const source = map.getSource("races");
@@ -496,6 +508,16 @@
         sidebar.classList.toggle("collapsed");
         setTimeout(() => map.resize(), 350);
       }
+    });
+
+    // Quick filter buttons
+    document.querySelectorAll(".filter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeFilter = btn.dataset.filter;
+        renderAll();
+      });
     });
 
     // Date filters (debounced)
