@@ -151,12 +151,6 @@ def load_config() -> dict:
     return yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
 
 
-def load_existing_data() -> dict:
-    if DATA_PATH.exists():
-        return json.loads(DATA_PATH.read_text(encoding="utf-8"))
-    return {"last_updated": None, "races": []}
-
-
 def save_data(data: dict) -> None:
     # Full version with member names (local only, gitignored)
     DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -259,8 +253,6 @@ def run():
     patterns = club.get("patterns", [])
     known_members = club.get("known_members", [])
     races_config = list(config.get("races") or [])
-    existing = load_existing_data()
-    existing_by_id = {r["id"]: r for r in existing.get("races", [])}
     scrape_cache = load_scrape_cache()
 
     # --- Auto-discovery (all platforms, national) ---
@@ -336,10 +328,16 @@ def run():
                 data = None
 
             member_count = data.get("member_count", 0) if data else 0
+            # Store data without lat/lng — geocoding is done separately
+            # and coords must come from the (correctable) geocache, not
+            # from a stale scrape cache entry.
+            cache_data = None
+            if data and member_count > 0:
+                cache_data = {k: v for k, v in data.items() if k not in ("lat", "lng")}
             scrape_cache[url] = {
                 "last_scraped": datetime.now(timezone.utc).isoformat(),
                 "member_count": member_count,
-                "data": data if member_count > 0 else None,
+                "data": cache_data,
             }
 
             if data and member_count > 0:
@@ -354,27 +352,21 @@ def run():
     save_scrape_cache(scrape_cache)
 
     # --- Geocode (BAN API is fast, Nominatim fallback for international) ---
+    # Always re-geocode via the geocache (which has manual corrections).
+    # Never blindly copy coords from previous runs or scrape cache,
+    # as those may contain wrong values from bad BAN/Nominatim results.
     for race in results:
         if race.get("lat") is not None and race.get("lng") is not None:
-            # Re-geocode if coords look wrong (e.g. overseas for a French race
-            # with no location field -- likely a geocoding error)
-            lat, lng = race["lat"], race["lng"]
-            has_location = bool(race.get("location", "").strip())
-            is_overseas = lat < -10 or lat > 52 or lng < -6 or lng > 10
-            if has_location or not is_overseas:
+            # Already has coords (from scraper or cache). Keep if location
+            # was provided by the platform (trustworthy).
+            if race.get("location", "").strip():
                 continue
-            # Coords look suspicious (overseas) and no location -- re-geocode
-            print(f"  Re-geocoding '{race.get('name')}' (coords {lat:.1f},{lng:.1f} look overseas)")
+            # No location field — coords came from name-based geocoding.
+            # Strip them so we re-geocode using the (possibly corrected) cache.
             race.pop("lat", None)
             race.pop("lng", None)
-        prev = existing_by_id.get(race.get("id", ""))
-        if prev and prev.get("lat") and prev.get("lng"):
-            race["lat"] = prev["lat"]
-            race["lng"] = prev["lng"]
-            continue
 
-        # Try location field first, then race name as fallback,
-        # then cleaned race name (strip event type words, sponsors, year)
+        # Build geocoding queries: location field, race name, cleaned name
         queries = [race.get("location", ""), race.get("name", "")]
         name = race.get("name", "")
         if name:
