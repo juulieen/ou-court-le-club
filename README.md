@@ -72,6 +72,43 @@ Copier `config.example.yml` en `config.yml` et remplir :
 - `club.known_members` — liste des membres connus (format "NOM Prenom")
 - `races` — courses manuelles (optionnel, pour les plateformes non supportees)
 
+## FAQ
+
+**Pourquoi ma course n'apparait pas sur la carte ?**
+
+Plusieurs raisons possibles :
+
+- **La course est passee et le projet n'existait pas encore** — Le scraper ne decouvre que les evenements *a venir*. Les courses passees dont les listes d'inscrits ont ete desactivees sont invisibles. Tu peux les ajouter manuellement dans `config.yml` (section `races`).
+- **Le champ club n'est pas rempli (ou mal rempli)** — Si tu n'as pas mis "Run Event 86" (ou une variante) dans le champ club a l'inscription, le scraper ne te trouvera que si ton nom est dans la liste `known_members` de `config.yml`.
+- **La plateforme n'est pas supportee** — Seules 13 plateformes sont scannees (voir tableau ci-dessus). Si ta course utilise une autre plateforme, elle ne sera pas detectee.
+- **La course est sur HelloAsso** — Les listes de participants HelloAsso sont privees. Les courses HelloAsso doivent etre ajoutees manuellement.
+- **Probleme de geocoding** — La course est peut-etre detectee mais n'a pas pu etre placee sur la carte (coordonnees manquantes).
+
+**Comment ajouter une course manuellement ?**
+
+Ajouter une entree dans la section `races` de `config.yml` :
+
+```yaml
+races:
+  - platform: manual
+    name: "Nom de la course"
+    date: "2026-01-25"
+    location: "Ville, Departement"
+    members:
+      - name: "NOM Prenom"
+        bib: "10km"
+```
+
+**Pourquoi plusieurs editions de la meme course (2024, 2025, 2026) apparaissent ?**
+
+Les listes d'inscrits des annees precedentes restent accessibles sur certaines plateformes (Njuko notamment). Le scraper les detecte donc comme des courses actives. Sur la carte, elles sont regroupees en un seul marqueur avec un badge "×N ed." et une timeline dans le popup.
+
+**Comment etre visible sur la carte ?**
+
+Deux options :
+1. Remplir correctement le champ "club" a l'inscription (ex: "Run Event 86")
+2. Demander a l'administrateur d'ajouter ton nom dans `known_members` de `config.yml`
+
 ## Vie privee
 
 Ce projet respecte le RGPD :
