@@ -66,6 +66,42 @@ SCRAPERS = {
     "listino": ListinoScraper,
 }
 
+# Patterns for extracting location from race names
+_PREFIX_RE = re.compile(
+    r"^(marathon|semi[- ]?marathon|trail|course|foul[ée]es?|cross|grand|"
+    r"corrida|rando[- ]?trail|boucles?|nocturne|run|festival|"
+    r"harmonie\s+mutuelle|schneider\s+electric|"
+    r"les?|la|du|de|des|l'|d')\s+",
+    re.IGNORECASE,
+)
+_SUFFIX_RE = re.compile(
+    r"\s+(trail|run\s*festival|run|festival|marathon|nocturne|"
+    r"course|cross|corrida|[çc]a\s+bouge)$",
+    re.IGNORECASE,
+)
+
+
+def _extract_location_from_name(name: str) -> str:
+    """Try to extract a geocodable location from a race name.
+
+    Strips event-type prefixes/suffixes, sponsor names, distances, and year.
+    E.g. "Marathon Poitiers-Futuroscope 2026" -> "Poitiers-Futuroscope"
+         "HENDAIA TRAIL 2026" -> "HENDAIA"
+         "HARMONIE MUTUELLE MARATHON 10-20K TOURS 2026" -> "TOURS"
+    """
+    cleaned = name
+    # Strip trailing year
+    cleaned = re.sub(r"\s+\d{4}$", "", cleaned).strip()
+    # Strip distances like "10K", "10-20K", "42.195km"
+    cleaned = re.sub(r"\s+\d+[\-,.]?\d*\s*[kK][mM]?\b", "", cleaned).strip()
+    # Strip leading prefixes repeatedly
+    while _PREFIX_RE.search(cleaned):
+        cleaned = _PREFIX_RE.sub("", cleaned, count=1).strip()
+    # Strip trailing suffixes
+    cleaned = _SUFFIX_RE.sub("", cleaned).strip()
+    return cleaned
+
+
 
 MAX_WORKERS = 6
 
@@ -293,21 +329,11 @@ def run():
             continue
 
         # Try location field first, then race name as fallback,
-        # then cleaned race name (strip event type prefixes and year)
+        # then cleaned race name (strip event type words, sponsors, year)
         queries = [race.get("location", ""), race.get("name", "")]
         name = race.get("name", "")
         if name:
-            cleaned = name
-            # Strip leading event type words and articles repeatedly
-            prefix_re = re.compile(
-                r"^(marathon|semi[- ]?marathon|trail|course|foul[ée]es?|cross|"
-                r"corrida|rando[- ]?trail|les?|la|du|de|des|l'|d')\s+",
-                re.IGNORECASE,
-            )
-            while prefix_re.search(cleaned):
-                cleaned = prefix_re.sub("", cleaned, count=1).strip()
-            # Strip trailing year
-            cleaned = re.sub(r"\s+\d{4}$", "", cleaned).strip()
+            cleaned = _extract_location_from_name(name)
             if cleaned and cleaned.lower() != name.lower():
                 queries.append(cleaned)
         for query in queries:
