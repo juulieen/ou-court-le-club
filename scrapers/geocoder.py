@@ -52,6 +52,10 @@ OVERRIDES: dict[str, tuple[float, float] | None] = {
     # Course des Pères Noël — Saint-Benoît 86 (near Poitiers)
     "st benoit": (46.55, 0.35),
     "la course des pères noel de st benoit le 20 décembre 2025": (46.55, 0.35),
+    # Marathon Poitiers-Futuroscope — Futuroscope (Chasseneuil-du-Poitou), not Fleuré
+    "poitiers-futuroscope": (46.66, 0.37),
+    "marathon poitiers-futuroscope 2026": (46.66, 0.37),
+    "marathon poitiers-futuroscope 2025": (46.66, 0.37),
     # Half on the Head — Ireland, not in France
     "half on the head 2026": None,
     "on the head": None,
