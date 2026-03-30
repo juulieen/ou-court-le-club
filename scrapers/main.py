@@ -71,6 +71,7 @@ _PREFIX_RE = re.compile(
     r"^(marathon|semi[- ]?marathon|trail|course|foul[ée]es?|cross|grand|"
     r"corrida|rando[- ]?trail|boucles?|nocturne|run|festival|"
     r"harmonie\s+mutuelle|schneider\s+electric|"
+    r"p[èe]res?\s*no[eë]ls?|half|"
     r"les?|la|du|de|des|l'|d')\s+",
     re.IGNORECASE,
 )
@@ -81,17 +82,28 @@ _SUFFIX_RE = re.compile(
 )
 
 
-def _extract_location_from_name(name: str) -> str:
-    """Try to extract a geocodable location from a race name.
+def _extract_location_from_name(name: str) -> list[str]:
+    """Try to extract geocodable locations from a race name.
 
-    Strips event-type prefixes/suffixes, sponsor names, distances, and year.
-    E.g. "Marathon Poitiers-Futuroscope 2026" -> "Poitiers-Futuroscope"
-         "HENDAIA TRAIL 2026" -> "HENDAIA"
-         "HARMONIE MUTUELLE MARATHON 10-20K TOURS 2026" -> "TOURS"
+    Returns a list of candidate queries, best first.
+    Strategies (tried in order):
+    1. Strip event-type prefixes/suffixes, sponsors, distances, year
+    2. Extract text after last "de/d'/à" preposition (location indicator)
+
+    E.g. "Marathon Poitiers-Futuroscope 2026" -> ["Poitiers-Futuroscope"]
+         "La Course des Pères Noel de St Benoit le 20 décembre 2025"
+           -> ["Pères Noel St Benoit", "St Benoit"]
     """
+    candidates = []
+
+    # --- Strategy 1: strip prefixes/suffixes (more complete) ---
     cleaned = name
     # Strip trailing year
     cleaned = re.sub(r"\s+\d{4}$", "", cleaned).strip()
+    # Strip trailing date like "le 20 décembre"
+    cleaned = re.sub(
+        r"\s+le\s+\d{1,2}\s+\w+$", "", cleaned, flags=re.IGNORECASE
+    ).strip()
     # Strip distances like "10K", "10-20K", "42.195km"
     cleaned = re.sub(r"\s+\d+[\-,.]?\d*\s*[kK][mM]?\b", "", cleaned).strip()
     # Strip leading prefixes repeatedly
@@ -99,7 +111,30 @@ def _extract_location_from_name(name: str) -> str:
         cleaned = _PREFIX_RE.sub("", cleaned, count=1).strip()
     # Strip trailing suffixes
     cleaned = _SUFFIX_RE.sub("", cleaned).strip()
-    return cleaned
+    if cleaned and cleaned.lower() != name.lower():
+        candidates.append(cleaned)
+
+    # --- Strategy 2: extract location after last "de/d'/à" preposition ---
+    stripped = re.sub(r"\s+\d{4}$", "", name).strip()
+    loc_matches = list(re.finditer(
+        r"\b(?:de|d'|à)\s+([A-ZÀ-Ÿ][a-zà-ÿ''-]+(?:[\s-]+[A-ZÀ-Ÿa-zà-ÿ''-]+)*)",
+        stripped,
+    ))
+    if loc_matches:
+        after_de = loc_matches[-1].group(1).strip()
+        # Clean trailing date patterns like "le 20 décembre"
+        after_de = re.sub(
+            r"\s+le\s+\d{1,2}(\s+\w+)?$", "", after_de, flags=re.IGNORECASE
+        ).strip()
+        # Strip trailing articles (le/la/les/sur)
+        after_de = re.sub(
+            r"\s+(le|la|les|sur)$", "", after_de, flags=re.IGNORECASE
+        ).strip()
+        if after_de and len(after_de) > 2:
+            if not candidates or after_de.lower() != candidates[0].lower():
+                candidates.append(after_de)
+
+    return candidates
 
 
 
@@ -333,9 +368,10 @@ def run():
         queries = [race.get("location", ""), race.get("name", "")]
         name = race.get("name", "")
         if name:
-            cleaned = _extract_location_from_name(name)
-            if cleaned and cleaned.lower() != name.lower():
-                queries.append(cleaned)
+            candidates = _extract_location_from_name(name)
+            for c in candidates:
+                if c.lower() != name.lower() and c not in queries:
+                    queries.append(c)
         for query in queries:
             if not query:
                 continue
