@@ -184,41 +184,56 @@
       map.easeTo({ center: features[0].geometry.coordinates, zoom: zoom + 1 });
     });
 
-    // Click individual point -> popup
+    // Click individual point -> popup (shows ALL races at same location)
     map.on("click", "race-points", (e) => {
       if (!e.features || !e.features.length) return;
       const coords = e.features[0].geometry.coordinates.slice();
-      const p = e.features[0].properties;
 
       while (Math.abs(e.lngLat.lng - coords[0]) > 180) {
         coords[0] += e.lngLat.lng > coords[0] ? 360 : -360;
       }
 
-      const dateFormatted = p.date
-        ? new Date(p.date + "T00:00:00").toLocaleDateString("fr-FR", {
-            weekday: "long", day: "numeric", month: "long", year: "numeric",
-          })
-        : "Date inconnue";
+      // Find all features near this click point (catches offset siblings)
+      const nearby = map.queryRenderedFeatures(e.point, { layers: ["race-points"] });
+      // Deduplicate by id
+      const seen = new Set();
+      const features = [];
+      for (const f of nearby) {
+        const id = f.properties.id;
+        if (!seen.has(id)) {
+          seen.add(id);
+          features.push(f.properties);
+        }
+      }
 
-      const membersHtml = p.member_count > 0
-        ? `<div class="popup-members-count">${p.member_count} membre${p.member_count > 1 ? "s" : ""} inscrit${p.member_count > 1 ? "s" : ""}</div>`
-        : "";
+      const popupHtml = features.map((p) => {
+        const dateFormatted = p.date
+          ? new Date(p.date + "T00:00:00").toLocaleDateString("fr-FR", {
+              weekday: "long", day: "numeric", month: "long", year: "numeric",
+            })
+          : "Date inconnue";
 
-      const linkHtml = p.url
-        ? `<a class="popup-link" href="${p.url}" target="_blank" rel="noopener">Voir sur ${p.platform} &rarr;</a>`
-        : "";
+        const membersHtml = p.member_count > 0
+          ? `<div class="popup-members-count">${p.member_count} membre${p.member_count > 1 ? "s" : ""} inscrit${p.member_count > 1 ? "s" : ""}</div>`
+          : "";
 
-      if (currentPopup) currentPopup.remove();
-      currentPopup = new maplibregl.Popup({ offset: 12, maxWidth: "280px" })
-        .setLngLat(coords)
-        .setHTML(`
-          <div class="race-popup">
+        const linkHtml = p.url
+          ? `<a class="popup-link" href="${p.url}" target="_blank" rel="noopener">Voir sur ${p.platform} &rarr;</a>`
+          : "";
+
+        return `
+          <div class="race-popup-item">
             <div class="popup-title" style="border-left: 3px solid ${p.color}; padding-left: 10px">${p.name}</div>
             <div class="popup-meta">${dateFormatted}${p.location ? " — " + p.location : ""}</div>
             ${membersHtml}
             ${linkHtml}
-          </div>
-        `)
+          </div>`;
+      }).join("");
+
+      if (currentPopup) currentPopup.remove();
+      currentPopup = new maplibregl.Popup({ offset: 12, maxWidth: "300px" })
+        .setLngLat(coords)
+        .setHTML(`<div class="race-popup">${popupHtml}</div>`)
         .addTo(map);
     });
 
@@ -233,13 +248,35 @@
   }
 
   function buildGeoJSON(races) {
+    const valid = races.filter((r) => r.lat != null && r.lng != null);
+
+    // Offset overlapping points (same coords) with a small spiral
+    const coordCounts = {};
+    valid.forEach((r) => {
+      const key = `${r.lat},${r.lng}`;
+      coordCounts[key] = (coordCounts[key] || 0) + 1;
+    });
+    const coordIndex = {};
+
     return {
       type: "FeatureCollection",
-      features: races
-        .filter((r) => r.lat != null && r.lng != null)
-        .map((r) => ({
+      features: valid.map((r) => {
+        let lng = r.lng;
+        let lat = r.lat;
+        const key = `${r.lat},${r.lng}`;
+        if (coordCounts[key] > 1) {
+          const idx = (coordIndex[key] = (coordIndex[key] || 0) + 1) - 1;
+          if (idx > 0) {
+            // Offset in a circle (~500m radius, visible from zoom 14+)
+            const angle = (idx * 2.4); // golden angle for even spread
+            const offset = 0.005;
+            lng += offset * Math.cos(angle);
+            lat += offset * Math.sin(angle);
+          }
+        }
+        return {
           type: "Feature",
-          geometry: { type: "Point", coordinates: [r.lng, r.lat] },
+          geometry: { type: "Point", coordinates: [lng, lat] },
           properties: {
             id: r.id,
             name: r.name,
@@ -251,7 +288,8 @@
             color: getColor(getTemporality(r.date)),
             temporality: getTemporality(r.date),
           },
-        })),
+        };
+      }),
     };
   }
 

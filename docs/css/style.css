@@ -398,6 +398,14 @@ body {
 .race-popup {
   padding: 2px 0;
   min-width: 180px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.race-popup-item + .race-popup-item {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
 }
 
 .race-popup .popup-title {
