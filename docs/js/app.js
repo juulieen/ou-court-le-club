@@ -1,4 +1,4 @@
-// RunEvent86 — "Ou court le club ?" — MapLibre GL + Protomaps
+// RunEvent86 — "Ou court le club ?" — MapLibre GL
 (function () {
   "use strict";
 
@@ -8,6 +8,7 @@
 
   let map;
   let allRaces = [];
+  let raceGroups = []; // grouped by event (multi-edition)
   let currentPopup = null;
 
   // --- Init ---
@@ -32,11 +33,11 @@
 
   // --- Data loading ---
   function loadData() {
-    // no-cache: always check with server, but use cached version if unchanged (304)
     fetch("data/races.json", { cache: "no-cache" })
       .then((r) => r.json())
       .then((data) => {
         allRaces = (data.races || []).filter((r) => r.member_count > 0);
+        raceGroups = groupEditions(allRaces);
         updateLastUpdated(data.last_updated);
         updateStats(allRaces);
         setupMapLayers();
@@ -47,6 +48,34 @@
         document.getElementById("race-list").innerHTML =
           '<div class="empty-state"><div class="empty-icon">&#128683;</div>Impossible de charger les donnees</div>';
       });
+  }
+
+  // --- Group editions of the same event ---
+  function groupEditions(races) {
+    const groups = {};
+    for (const r of races) {
+      // Strip trailing year to get base name
+      const base = r.name.replace(/\s*\d{4}\s*$/, "").trim().toLowerCase();
+      // Group by base name + approximate location
+      const locKey = r.lat != null && r.lng != null
+        ? `${Math.round(r.lat * 100)},${Math.round(r.lng * 100)}`
+        : "nocoords";
+      const key = `${base}|${locKey}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(r);
+    }
+
+    // Sort editions by date (newest first) within each group
+    const result = [];
+    for (const editions of Object.values(groups)) {
+      editions.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      result.push({
+        latest: editions[0],
+        editions: editions,
+        isMulti: editions.length > 1,
+      });
+    }
+    return result;
   }
 
   // --- Stats ---
@@ -99,10 +128,9 @@
 
   // --- Map layers ---
   function setupMapLayers() {
-    // Clustered source
     map.addSource("races", {
       type: "geojson",
-      data: buildGeoJSON(allRaces),
+      data: buildGeoJSON(raceGroups),
       cluster: true,
       clusterMaxZoom: 13,
       clusterRadius: 50,
@@ -142,7 +170,7 @@
       },
     });
 
-    // Individual race circles
+    // Individual race circles — larger for multi-edition
     map.addLayer({
       id: "race-points",
       type: "circle",
@@ -150,9 +178,12 @@
       filter: ["!", ["has", "point_count"]],
       paint: {
         "circle-color": ["get", "color"],
-        "circle-radius": 10,
-        "circle-stroke-width": 2.5,
-        "circle-stroke-color": "#fff",
+        "circle-radius": ["case", ["get", "is_multi"], 13, 10],
+        "circle-stroke-width": ["case", ["get", "is_multi"], 3.5, 2.5],
+        "circle-stroke-color": ["case",
+          ["get", "is_multi"], "#F57C20",
+          "#fff"
+        ],
       },
     });
 
@@ -173,6 +204,26 @@
       },
     });
 
+    // Edition count badge (small circle at top-right of multi-edition markers)
+    map.addLayer({
+      id: "edition-badge",
+      type: "symbol",
+      source: "races",
+      filter: ["all", ["!", ["has", "point_count"]], ["get", "is_multi"]],
+      layout: {
+        "text-field": ["concat", "×", ["to-string", ["get", "edition_count"]]],
+        "text-font": ["Noto Sans Bold"],
+        "text-size": 9,
+        "text-offset": [1.2, -1.2],
+        "text-allow-overlap": true,
+      },
+      paint: {
+        "text-color": "#F57C20",
+        "text-halo-color": "#fff",
+        "text-halo-width": 1.5,
+      },
+    });
+
     // --- Interactions ---
 
     // Click cluster -> zoom in
@@ -184,56 +235,88 @@
       map.easeTo({ center: features[0].geometry.coordinates, zoom: zoom + 1 });
     });
 
-    // Click individual point -> popup (shows ALL races at same location)
+    // Click individual point -> popup with all editions
     map.on("click", "race-points", (e) => {
       if (!e.features || !e.features.length) return;
       const coords = e.features[0].geometry.coordinates.slice();
+      const p = e.features[0].properties;
 
       while (Math.abs(e.lngLat.lng - coords[0]) > 180) {
         coords[0] += e.lngLat.lng > coords[0] ? 360 : -360;
       }
 
-      // Find all features near this click point (catches offset siblings)
-      const nearby = map.queryRenderedFeatures(e.point, { layers: ["race-points"] });
-      // Deduplicate by id
-      const seen = new Set();
-      const features = [];
-      for (const f of nearby) {
-        const id = f.properties.id;
-        if (!seen.has(id)) {
-          seen.add(id);
-          features.push(f.properties);
-        }
+      // Parse editions JSON
+      let editions = [];
+      try {
+        editions = JSON.parse(p.editions_json);
+      } catch (_) {
+        editions = [{
+          name: p.name, date: p.date, member_count: p.member_count,
+          platform: p.platform, url: p.url, color: p.color,
+        }];
       }
 
-      const popupHtml = features.map((p) => {
-        const dateFormatted = p.date
-          ? new Date(p.date + "T00:00:00").toLocaleDateString("fr-FR", {
+      let popupHtml;
+      if (editions.length > 1) {
+        // Multi-edition: show timeline
+        const title = p.name.replace(/\s*\d{4}\s*$/, "").trim();
+        const timelineHtml = editions.map((ed) => {
+          const year = ed.date ? ed.date.substring(0, 4) : "?";
+          const dateFormatted = ed.date
+            ? new Date(ed.date + "T00:00:00").toLocaleDateString("fr-FR", {
+                day: "numeric", month: "short", year: "numeric",
+              })
+            : "?";
+          const temp = getTemporality(ed.date);
+          const color = getColor(temp);
+          const linkHtml = ed.url
+            ? `<a class="popup-link" href="${ed.url}" target="_blank" rel="noopener">${ed.platform} &rarr;</a>`
+            : "";
+          return `
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background: ${color}"></div>
+              <div class="timeline-content">
+                <div class="timeline-year">${dateFormatted}</div>
+                <div class="timeline-members">${ed.member_count} membre${ed.member_count > 1 ? "s" : ""} ${linkHtml}</div>
+              </div>
+            </div>`;
+        }).join("");
+
+        popupHtml = `
+          <div class="race-popup">
+            <div class="popup-title" style="border-left: 3px solid ${p.color}; padding-left: 10px">${title}</div>
+            <div class="popup-meta">${p.location || ""}</div>
+            <div class="popup-edition-badge">${editions.length} editions</div>
+            <div class="timeline">${timelineHtml}</div>
+          </div>`;
+      } else {
+        // Single edition
+        const ed = editions[0];
+        const dateFormatted = ed.date
+          ? new Date(ed.date + "T00:00:00").toLocaleDateString("fr-FR", {
               weekday: "long", day: "numeric", month: "long", year: "numeric",
             })
           : "Date inconnue";
-
-        const membersHtml = p.member_count > 0
-          ? `<div class="popup-members-count">${p.member_count} membre${p.member_count > 1 ? "s" : ""} inscrit${p.member_count > 1 ? "s" : ""}</div>`
+        const membersHtml = ed.member_count > 0
+          ? `<div class="popup-members-count">${ed.member_count} membre${ed.member_count > 1 ? "s" : ""} inscrit${ed.member_count > 1 ? "s" : ""}</div>`
+          : "";
+        const linkHtml = ed.url
+          ? `<a class="popup-link" href="${ed.url}" target="_blank" rel="noopener">Voir sur ${ed.platform} &rarr;</a>`
           : "";
 
-        const linkHtml = p.url
-          ? `<a class="popup-link" href="${p.url}" target="_blank" rel="noopener">Voir sur ${p.platform} &rarr;</a>`
-          : "";
-
-        return `
-          <div class="race-popup-item">
-            <div class="popup-title" style="border-left: 3px solid ${p.color}; padding-left: 10px">${p.name}</div>
+        popupHtml = `
+          <div class="race-popup">
+            <div class="popup-title" style="border-left: 3px solid ${ed.color || p.color}; padding-left: 10px">${ed.name}</div>
             <div class="popup-meta">${dateFormatted}${p.location ? " — " + p.location : ""}</div>
             ${membersHtml}
             ${linkHtml}
           </div>`;
-      }).join("");
+      }
 
       if (currentPopup) currentPopup.remove();
       currentPopup = new maplibregl.Popup({ offset: 12, maxWidth: "300px" })
         .setLngLat(coords)
-        .setHTML(`<div class="race-popup">${popupHtml}</div>`)
+        .setHTML(popupHtml)
         .addTo(map);
     });
 
@@ -247,49 +330,47 @@
     fitBounds(allRaces);
   }
 
-  function buildGeoJSON(races) {
-    const valid = races.filter((r) => r.lat != null && r.lng != null);
-
-    // Offset overlapping points (same coords) with a small spiral
-    const coordCounts = {};
-    valid.forEach((r) => {
-      const key = `${r.lat},${r.lng}`;
-      coordCounts[key] = (coordCounts[key] || 0) + 1;
-    });
-    const coordIndex = {};
-
+  function buildGeoJSON(groups) {
     return {
       type: "FeatureCollection",
-      features: valid.map((r) => {
-        let lng = r.lng;
-        let lat = r.lat;
-        const key = `${r.lat},${r.lng}`;
-        if (coordCounts[key] > 1) {
-          const idx = (coordIndex[key] = (coordIndex[key] || 0) + 1) - 1;
-          if (idx > 0) {
-            // Offset in a circle (~500m radius, visible from zoom 14+)
-            const angle = (idx * 2.4); // golden angle for even spread
-            const offset = 0.005;
-            lng += offset * Math.cos(angle);
-            lat += offset * Math.sin(angle);
-          }
-        }
-        return {
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [lng, lat] },
-          properties: {
-            id: r.id,
-            name: r.name,
-            date: r.date || "",
-            location: r.location || "",
-            platform: r.platform || "",
-            url: r.url || "",
-            member_count: r.member_count,
-            color: getColor(getTemporality(r.date)),
-            temporality: getTemporality(r.date),
-          },
-        };
-      }),
+      features: groups
+        .filter((g) => g.latest.lat != null && g.latest.lng != null)
+        .map((g) => {
+          const r = g.latest;
+          const totalMembers = g.editions.reduce((s, e) => s + e.member_count, 0);
+          // For color: use latest future edition, or latest overall
+          const futureEd = g.editions.find((e) => getTemporality(e.date) !== "past");
+          const colorRef = futureEd || r;
+
+          // Build compact editions data for popup
+          const editionsData = g.editions.map((e) => ({
+            name: e.name,
+            date: e.date || "",
+            member_count: e.member_count,
+            platform: e.platform || "",
+            url: e.url || "",
+            color: getColor(getTemporality(e.date)),
+          }));
+
+          return {
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [r.lng, r.lat] },
+            properties: {
+              id: r.id,
+              name: r.name,
+              date: r.date || "",
+              location: r.location || "",
+              platform: r.platform || "",
+              url: r.url || "",
+              member_count: g.isMulti ? totalMembers : r.member_count,
+              color: getColor(getTemporality(colorRef.date)),
+              temporality: getTemporality(colorRef.date),
+              is_multi: g.isMulti,
+              edition_count: g.editions.length,
+              editions_json: JSON.stringify(editionsData),
+            },
+          };
+        }),
     };
   }
 
@@ -316,28 +397,31 @@
       return true;
     });
 
+    const filteredGroups = groupEditions(filtered);
+
     // Update map source
     const source = map.getSource("races");
     if (source) {
-      source.setData(buildGeoJSON(filtered));
+      source.setData(buildGeoJSON(filteredGroups));
     }
 
-    renderList(filtered);
+    renderList(filteredGroups);
   }
 
-  function renderList(races) {
+  function renderList(groups) {
     const list = document.getElementById("race-list");
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const sorted = [...races].sort((a, b) => {
-      const aDate = new Date(a.date + "T00:00:00");
-      const bDate = new Date(b.date + "T00:00:00");
-      const aFuture = aDate >= today;
-      const bFuture = bDate >= today;
-      if (aFuture && !bFuture) return -1;
-      if (!aFuture && bFuture) return 1;
-      if (aFuture) return aDate - bDate;
+    // Sort: groups with upcoming editions first, then by nearest date
+    const sorted = [...groups].sort((a, b) => {
+      const aFutureEd = a.editions.find((e) => e.date && new Date(e.date + "T00:00:00") >= today);
+      const bFutureEd = b.editions.find((e) => e.date && new Date(e.date + "T00:00:00") >= today);
+      if (aFutureEd && !bFutureEd) return -1;
+      if (!aFutureEd && bFutureEd) return 1;
+      const aDate = aFutureEd ? new Date(aFutureEd.date + "T00:00:00") : new Date(a.latest.date + "T00:00:00");
+      const bDate = bFutureEd ? new Date(bFutureEd.date + "T00:00:00") : new Date(b.latest.date + "T00:00:00");
+      if (aFutureEd && bFutureEd) return aDate - bDate;
       return bDate - aDate;
     });
 
@@ -347,21 +431,39 @@
     }
 
     list.innerHTML = sorted
-      .map((race) => {
-        const temp = getTemporality(race.date);
-        const dateFormatted = race.date
-          ? new Date(race.date + "T00:00:00").toLocaleDateString("fr-FR", {
+      .map((group) => {
+        const r = group.latest;
+        // Use future edition for temporality if available
+        const futureEd = group.editions.find((e) => getTemporality(e.date) !== "past");
+        const displayEd = futureEd || r;
+        const temp = getTemporality(displayEd.date);
+
+        const dateFormatted = displayEd.date
+          ? new Date(displayEd.date + "T00:00:00").toLocaleDateString("fr-FR", {
               day: "numeric", month: "short", year: "numeric",
             })
           : "?";
 
+        const totalMembers = group.editions.reduce((s, e) => s + e.member_count, 0);
+        const displayName = group.isMulti
+          ? r.name.replace(/\s*\d{4}\s*$/, "").trim()
+          : r.name;
+
+        const editionBadge = group.isMulti
+          ? `<span class="edition-badge">${group.editions.length} ed.</span>`
+          : "";
+
+        const memberLabel = group.isMulti
+          ? `${displayEd.member_count} membre${displayEd.member_count > 1 ? "s" : ""}`
+          : `${r.member_count} membre${r.member_count > 1 ? "s" : ""}`;
+
         return `
-        <div class="race-card" data-id="${race.id}" data-temp="${temp}" data-lng="${race.lng}" data-lat="${race.lat}">
-          <div class="race-name">${race.name}</div>
+        <div class="race-card" data-id="${r.id}" data-temp="${temp}" data-lng="${r.lng}" data-lat="${r.lat}">
+          <div class="race-name">${displayName} ${editionBadge}</div>
           <div class="race-meta">
             <span class="date">${dateFormatted}</span>
-            <span class="location">${race.location || ""}</span>
-            <span class="member-badge">${race.member_count} membre${race.member_count > 1 ? "s" : ""}</span>
+            <span class="location">${displayEd.location || r.location || ""}</span>
+            <span class="member-badge">${memberLabel}</span>
           </div>
         </div>`;
       })
