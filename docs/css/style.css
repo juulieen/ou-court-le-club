@@ -288,6 +288,19 @@ body {
   white-space: nowrap;
 }
 
+.edition-badge {
+  display: inline-block;
+  background: var(--purple);
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  vertical-align: middle;
+  margin-left: 4px;
+  letter-spacing: 0.02em;
+}
+
 /* Temporal left accent */
 .race-card[data-temp="this-week"] {
   border-left: 4px solid #E53935;
@@ -446,6 +459,69 @@ body {
 
 .race-popup .popup-link:hover {
   color: var(--orange);
+}
+
+/* Edition badge in popup */
+.race-popup .popup-edition-badge {
+  display: inline-block;
+  background: var(--purple);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  margin: 6px 0;
+}
+
+/* Timeline for multi-edition popup */
+.timeline {
+  margin-top: 8px;
+  padding-left: 2px;
+}
+
+.timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 0;
+  position: relative;
+}
+
+.timeline-item + .timeline-item {
+  border-top: 1px solid var(--border);
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+}
+
+.timeline-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline-year {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.timeline-members {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timeline-members .popup-link {
+  font-size: 0.68rem;
 }
 
 /* ---- Modal ---- */
