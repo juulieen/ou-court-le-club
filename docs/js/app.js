@@ -383,7 +383,12 @@
     }
     const bounds = new maplibregl.LngLatBounds();
     valid.forEach((r) => bounds.extend([r.lng, r.lat]));
-    map.fitBounds(bounds, { padding: { top: 60, bottom: 60, left: 420, right: 60 }, maxZoom: 12 });
+    // Adapt padding for mobile (sidebar at bottom) vs desktop (sidebar on left)
+    const isMobile = window.innerWidth <= 768;
+    const padding = isMobile
+      ? { top: 40, bottom: 40, left: 40, right: 40 }
+      : { top: 60, bottom: 60, left: 420, right: 60 };
+    map.fitBounds(bounds, { padding, maxZoom: 12 });
   }
 
   // --- Rendering ---
