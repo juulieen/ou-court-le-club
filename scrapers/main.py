@@ -355,8 +355,18 @@ def run():
 
     # --- Geocode (BAN API is fast, Nominatim fallback for international) ---
     for race in results:
-        if race.get("lat") is not None:
-            continue
+        if race.get("lat") is not None and race.get("lng") is not None:
+            # Re-geocode if coords look wrong (e.g. overseas for a French race
+            # with no location field -- likely a geocoding error)
+            lat, lng = race["lat"], race["lng"]
+            has_location = bool(race.get("location", "").strip())
+            is_overseas = lat < -10 or lat > 52 or lng < -6 or lng > 10
+            if has_location or not is_overseas:
+                continue
+            # Coords look suspicious (overseas) and no location -- re-geocode
+            print(f"  Re-geocoding '{race.get('name')}' (coords {lat:.1f},{lng:.1f} look overseas)")
+            race.pop("lat", None)
+            race.pop("lng", None)
         prev = existing_by_id.get(race.get("id", ""))
         if prev and prev.get("lat") and prev.get("lng"):
             race["lat"] = prev["lat"]
