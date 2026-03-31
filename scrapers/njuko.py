@@ -315,6 +315,8 @@ _SEED_SLUGS = {
     "saumur-marathon-de-la-loire-2026",
     "asics-saintelyon-2026",
     "schneider-electric-marathon-de-paris-2026",
+    "lavenivici-2026",
+    "epopee-royale-2026",
 }
 
 # Slugs that are not events
