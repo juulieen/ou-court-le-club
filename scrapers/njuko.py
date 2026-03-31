@@ -26,6 +26,7 @@ class NjukoScraper(BaseScraper):
     _API_BASES = {
         "sporkrono-inscriptions.fr": "https://front-api.sporkrono-inscriptions.fr",
         "sports107.com": "https://front-api.sports107.com",
+        "timeto.com": "https://front-api.timeto.com",
     }
     # Njuko's API returns 403 Forbidden when the default python-requests
     # User-Agent is used.  Sending a browser-like UA avoids the block.
@@ -81,13 +82,32 @@ class NjukoScraper(BaseScraper):
             if comp_id:
                 competitions[comp_id] = comp_name
 
-        # Step 2: Fetch all registrations
+        # Step 2: Fetch registrations
         registrations = self._get_registrations(edition_id, api_base=api_base)
-        if registrations is None:
-            return None
 
-        # Step 3: Filter for club members
-        members = self._find_members(registrations, competitions)
+        if registrations is not None:
+            # Step 3a: Filter for club members (normal path)
+            members = self._find_members(registrations, competitions)
+        else:
+            # Step 3b: Bulk fetch failed (timeout on large events like Marathon
+            # de Paris with 50k+ registrants). Fall back to per-name search.
+            print(f"  [njuko] Bulk fetch failed, searching by name...")
+            members = []
+            seen = set()
+            for full_name in (self.known_members or []):
+                parts = full_name.strip().split()
+                if not parts:
+                    continue
+                last_name = parts[0] if parts[0].isupper() else parts[-1]
+                results = self._search_registrations(
+                    edition_id, last_name, api_base=api_base
+                )
+                for reg in results:
+                    found = self._find_members([reg], competitions)
+                    for m in found:
+                        if m.name.lower() not in seen:
+                            members.append(m)
+                            seen.add(m.name.lower())
 
         # Extract location from edition data if not in config
         if not location:
@@ -163,7 +183,7 @@ class NjukoScraper(BaseScraper):
                     return slug
 
         # Njuko white-label platforms (Sporkrono, Sports107, etc.)
-        for domain in ("sporkrono-inscriptions.fr/", "sports107.com/"):
+        for domain in ("sporkrono-inscriptions.fr/", "sports107.com/", "timeto.com/"):
             if domain in url_path:
                 parts = url_path.split(domain)
                 if len(parts) > 1:
@@ -203,8 +223,28 @@ class NjukoScraper(BaseScraper):
                 return data
             return data.get("registrations", data.get("results", []))
         except requests.RequestException as e:
-            print(f"  [njuko] Erreur API registrations: {e}")
+            print(f"  [njuko] Erreur API registrations (bulk): {e}")
             return None
+
+    def _search_registrations(self, edition_id: str, search_term: str,
+                              *, api_base: str | None = None) -> list:
+        """Search registrations by name (for large events where bulk fetch times out)."""
+        base = api_base or self.API_BASE
+        import json as _json
+        search_body = _json.dumps({"search": search_term})
+        try:
+            resp = requests.get(
+                f"{base}/registrations/{edition_id}/_search/{search_body}",
+                headers=self.HEADERS,
+                timeout=15,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            if isinstance(data, list):
+                return data
+            return data.get("registrations", data.get("results", []))
+        except requests.RequestException:
+            return []
 
     def _find_members(self, registrations: list, competitions: dict) -> list[Member]:
         """Find club members in the registrations list.
@@ -274,6 +314,7 @@ _SLUG_CACHE_PATH = Path(__file__).resolve().parent.parent / "data" / "njuko_slug
 _SEED_SLUGS = {
     "saumur-marathon-de-la-loire-2026",
     "asics-saintelyon-2026",
+    "schneider-electric-marathon-de-paris-2026",
 }
 
 # Slugs that are not events
