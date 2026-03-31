@@ -313,13 +313,31 @@ def scrape_race(rc: dict, patterns: list[str], known_members: list[str]) -> dict
     return None
 
 
+def _elapsed(start: float) -> str:
+    """Format elapsed time since start."""
+    import time
+    secs = time.time() - start
+    if secs < 60:
+        return f"{secs:.0f}s"
+    return f"{int(secs // 60)}m{int(secs % 60):02d}s"
+
+
 def run():
+    import time
+    run_start = time.time()
+
     config = load_config()
     club = config.get("club", {})
     patterns = club.get("patterns", [])
     known_members = club.get("known_members", [])
     races_config = list(config.get("races") or [])
     scrape_cache = load_scrape_cache()
+
+    print(f"{'='*60}")
+    print(f"  RunEvent86 — Scraper Pipeline")
+    print(f"  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"  {len(patterns)} club patterns, {len(known_members)} known members")
+    print(f"{'='*60}")
 
     # --- Auto-discovery (all platforms, national) ---
     discoveries = [
@@ -341,13 +359,19 @@ def run():
     ]
 
     discovered = []
-    for label, discover_fn in discoveries:
-        print(f"=== Auto-decouverte {label} ===")
+    print(f"\n{'─'*60}")
+    print(f"  PHASE 1/4 — Decouverte ({len(discoveries)} plateformes)")
+    print(f"{'─'*60}")
+    discovery_start = time.time()
+    for i, (label, discover_fn) in enumerate(discoveries, 1):
+        print(f"  [{i:2d}/{len(discoveries)}] {label:25s}", end="", flush=True)
         try:
             found = discover_fn()
             discovered.extend(found)
+            print(f" -> {len(found):5d} courses ({_elapsed(discovery_start)})")
         except Exception as e:
-            print(f"  Erreur: {e}")
+            print(f" -> ERREUR: {e}")
+    print(f"  Total: {len(discovered)} courses decouvertes ({_elapsed(discovery_start)})")
 
     # Merge: config takes priority, then discovered (deduplicated by URL)
     config_urls = {rc.get("url", "").rstrip("/") for rc in races_config}
@@ -375,7 +399,10 @@ def run():
 
     total = len(races_config)
     cached = total - len(to_scrape)
-    print(f"\n=== {total} courses, {cached} en cache, {len(to_scrape)} a scraper ===")
+    print(f"\n{'─'*60}")
+    print(f"  PHASE 2/4 — Scraping ({len(to_scrape)} courses, {cached} en cache)")
+    print(f"{'─'*60}")
+    scrape_start = time.time()
 
     # --- Scrape concurrently ---
     results: list[dict] = list(cached_results)
@@ -415,18 +442,22 @@ def run():
             if data and member_count > 0:
                 results.append(data)
                 found_count += 1
-                print(f"  [{platform}] {name} -> {member_count} membre(s) !")
+                print(f"  ✓ [{platform}] {name[:45]} -> {member_count} membre(s) !")
 
-            if done % 100 == 0:
-                print(f"  ... {done}/{len(to_scrape)} ({found_count} avec membres)")
+            if done % 200 == 0:
+                pct = done * 100 // len(to_scrape) if to_scrape else 100
+                print(f"  ... {done}/{len(to_scrape)} ({pct}%) — {found_count} avec membres ({_elapsed(scrape_start)})")
 
-    print(f"  ... {done}/{len(to_scrape)} termine")
+    pct = 100
+    print(f"  ... {done}/{len(to_scrape)} (100%) — {found_count} avec membres ({_elapsed(scrape_start)})")
     save_scrape_cache(scrape_cache)
 
-    # --- Geocode (BAN API is fast, Nominatim fallback for international) ---
-    # Always re-geocode via the geocache (which has manual corrections).
-    # Never blindly copy coords from previous runs or scrape cache,
-    # as those may contain wrong values from bad BAN/Nominatim results.
+    # --- Geocode ---
+    print(f"\n{'─'*60}")
+    print(f"  PHASE 3/4 — Geocoding ({len(results)} courses avec membres)")
+    print(f"{'─'*60}")
+    geo_start = time.time()
+    geo_count = 0
     for race in results:
         if race.get("lat") is not None and race.get("lng") is not None:
             # Already has coords (from scraper or cache). Keep if location
@@ -453,15 +484,42 @@ def run():
             coords = geocode(query)
             if coords:
                 race["lat"], race["lng"] = coords
+                geo_count += 1
                 break
 
+    no_coords = sum(1 for r in results if r.get("lat") is None)
+    print(f"  {geo_count} geocodes, {no_coords} sans coordonnees ({_elapsed(geo_start)})")
+
     # --- Save ---
+    print(f"\n{'─'*60}")
+    print(f"  PHASE 4/4 — Sauvegarde & enrichissement")
+    print(f"{'─'*60}")
     output = {
         "last_updated": datetime.now(timezone.utc).isoformat(),
         "races": results,
     }
     save_data(output)
-    print(f"\n=== {len(results)} course(s) avec membres / {total} decouvertes ===")
+
+    # --- Summary ---
+    from collections import Counter
+    plat_counts = Counter(r.get("platform", "?") for r in results)
+    type_counts = Counter(r.get("race_type", "?") for r in results)
+    total_members = sum(r.get("member_count", 0) for r in results)
+
+    print(f"\n{'='*60}")
+    print(f"  TERMINE — {_elapsed(run_start)}")
+    print(f"{'='*60}")
+    print(f"  Courses decouvertes:  {total}")
+    print(f"  Courses avec membres: {len(results)}")
+    print(f"  Inscriptions club:    {total_members}")
+    print(f"  Sans coordonnees:     {no_coords}")
+    print(f"\n  Par plateforme:")
+    for p, c in plat_counts.most_common():
+        print(f"    {p:20s} {c:3d} courses")
+    print(f"\n  Par type:")
+    for t, c in type_counts.most_common():
+        print(f"    {t:10s} {c:3d}")
+    print(f"{'='*60}")
 
 
 if __name__ == "__main__":
