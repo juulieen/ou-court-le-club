@@ -267,6 +267,12 @@ BROWSER_UA = (
 
 _SLUG_CACHE_PATH = Path(__file__).resolve().parent.parent / "data" / "njuko_slugs.json"
 
+# Known slugs to always include (manually curated for club-relevant events).
+# These are injected into the slug cache on every run so they are always discovered.
+_SEED_SLUGS = {
+    "saumur-marathon-de-la-loire-2026",
+}
+
 # Slugs that are not events
 _SLUG_BLACKLIST = {
     "check-registration", "registrations-list", "registration",
@@ -284,6 +290,11 @@ def discover_races() -> list[dict]:
     Each slug is validated against the Njuko API to get current data.
     """
     slugs = _load_slug_cache()
+
+    # Inject known slugs (manually curated)
+    if _SEED_SLUGS - slugs:
+        slugs.update(_SEED_SLUGS)
+        _save_slug_cache(slugs)
 
     # Try to seed from CDX if cache is small
     if len(slugs) < 50:
