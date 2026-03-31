@@ -25,6 +25,7 @@ class NjukoScraper(BaseScraper):
     # White-label domains that use a separate API base URL
     _API_BASES = {
         "sporkrono-inscriptions.fr": "https://front-api.sporkrono-inscriptions.fr",
+        "sports107.com": "https://front-api.sports107.com",
     }
     # Njuko's API returns 403 Forbidden when the default python-requests
     # User-Agent is used.  Sending a browser-like UA avoids the block.
@@ -161,13 +162,14 @@ class NjukoScraper(BaseScraper):
                 if slug:
                     return slug
 
-        # sporkrono-inscriptions.fr/slug (Sporkrono is a Njuko white-label)
-        if "sporkrono-inscriptions.fr/" in url_path:
-            parts = url_path.split("sporkrono-inscriptions.fr/")
-            if len(parts) > 1:
-                slug = parts[1].split("/")[0]
-                if slug:
-                    return slug
+        # Njuko white-label platforms (Sporkrono, Sports107, etc.)
+        for domain in ("sporkrono-inscriptions.fr/", "sports107.com/"):
+            if domain in url_path:
+                parts = url_path.split(domain)
+                if len(parts) > 1:
+                    slug = parts[1].split("/")[0]
+                    if slug:
+                        return slug
 
         return None
 
@@ -271,6 +273,7 @@ _SLUG_CACHE_PATH = Path(__file__).resolve().parent.parent / "data" / "njuko_slug
 # These are injected into the slug cache on every run so they are always discovered.
 _SEED_SLUGS = {
     "saumur-marathon-de-la-loire-2026",
+    "asics-saintelyon-2026",
 }
 
 # Slugs that are not events
