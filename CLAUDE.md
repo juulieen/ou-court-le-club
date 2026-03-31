@@ -26,7 +26,7 @@ scrapers/
   endurancechrono.py     -- Endurance Chrono platform scraper
   listino.py             -- Listino platform scraper
   runchrono.py           -- RunChrono discovery-only module (produces onsinscrit entries)
-  ipitos.py              -- IPITOS scraper (exists but NOT wired into main.py)
+  ipitos.py              -- IPITOS platform scraper (live.ipitos.com, .clax XML)
   helloasso.py           -- HelloAsso discovery-only (participants are private)
 data/
   races.json             -- final output JSON
@@ -44,7 +44,7 @@ docs/                    -- static frontend (GitHub Pages)
 
 Each platform module exports a `discover_races()` function and a `*Scraper(BaseScraper)` class. Discovery finds all upcoming events nationally; the scraper then checks each event's registration list for club members using dual matching.
 
-The `SCRAPERS` dict in `main.py` maps platform names to scraper classes (12 active scrapers). RunChrono is discovery-only (produces `onsinscrit` platform entries).
+The `SCRAPERS` dict in `main.py` maps platform names to scraper classes (13 active scrapers). RunChrono is discovery-only (produces `onsinscrit` platform entries).
 
 | Platform | File | Discovery method | Scraping method | Notes |
 |---|---|---|---|---|
@@ -61,7 +61,7 @@ The `SCRAPERS` dict in `main.py` maps platform names to scraper classes (12 acti
 | **Endurance Chrono** | `endurancechrono.py` | Main page lists upcoming events | HTML table at `/fr/{slug}?list=part&order=club` | `order=club` URL param sorts by club for easier parsing |
 | **Listino** | `listino.py` | Paginated search at `/recherche/evenement` (11 per page) | HTML table at `/slug/inscrits/{race_id}/0`, Club column | |
 | **RunChrono** | `runchrono.py` | Local (dept 86) calendar at `runchrono.fr/inscription.php`; extracts OnSinscrit links from event divs | Discovery only -- produces `onsinscrit` platform entries that are scraped by `OnSinscritScraper` | No scraper class; only `discover_races()` function |
-| **IPITOS** | `ipitos.py` | Not wired into `main.py` | Wiclax `.clax` XML files, club in `c` attribute of `<E>` elements | Blocked by Sucuri WAF; not integrated |
+| **IPITOS** | `ipitos.py` | Index page at `live.ipitos.com/` lists all events with slugs and dates | Wiclax `.clax` XML files found via iframe in event page; `<E>` elements with `n`(name), `c`(club), `p`(parcours), `d`(dossard) | Uses `live.ipitos.com` (no WAF); `www.ipitos.com` is blocked by Sucuri |
 | **HelloAsso** | `helloasso.py` | Directory search via website (no auth needed) | N/A -- participants are private by design | `discover_races()` exists but returns `platform: manual`; members must be added manually in `config.yml` |
 
 ## Dual Matching
@@ -166,7 +166,7 @@ The full pipeline takes several minutes due to the number of platforms and rate 
 
 ## Known Limitations
 
-- **IPITOS** scraper exists (`ipitos.py`) but is not wired into `main.py`. Blocked by Sucuri WAF (Web Application Firewall).
+- **IPITOS** uses `live.ipitos.com` to bypass the Sucuri WAF on `www.ipitos.com`. If the live subdomain structure changes, discovery and scraping will break.
 - **HelloAsso** participants are private by design; no scraper possible. `helloasso.py` has a `discover_races()` function but participants must be added manually in `config.yml`.
 - **Njuko** discovery depends on a persistent slug cache (`njuko_slugs.json`). CDX seeding from Wayback Machine is slow and unreliable. New slugs must be manually added or discovered from other sources.
 - **Chrono-Start** requires `cloudscraper` to bypass Cloudflare protection; may break if Cloudflare changes detection.
