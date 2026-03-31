@@ -74,44 +74,41 @@ class IpitosScraper(BaseScraper):
         except requests.RequestException:
             return None
 
-        # Strategy 1: Look for .clax reference in HTML/JS (direct reference)
-        match = re.search(r'["\']([^"\']*\.clax)["\']', resp.text)
-        if match:
-            clax_path = match.group(1)
-            if clax_path.startswith("http"):
-                return clax_path
-            if clax_path.startswith("../"):
-                clax_path = clax_path.replace("../", "")
-                return f"{LIVE_BASE}/{clax_path}"
-            if clax_path.startswith("/"):
-                return f"{LIVE_BASE}{clax_path}"
-            return f"{LIVE_BASE}/{slug}/{clax_path}"
-
-        # Strategy 2: Find iframe src, then look for .clax inside the iframe page
+        # Strategy 1: Find iframe with g-live viewer, extract .clax path from
+        # its query string (e.g., src="G-Live/g-live.html?f=../slug/file.clax")
         soup = BeautifulSoup(resp.text, "html.parser")
         for iframe in soup.select("iframe[src]"):
-            iframe_src = iframe["src"]
-            if not iframe_src.startswith("http"):
-                if iframe_src.startswith("/"):
-                    iframe_src = f"{LIVE_BASE}{iframe_src}"
-                else:
-                    iframe_src = f"{LIVE_BASE}/{slug}/{iframe_src}"
-            try:
-                iframe_resp = requests.get(iframe_src, headers=HEADERS, timeout=15, allow_redirects=True)
-                iframe_resp.raise_for_status()
-            except requests.RequestException:
-                continue
-            clax_match = re.search(r'["\']([^"\']*\.clax)["\']', iframe_resp.text)
-            if clax_match:
-                clax_path = clax_match.group(1)
+            src = iframe.get("src", "")
+            # Extract .clax path from ?f=... parameter
+            f_match = re.search(r"[?&]f=([^&]+\.clax)", src)
+            if f_match:
+                clax_path = f_match.group(1)
+                # Resolve relative path: ../slug/file.clax -> slug/file.clax
+                while clax_path.startswith("../"):
+                    clax_path = clax_path[3:]
                 if clax_path.startswith("http"):
                     return clax_path
-                # Resolve relative to iframe URL
-                iframe_base = iframe_src.rsplit("/", 1)[0]
-                if clax_path.startswith("../"):
-                    clax_path = clax_path.replace("../", "")
-                    iframe_base = iframe_base.rsplit("/", 1)[0]
-                return f"{iframe_base}/{clax_path}"
+                return f"{LIVE_BASE}/{clax_path}"
+
+        # Strategy 2: Look for direct .clax link in page (href or src)
+        for a in soup.select("a[href]"):
+            href = a.get("href", "")
+            if ".clax" in href:
+                if href.startswith("http"):
+                    return href
+                if href.startswith("/"):
+                    return f"{LIVE_BASE}{href}"
+                return f"{LIVE_BASE}/{slug}/{href}"
+
+        # Strategy 3: Regex fallback — match .clax paths (handle apostrophes)
+        match = re.search(r'([\w/._-]+\.clax)', resp.text)
+        if match:
+            clax_path = match.group(1)
+            while clax_path.startswith("../"):
+                clax_path = clax_path[3:]
+            if clax_path.startswith("http"):
+                return clax_path
+            return f"{LIVE_BASE}/{clax_path}"
 
         # Strategy 3: Look for direct <a> links to .clax files
         for a in soup.select("a[href*='.clax']"):
