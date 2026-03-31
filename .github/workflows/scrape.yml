@@ -57,6 +57,17 @@ jobs:
       # - docs/data/races.json (anonymized, no names — public)
       # No manual copy needed.
 
+      - name: Upload cache as artifact (for local sync)
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-data
+          path: |
+            data/geocache.json
+            data/scrape_cache.json
+            data/njuko_slugs.json
+            data/races.json
+          retention-days: 7
+
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
