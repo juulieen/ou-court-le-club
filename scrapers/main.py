@@ -33,6 +33,7 @@ from .klikego import KlikegoScraper
 from .klikego import discover_races as klikego_discover
 from .njuko import NjukoScraper
 from .njuko import discover_races as njuko_discover
+from .njuko import discover_utmb_races as utmb_discover
 from .onsinscrit import OnSinscritScraper
 from .onsinscrit import discover_races as onsinscrit_discover
 from .protiming import ProtimingScraper
@@ -43,6 +44,8 @@ from .threewsport import ThreeWSportScraper
 from .threewsport import discover_races as threewsport_discover
 from .timepulse import TimePulseScraper
 from .timepulse import discover_races as timepulse_discover
+from .ipitos import IpitosScraper
+from .ipitos import discover_races as ipitos_discover
 from .runchrono import discover_races as runchrono_discover
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -64,6 +67,7 @@ SCRAPERS = {
     "timepulse": TimePulseScraper,
     "endurancechrono": EnduranceChronoScraper,
     "listino": ListinoScraper,
+    "ipitos": IpitosScraper,
 }
 
 # Patterns for extracting location from race names
@@ -323,6 +327,7 @@ def run():
         ("Protiming", protiming_discover),
         ("OnSinscrit", onsinscrit_discover),
         ("Njuko", njuko_discover),
+        ("UTMB (Njuko)", utmb_discover),
         ("Chronometrage.com", chronometrage_discover),
         ("Chrono-Start", chronostart_discover),
         ("3wsport", threewsport_discover),
@@ -331,6 +336,7 @@ def run():
         ("TimePulse", timepulse_discover),
         ("Endurance Chrono", endurancechrono_discover),
         ("Listino", listino_discover),
+        ("IPITOS", ipitos_discover),
         ("RunChrono (local 86)", runchrono_discover),
     ]
 
