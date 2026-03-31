@@ -117,6 +117,7 @@ class NjukoScraper(BaseScraper):
         - https://in.njuko.com/{slug}?currentPage=check-registration
         - https://www.njuko.net/{slug}/registrations-list
         - https://www.njuko.net/{slug}/check-registration
+        - https://in.register-utmb.world/{slug}
         """
         url = url.rstrip("/")
         # Remove query params
@@ -133,6 +134,14 @@ class NjukoScraper(BaseScraper):
             parts = url_path.split("njuko.net/")
             if len(parts) > 1:
                 return parts[1].split("/")[0]
+
+        # register-utmb.world/slug (UTMB uses Njuko API under the hood)
+        if "register-utmb.world/" in url_path:
+            parts = url_path.split("register-utmb.world/")
+            if len(parts) > 1:
+                slug = parts[1].split("/")[0]
+                if slug:
+                    return slug
 
         return None
 
@@ -186,7 +195,7 @@ class NjukoScraper(BaseScraper):
                 for item in meta:
                     if isinstance(item, dict):
                         key = item.get("key", item.get("name", ""))
-                        if key in ("STRNOM_CLU", "STRNOMABR_CLU", "club"):
+                        if key in ("STRNOM_CLU", "STRNOMABR_CLU", "club", "utmb_information_club"):
                             val = item.get("value", "")
                             if val and len(val) > len(club_name):
                                 club_name = val
@@ -392,4 +401,195 @@ def _validate_slug(slug: str) -> dict | None:
         "location": location,
         "source": "njuko-discovery",
         "_edition_id": edition_id,
+    }
+
+
+# --- UTMB discovery (register-utmb.world uses Njuko API) ---
+
+def discover_utmb_races() -> list[dict]:
+    """Discover French UTMB World Series events.
+
+    UTMB registration is powered by Njuko under the hood, so discovered
+    events are returned with platform='njuko' and scraped by NjukoScraper.
+
+    Steps:
+    1. Fetch the UTMB World Series events page and parse __NEXT_DATA__
+    2. Filter for French events (countryCode == "FR")
+    3. For each event, fetch its page to find the register-utmb.world slug
+    4. Return discovery dicts with the registration URL
+    """
+    events_url = "https://utmb.world/utmb-world-series-events"
+    print(f"  [utmb] Fetching {events_url}")
+
+    try:
+        resp = requests.get(events_url, headers={"User-Agent": BROWSER_UA}, timeout=30)
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        print(f"  [utmb] Erreur fetch events page: {e}")
+        return []
+
+    # Parse __NEXT_DATA__ JSON from the page
+    events = _parse_utmb_events(resp.text)
+    if not events:
+        print("  [utmb] Aucun evenement trouve dans __NEXT_DATA__")
+        return []
+
+    # Filter French events
+    fr_events = [e for e in events if e.get("countryCode") == "FR"]
+    print(f"  [utmb] {len(fr_events)} evenement(s) FR / {len(events)} total")
+
+    if not fr_events:
+        return []
+
+    # Resolve registration URLs concurrently
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    races = []
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {executor.submit(_resolve_utmb_event, e): e for e in fr_events}
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                if result:
+                    races.append(result)
+            except Exception:
+                pass
+
+    print(f"  [utmb] {len(races)} course(s) avec lien d'inscription")
+    return races
+
+
+def _parse_utmb_events(html: str) -> list[dict]:
+    """Extract event list from __NEXT_DATA__ JSON in the UTMB events page."""
+    match = re.search(
+        r'<script\s+id="__NEXT_DATA__"\s+type="application/json">(.*?)</script>',
+        html,
+        re.DOTALL,
+    )
+    if not match:
+        return []
+
+    try:
+        next_data = json.loads(match.group(1))
+    except (json.JSONDecodeError, ValueError):
+        return []
+
+    # Navigate the Next.js data structure to find events.
+    # The structure may vary; try several common paths.
+    events = []
+
+    # Try pageProps.events, pageProps.races, pageProps.data.events, etc.
+    page_props = next_data.get("props", {}).get("pageProps", {})
+
+    # Walk all values in pageProps looking for lists of dicts with event-like keys
+    for key, val in page_props.items():
+        if isinstance(val, list) and val:
+            # Check if items look like events (have name/title and country info)
+            sample = val[0] if isinstance(val[0], dict) else None
+            if sample and any(
+                k in sample for k in ("countryCode", "country", "countryIso")
+            ):
+                events = val
+                break
+        elif isinstance(val, dict):
+            # Nested: pageProps.data.events or similar
+            for subkey, subval in val.items():
+                if isinstance(subval, list) and subval:
+                    sample = subval[0] if isinstance(subval[0], dict) else None
+                    if sample and any(
+                        k in sample
+                        for k in ("countryCode", "country", "countryIso")
+                    ):
+                        events = subval
+                        break
+            if events:
+                break
+
+    # Normalize countryCode if only 'country' or 'countryIso' is present
+    for e in events:
+        if "countryCode" not in e:
+            e["countryCode"] = e.get("countryIso", e.get("country", ""))
+
+    return events
+
+
+def _resolve_utmb_event(event: dict) -> dict | None:
+    """Fetch a UTMB event page to find its register-utmb.world registration URL.
+
+    Returns a discovery dict with platform='njuko' or None.
+    """
+    # Build the event page URL from available fields
+    # Common fields: slug, url, tenant, editionUrl
+    event_url = None
+    for key in ("url", "editionUrl", "eventUrl"):
+        val = event.get(key, "")
+        if val:
+            if val.startswith("http"):
+                event_url = val
+            elif val.startswith("/"):
+                event_url = f"https://utmb.world{val}"
+            break
+
+    # Try building URL from slug/tenant
+    if not event_url:
+        slug = event.get("slug", event.get("tenant", ""))
+        if slug:
+            event_url = f"https://{slug}.utmb.world/"
+
+    if not event_url:
+        return None
+
+    # Fetch the event page to find registration link
+    try:
+        resp = requests.get(
+            event_url,
+            headers={"User-Agent": BROWSER_UA},
+            timeout=15,
+            allow_redirects=True,
+        )
+        resp.raise_for_status()
+    except requests.RequestException:
+        return None
+
+    # Look for register-utmb.world/{slug} in the page
+    reg_match = re.search(
+        r'https?://(?:in\.)?register-utmb\.world/([a-zA-Z0-9_-]+)',
+        resp.text,
+    )
+    if not reg_match:
+        return None
+
+    reg_slug = reg_match.group(1)
+    reg_url = f"https://in.register-utmb.world/{reg_slug}"
+
+    # Extract event metadata
+    name = event.get("name", event.get("title", event.get("label", "")))
+    if isinstance(name, dict):
+        name = name.get("en", name.get("fr", str(name)))
+
+    date_str = ""
+    for date_key in ("startDate", "date", "eventDate", "editionDate"):
+        raw_date = event.get(date_key, "")
+        if raw_date:
+            dm = re.match(r"(\d{4}-\d{2}-\d{2})", str(raw_date))
+            if dm:
+                date_str = dm.group(1)
+                break
+
+    location = ""
+    city = event.get("city", event.get("location", ""))
+    if isinstance(city, dict):
+        city = city.get("name", city.get("label", ""))
+    if city:
+        location = city
+    elif event.get("region"):
+        location = event["region"]
+
+    return {
+        "platform": "njuko",
+        "url": reg_url,
+        "name": name or reg_slug,
+        "date": date_str,
+        "location": location,
+        "source": "utmb-discovery",
     }
