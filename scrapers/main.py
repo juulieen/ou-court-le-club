@@ -298,6 +298,13 @@ def scrape_race(rc: dict, patterns: list[str], known_members: list[str]) -> dict
         # chronometrage.com tourism_category) so _enrich_race can use it.
         if rc.get("race_type"):
             data["race_type"] = rc["race_type"]
+        if rc.get("distances"):
+            data.setdefault("distances", [])
+            existing = set(data["distances"])
+            for d in rc["distances"]:
+                if d not in existing:
+                    data["distances"].append(d)
+                    existing.add(d)
         return data
     return None
 

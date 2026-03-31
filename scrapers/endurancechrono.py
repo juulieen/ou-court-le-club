@@ -3,6 +3,10 @@
 Registration lists at: /fr/{event-slug}?list=part&order=club
 Event discovery: main page lists upcoming events
 Table columns: N dossard, Nom, Sexe, Categorie, Club/Team, Paiement, Certificat
+
+Race info on participant page (div.pull-left):
+  <em>Type :</em> <strong>Course nature</strong>
+  <em>Distance :</em> <strong>10,000</strong> Km
 """
 
 import re
@@ -14,6 +18,31 @@ from bs4 import BeautifulSoup
 from .base import BaseScraper, Member, RaceResult, matches_club, matches_known_member
 
 BASE_URL = "https://www.endurancechrono.com"
+
+# Map French race type labels to canonical types used by _enrich_race
+_RACE_TYPE_MAP = {
+    "trail": "trail",
+    "course nature": "trail",
+    "course a obstacle": "autre",
+    "course à obstacle": "autre",
+    "course à pied": "route",
+    "course a pied": "route",
+    "marche nordique": "marche",
+    "marche": "marche",
+}
+
+
+def _normalize_race_type(raw: str) -> str:
+    """Convert a French race type label to a canonical type."""
+    return _RACE_TYPE_MAP.get(raw.lower().strip(), "")
+
+
+def _parse_distance_km(text: str) -> float | None:
+    """Parse a distance string like '10,000' or '12.5' to km float."""
+    m = re.search(r"(\d+[,.]?\d*)", text)
+    if m:
+        return round(float(m.group(1).replace(",", ".")), 1)
+    return None
 
 
 class EnduranceChronoScraper(BaseScraper):
@@ -35,7 +64,12 @@ class EnduranceChronoScraper(BaseScraper):
         except requests.RequestException:
             return None
 
-        members = self._parse_table(resp.text)
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        # Extract race name from page info section (e.g. "10 km")
+        race_label = self._extract_race_label(soup)
+
+        members = self._parse_table(soup, bib=race_label)
         if not members:
             return None
 
@@ -50,8 +84,25 @@ class EnduranceChronoScraper(BaseScraper):
             last_scraped=datetime.now(timezone.utc).isoformat(),
         )
 
-    def _parse_table(self, html: str) -> list[Member]:
-        soup = BeautifulSoup(html, "html.parser")
+    @staticmethod
+    def _extract_race_label(soup: BeautifulSoup) -> str:
+        """Extract the race/distance label from the page info section.
+
+        The participant page has a div.pull-left with:
+          <h2>10 km</h2>
+          <em>Type :</em> <strong>Course nature</strong>
+          <em>Distance :</em> <strong>10,000</strong> Km
+        We use the <h2> text as the race label for the bib field.
+        There are multiple div.pull-left on the page; we need the one
+        containing the <em>Type</em> tag.
+        """
+        for div in soup.select("div.pull-left"):
+            if div.select_one("em"):
+                h2 = div.select_one("h2")
+                return h2.get_text(strip=True) if h2 else ""
+        return ""
+
+    def _parse_table(self, soup: BeautifulSoup, bib: str = "") -> list[Member]:
         table = soup.select_one("table")
         if not table:
             return []
@@ -81,37 +132,109 @@ class EnduranceChronoScraper(BaseScraper):
             if not name or name in seen:
                 continue
             seen.add(name)
-            members.append(Member(name=name, bib=""))
+            members.append(Member(name=name, bib=bib))
         return members
 
 
-def discover_races() -> list[dict]:
+def _parse_results_section(soup: BeautifulSoup) -> list[dict]:
+    """Parse the 'Les résultats précédents' section on the homepage.
+
+    Each entry is a div.media inside #blog with structure:
+      <h4 class="media-heading"><a href="/fr/...">Name</a></h4>
+      Race_type <strong>Distance Km</strong><br/>
+      Terminée le <strong>date</strong> ...
+    """
     races = []
-    try:
-        resp = requests.get(BASE_URL, timeout=10)
-        resp.raise_for_status()
-    except requests.RequestException:
-        print("  [endurancechrono] Erreur page principale")
-        return []
-
-    soup = BeautifulSoup(resp.text, "html.parser")
-    seen = set()
-
-    for link in soup.select("a[href*='/fr/']"):
+    for media in soup.select("#blog div.media"):
+        link = media.select_one("h4.media-heading a")
+        if not link:
+            continue
         href = link.get("href", "")
-        # Filter for event pages (not static pages)
-        if not re.search(r"/fr/[a-z0-9-]+", href):
+        if not re.search(r"/fr/[a-zA-Z0-9_-]+/", href):
             continue
-        if any(x in href for x in ("/fr/contact", "/fr/tarifs", "/fr/fonctionnalites", "/fr/a-propos")):
+        name = link.get_text(strip=True)
+
+        body = media.select_one(".media-body")
+        if not body:
             continue
-        if href in seen:
-            continue
-        seen.add(href)
+
+        # Extract race_type and distance from text nodes in media-body.
+        # Pattern: "Course nature <strong>10,000 Km</strong>"
+        # The race type is the text between the h4 and the first <strong>.
+        race_type = ""
+        distance = None
+        strong_tags = body.select("strong")
+        if strong_tags:
+            # The first strong after h4 contains the distance value
+            first_strong = strong_tags[0]
+            # Text before the first strong (after the h4) is the race type
+            # Walk previous siblings of the first strong
+            prev_text = ""
+            for sib in first_strong.previous_siblings:
+                if hasattr(sib, "name") and sib.name == "h4":
+                    break
+                if isinstance(sib, str):
+                    prev_text = sib.strip() + prev_text
+            race_type = _normalize_race_type(prev_text)
+
+            # Distance: first strong text + "Km" suffix
+            dist_text = first_strong.get_text(strip=True)
+            distance = _parse_distance_km(dist_text)
+
+        # Extract date from "Terminée le <strong>date</strong>"
+        date = ""
+        for i, st in enumerate(strong_tags):
+            if i >= 1:
+                txt = st.get_text(strip=True)
+                # Look for a date like "22 mars 2026"
+                if re.match(r"\d{1,2}\s+\w+\s+\d{4}", txt):
+                    date = txt
+                    break
 
         full_url = href if href.startswith("http") else f"{BASE_URL}{href}"
-        name = link.get_text(strip=True) or "Course"
+        # Replace list=all with list=part&order=club for scraping
+        full_url = re.sub(r"\?list=all$", "", full_url)
+
+        entry = {
+            "platform": "endurancechrono",
+            "url": f"{full_url}?list=part&order=club",
+            "name": name,
+            "date": date,
+            "location": "",
+            "source": "endurancechrono-discovery",
+        }
+        if race_type:
+            entry["race_type"] = race_type
+        if distance:
+            entry["distances"] = [distance]
+        races.append(entry)
+    return races
+
+
+def _parse_inscriptions_section(soup: BeautifulSoup) -> list[dict]:
+    """Parse the 'Inscriptions en cours' section on the homepage.
+
+    Each entry is a div.media inside #comments with structure:
+      <h4 class="media-heading"><a href="/inscription/fr/...">Name</a></h4>
+      <span class="text-muted">jusqu'au date</span>
+    These are event-level (no distance/race_type info on homepage).
+    """
+    races = []
+    for media in soup.select("#comments div.media"):
+        link = media.select_one("h4.media-heading a")
+        if not link:
+            continue
+        href = link.get("href", "")
+        if "/inscription/fr/" not in href:
+            continue
+        name = link.get_text(strip=True)
         if len(name) < 4:
             continue
+
+        # Convert inscription URL to participant list URL
+        # /inscription/fr/Foulees_Perrier_Vergeze_4 -> /fr/Foulees_Perrier_Vergeze_4
+        slug = href.replace("/inscription/fr/", "/fr/")
+        full_url = f"{BASE_URL}{slug}"
 
         races.append({
             "platform": "endurancechrono",
@@ -121,6 +244,57 @@ def discover_races() -> list[dict]:
             "location": "",
             "source": "endurancechrono-discovery",
         })
+    return races
+
+
+def discover_races() -> list[dict]:
+    try:
+        resp = requests.get(BASE_URL, timeout=10)
+        resp.raise_for_status()
+    except requests.RequestException:
+        print("  [endurancechrono] Erreur page principale")
+        return []
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    # Parse structured sections for race_type + distances
+    races = _parse_results_section(soup)
+    inscriptions = _parse_inscriptions_section(soup)
+
+    # Deduplicate by URL
+    seen = {r["url"] for r in races}
+    for insc in inscriptions:
+        if insc["url"] not in seen:
+            races.append(insc)
+            seen.add(insc["url"])
+
+    # Also pick up any /fr/ links not already captured (fallback)
+    for link in soup.select("a[href*='/fr/']"):
+        href = link.get("href", "")
+        if not re.search(r"/fr/[a-z0-9-]+", href):
+            continue
+        if any(x in href for x in ("/fr/contact", "/fr/tarifs", "/fr/fonctionnalites", "/fr/a-propos")):
+            continue
+        full_url = href if href.startswith("http") else f"{BASE_URL}{href}"
+        candidate_url = f"{full_url}?list=part&order=club"
+        if candidate_url in seen:
+            continue
+        name = link.get_text(strip=True) or "Course"
+        if len(name) < 4:
+            continue
+        # Skip navigation / static pages (numbered slugs like 1-Accueil_1)
+        if re.search(r"/fr/\d+-\w", href):
+            continue
+
+        races.append({
+            "platform": "endurancechrono",
+            "url": candidate_url,
+            "name": name,
+            "date": "",
+            "location": "",
+            "source": "endurancechrono-discovery",
+        })
+        seen.add(candidate_url)
 
     print(f"  [endurancechrono] {len(races)} course(s) decouverte(s)")
     return races
