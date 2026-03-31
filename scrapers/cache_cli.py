@@ -1,19 +1,27 @@
-"""CLI tool to manage scraper caches.
+"""CLI tool to manage scraper caches (local + CI/prod).
 
-Usage:
+Local cache:
+    python -m scrapers.cache_cli stats
     python -m scrapers.cache_cli list [--platform PLATFORM] [--with-members]
     python -m scrapers.cache_cli clear --url PATTERN
     python -m scrapers.cache_cli clear --platform PLATFORM
     python -m scrapers.cache_cli clear --all
-    python -m scrapers.cache_cli clear --empty    # clear entries with 0 members
-    python -m scrapers.cache_cli stats
+    python -m scrapers.cache_cli clear --empty
     python -m scrapers.cache_cli geocache list [PATTERN]
     python -m scrapers.cache_cli geocache clear PATTERN
+
+CI/Prod cache (requires gh CLI):
+    python -m scrapers.cache_cli ci list          # list CI caches
+    python -m scrapers.cache_cli ci clear         # delete latest CI cache
+    python -m scrapers.cache_cli ci clear --all   # delete all CI caches
+    python -m scrapers.cache_cli ci run           # trigger a new CI run
+    python -m scrapers.cache_cli ci run --fresh   # clear cache + trigger run
 """
 
 import argparse
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -178,17 +186,92 @@ def cmd_geocache(args):
         print(f"Removed {len(to_remove)} entries.")
 
 
+def _gh(*args) -> subprocess.CompletedProcess:
+    """Run a gh CLI command."""
+    return subprocess.run(["gh", *args], capture_output=True, text=True)
+
+
+def cmd_ci(args):
+    action = args.action
+
+    if action == "list":
+        result = _gh("cache", "list", "--json", "key,createdAt,sizeInBytes")
+        if result.returncode != 0:
+            print(f"Error: {result.stderr.strip()}")
+            return
+        try:
+            all_caches = json.loads(result.stdout)
+        except Exception:
+            print("No CI caches found.")
+            return
+        caches = [c for c in all_caches if c.get("key", "").startswith("scraper-data-")]
+        if not caches:
+            print("No CI scraper caches found.")
+            return
+        print(f"CI caches ({len(caches)}):")
+        for entry in caches:
+            size_kb = entry.get("sizeInBytes", 0) / 1024
+            print(f"  {entry['key']:45s} {size_kb:8.1f} KB  {entry.get('createdAt', '?')}")
+
+    elif action == "clear":
+        # Get all scraper-data cache keys
+        result = _gh("cache", "list", "--json", "key")
+        if result.returncode != 0:
+            print(f"Error: {result.stderr.strip()}")
+            return
+        try:
+            all_caches = json.loads(result.stdout)
+        except Exception:
+            all_caches = []
+        keys = [c["key"] for c in all_caches if c.get("key", "").startswith("scraper-data-")]
+        if not keys:
+            print("No CI caches to clear.")
+            return
+
+        if args.all:
+            to_delete = keys
+        else:
+            # Delete only the latest (most recent restore key)
+            to_delete = [keys[0]]
+
+        for key in to_delete:
+            r = _gh("cache", "delete", key)
+            if r.returncode == 0:
+                print(f"  Deleted: {key}")
+            else:
+                print(f"  Failed: {key} ({r.stderr.strip()})")
+        print(f"Deleted {len(to_delete)} CI cache(s).")
+
+    elif action == "run":
+        if args.fresh:
+            print("Clearing CI caches first...")
+            args_clear = argparse.Namespace(action="clear", all=True)
+            cmd_ci(args_clear)
+            print()
+
+        print("Triggering CI workflow...")
+        result = _gh("workflow", "run", "scrape.yml")
+        if result.returncode == 0:
+            print(f"Workflow triggered! {result.stdout.strip()}")
+            # Get the run URL
+            result2 = _gh("run", "list", "--limit", "1", "--json", "url", "-q", ".[0].url")
+            if result2.stdout.strip():
+                print(f"  {result2.stdout.strip()}")
+        else:
+            print(f"Error: {result.stderr.strip()}")
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Manage scraper caches")
+    parser = argparse.ArgumentParser(description="Manage scraper caches (local + CI)")
     sub = parser.add_subparsers(dest="command")
 
     # list
-    p_list = sub.add_parser("list", help="List cache entries")
+    p_list = sub.add_parser("list", help="List local cache entries")
     p_list.add_argument("--platform", "-p", help="Filter by platform")
     p_list.add_argument("--with-members", "-m", action="store_true", help="Only show entries with members")
 
     # clear
-    p_clear = sub.add_parser("clear", help="Clear cache entries")
+    p_clear = sub.add_parser("clear", help="Clear local cache entries")
     p_clear.add_argument("--url", "-u", help="Clear entries matching URL pattern")
     p_clear.add_argument("--platform", "-p", help="Clear all entries for a platform")
     p_clear.add_argument("--all", action="store_true", help="Clear entire cache")
@@ -202,6 +285,12 @@ def main():
     p_geo.add_argument("action", choices=["list", "clear"])
     p_geo.add_argument("pattern", nargs="?", default="")
 
+    # ci
+    p_ci = sub.add_parser("ci", help="Manage CI/prod cache and workflows")
+    p_ci.add_argument("action", choices=["list", "clear", "run"])
+    p_ci.add_argument("--all", action="store_true", help="Clear all CI caches (not just latest)")
+    p_ci.add_argument("--fresh", action="store_true", help="Clear cache before running")
+
     args = parser.parse_args()
 
     if args.command == "list":
@@ -212,6 +301,8 @@ def main():
         cmd_stats(args)
     elif args.command == "geocache":
         cmd_geocache(args)
+    elif args.command == "ci":
+        cmd_ci(args)
     else:
         parser.print_help()
 
