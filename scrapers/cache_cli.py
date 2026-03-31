@@ -200,6 +200,113 @@ def cmd_geocache(args):
         print(f"Removed {len(to_remove)} entries.")
 
 
+def cmd_show(args):
+    """Show detailed info about a cache entry."""
+    cache = load_scrape_cache()
+    pattern = args.pattern.lower()
+    matches = [(url, entry) for url, entry in cache.items() if pattern in url.lower()]
+
+    if not matches:
+        print(f"No entries matching '{args.pattern}'.")
+        return
+
+    for url, entry in matches:
+        platform = detect_platform(url)
+        members = entry.get("member_count", 0)
+        last = entry.get("last_scraped", "?")
+        data = entry.get("data")
+
+        print(f"\n{'─'*60}")
+        print(f"  URL:        {url}")
+        print(f"  Platform:   {platform}")
+        print(f"  Members:    {members}")
+        print(f"  Scraped:    {last}")
+
+        if data and isinstance(data, dict):
+            print(f"  Name:       {data.get('name', '?')}")
+            print(f"  Date:       {data.get('date', '?')}")
+            print(f"  Location:   {data.get('location', '?')}")
+            print(f"  Race type:  {data.get('race_type', '?')}")
+            print(f"  Distances:  {data.get('distances', [])}")
+            for m in data.get("members", []):
+                print(f"    👤 {m.get('name', '?'):30s} — {m.get('bib', '')}")
+        elif members == 0:
+            print(f"  (no data cached — 0 members)")
+        print(f"{'─'*60}")
+
+
+def cmd_rescrape(args):
+    """Clear specific entries and immediately re-scrape them."""
+    import yaml
+
+    cache = load_scrape_cache()
+    pattern = args.pattern.lower()
+    matches = [url for url in cache if pattern in url.lower()]
+
+    if not matches:
+        print(f"No cache entries matching '{args.pattern}'.")
+        return
+
+    # Show what we'll re-scrape
+    print(f"Will re-scrape {len(matches)} URL(s):")
+    for url in matches:
+        members = cache[url].get("member_count", 0)
+        print(f"  {'*' if members else ' '} {url[:80]}")
+
+    # Clear them from cache
+    for url in matches:
+        del cache[url]
+    save_scrape_cache(cache)
+
+    # Load config
+    config_path = ROOT / "config.yml"
+    if not config_path.exists():
+        print("config.yml not found — cleared cache but cannot re-scrape.")
+        return
+
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    club = config.get("club", {})
+    patterns = club.get("patterns", [])
+    known_members = club.get("known_members", [])
+
+    # Import scrape function
+    from .main import scrape_race
+
+    # Re-scrape each URL
+    print(f"\nRe-scraping...")
+    found = 0
+    for url in matches:
+        # Build a minimal race_config
+        platform = detect_platform(url)
+        rc = {"url": url, "platform": platform, "name": "?", "date": "", "location": ""}
+        try:
+            data = scrape_race(rc, patterns, known_members)
+        except Exception as e:
+            print(f"  ✗ {url[:60]} — {e}")
+            data = None
+
+        member_count = data.get("member_count", 0) if data else 0
+        cache_data = None
+        if data and member_count > 0:
+            cache_data = {k: v for k, v in data.items() if k not in ("lat", "lng")}
+            found += 1
+            print(f"  ✓ {data.get('name', url)[:50]} — {member_count} membre(s)")
+            for m in data.get("members", []):
+                print(f"    👤 {m.get('name', '?')} — {m.get('bib', '')}")
+        else:
+            print(f"  · {url[:60]} — 0 membres")
+
+        from datetime import datetime, timezone
+        cache[url] = {
+            "last_scraped": datetime.now(timezone.utc).isoformat(),
+            "member_count": member_count,
+            "data": cache_data,
+        }
+
+    save_scrape_cache(cache)
+    print(f"\nDone. {found}/{len(matches)} avec membres.")
+
+
 def _gh(*args) -> subprocess.CompletedProcess:
     """Run a gh CLI command."""
     return subprocess.run(["gh", *args], capture_output=True, text=True)
@@ -418,6 +525,14 @@ def main():
     p_clear.add_argument("--all", action="store_true", help="Clear entire cache")
     p_clear.add_argument("--empty", action="store_true", help="Clear entries with 0 members")
 
+    # show
+    p_show = sub.add_parser("show", help="Show detailed info about a cache entry")
+    p_show.add_argument("pattern", help="URL pattern to search for")
+
+    # rescrape
+    p_rescrape = sub.add_parser("rescrape", help="Clear + immediately re-scrape matching URLs")
+    p_rescrape.add_argument("pattern", help="URL pattern to match")
+
     # stats
     sub.add_parser("stats", help="Show cache statistics")
 
@@ -440,6 +555,10 @@ def main():
 
     if args.command == "list":
         cmd_list(args)
+    elif args.command == "show":
+        cmd_show(args)
+    elif args.command == "rescrape":
+        cmd_rescrape(args)
     elif args.command == "clear":
         cmd_clear(args)
     elif args.command == "stats":
