@@ -185,7 +185,10 @@ class NjukoScraper(BaseScraper):
         seen = set()
 
         for reg in registrations:
-            if reg.get("status") not in ("COMPLETED", "VALIDATED", None):
+            # Accept confirmed registrations. "IN PROGRESS" on UTMB means
+            # paid registration with pending steps (medical cert, etc.)
+            status = reg.get("status", "")
+            if status and status not in ("COMPLETED", "VALIDATED", "IN PROGRESS"):
                 continue
 
             # Extract club from metaData
