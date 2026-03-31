@@ -127,6 +127,28 @@ class ChronometrageScraper(BaseScraper):
 
 # --- Event discovery ---
 
+# Map chronometrage.com tourism_category.type values to our race_type taxonomy
+_TOURISM_TYPE_MAP = {
+    "TRAIL": "trail",
+    "RUNNING": "route",
+    "TRIATHLON": "triathlon",
+    "MARCHE": "marche",
+    "RAID": "trail",
+    "CANICROSS": "trail",
+}
+
+
+def _map_tourism_type(raw_type: str) -> str:
+    """Map a chronometrage.com tourism_category.type to our race_type.
+
+    Returns empty string if the type is unknown or empty (caller should
+    fall back to text-based detection).
+    """
+    if not raw_type:
+        return ""
+    return _TOURISM_TYPE_MAP.get(raw_type.upper().strip(), "")
+
+
 def discover_races() -> list[dict]:
     """Discover events from chronometrage.com via __NEXT_DATA__.
 
@@ -183,14 +205,26 @@ def discover_races() -> list[dict]:
             if dm:
                 date_str = dm.group(1)
 
-        races.append({
+        # Extract structured race type from tourism_category.type
+        # Values seen: "TRAIL", "RUNNING", "TRIATHLON", etc.
+        race_type = _map_tourism_type(
+            ev.get("tourism_category", {}).get("type", "")
+            if isinstance(ev.get("tourism_category"), dict)
+            else ""
+        )
+
+        entry = {
             "platform": "chronometrage",
             "url": f"https://www.chronometrage.com/eventSubscription/{slug}",
             "name": name,
             "date": date_str,
             "location": location,
             "source": "chronometrage-discovery",
-        })
+        }
+        if race_type:
+            entry["race_type"] = race_type
+
+        races.append(entry)
 
     print(f"  [chronometrage] {len(races)} course(s) decouverte(s)")
     return races

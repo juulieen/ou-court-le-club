@@ -186,8 +186,13 @@ def _extract_distances(bibs: list[str]) -> list[float]:
 def _enrich_race(race: dict) -> dict:
     """Add race_type and distances fields to a race dict."""
     bibs = [m.get("bib", "") for m in race.get("members", []) if m.get("bib")]
-    race["race_type"] = _detect_race_type(race.get("name", ""), bibs)
-    race["distances"] = _extract_distances(bibs)
+    # Use platform-provided race_type if already set, else detect from text
+    if not race.get("race_type"):
+        race["race_type"] = _detect_race_type(race.get("name", ""), bibs)
+    # Merge platform-provided distances with bib-extracted ones
+    existing = set(race.get("distances") or [])
+    existing.update(_extract_distances(bibs))
+    race["distances"] = sorted(existing)
     return race
 
 
@@ -288,7 +293,12 @@ def scrape_race(rc: dict, patterns: list[str], known_members: list[str]) -> dict
         return None
 
     if race:
-        return asdict(race)
+        data = asdict(race)
+        # Forward structured metadata from discovery (e.g. race_type from
+        # chronometrage.com tourism_category) so _enrich_race can use it.
+        if rc.get("race_type"):
+            data["race_type"] = rc["race_type"]
+        return data
     return None
 
 
@@ -344,7 +354,11 @@ def run():
         else:
             entry = scrape_cache.get(url, {})
             if entry.get("member_count", 0) > 0 and entry.get("data"):
-                cached_results.append(entry["data"])
+                data = entry["data"]
+                # Forward structured metadata from discovery (e.g. race_type)
+                if rc.get("race_type") and not data.get("race_type"):
+                    data["race_type"] = rc["race_type"]
+                cached_results.append(data)
 
     total = len(races_config)
     cached = total - len(to_scrape)
