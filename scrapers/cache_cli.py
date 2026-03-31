@@ -16,18 +16,32 @@ CI/Prod cache (requires gh CLI):
     python -m scrapers.cache_cli ci clear --all   # delete all CI caches
     python -m scrapers.cache_cli ci run           # trigger a new CI run
     python -m scrapers.cache_cli ci run --fresh   # clear cache + trigger run
+
+Sync between local and CI:
+    python -m scrapers.cache_cli sync pull        # download CI cache to local
+    python -m scrapers.cache_cli sync push        # upload local cache to CI (next run uses it)
+    python -m scrapers.cache_cli sync diff        # show differences
 """
 
 import argparse
 import json
+import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SCRAPE_CACHE = ROOT / "data" / "scrape_cache.json"
-GEOCACHE = ROOT / "data" / "geocache.json"
+DATA_DIR = ROOT / "data"
+SCRAPE_CACHE = DATA_DIR / "scrape_cache.json"
+GEOCACHE = DATA_DIR / "geocache.json"
+NJUKO_SLUGS = DATA_DIR / "njuko_slugs.json"
+RACES_JSON = DATA_DIR / "races.json"
+
+# Files that are synced between local and CI
+SYNC_FILES = [SCRAPE_CACHE, GEOCACHE, NJUKO_SLUGS, RACES_JSON]
 
 
 def load_scrape_cache() -> dict:
@@ -261,6 +275,133 @@ def cmd_ci(args):
             print(f"Error: {result.stderr.strip()}")
 
 
+def cmd_sync(args):
+    action = args.action
+
+    if action == "pull":
+        # Download CI cache artifact to local
+        print("Downloading CI cache from latest workflow run...")
+
+        # Find latest successful scrape run
+        result = _gh("run", "list", "--workflow", "scrape.yml", "--status", "success",
+                      "--limit", "1", "--json", "databaseId,createdAt")
+        if result.returncode != 0:
+            print(f"Error: {result.stderr.strip()}")
+            return
+        try:
+            runs = json.loads(result.stdout)
+        except Exception:
+            print("No successful runs found.")
+            return
+        if not runs:
+            print("No successful scrape runs found.")
+            return
+
+        run_id = runs[0]["databaseId"]
+        created = runs[0].get("createdAt", "?")
+        print(f"  Latest run: {run_id} ({created})")
+
+        # Download artifact
+        with tempfile.TemporaryDirectory() as tmp:
+            result = _gh("run", "download", str(run_id), "--name", "scraper-data", "--dir", tmp)
+            if result.returncode != 0:
+                print(f"  Error downloading artifact: {result.stderr.strip()}")
+                print("  (The CI workflow may not have the upload-artifact step yet.)")
+                print("  Run the workflow once after the latest push to generate the artifact.")
+                return
+
+            # Copy files to local data/
+            DATA_DIR.mkdir(parents=True, exist_ok=True)
+            count = 0
+            for src in Path(tmp).rglob("*.json"):
+                # Artifact preserves the data/ prefix
+                dest = DATA_DIR / src.name
+                local_size = dest.stat().st_size if dest.exists() else 0
+                remote_size = src.stat().st_size
+                shutil.copy2(src, dest)
+                count += 1
+                marker = " (new)" if local_size == 0 else f" ({local_size} -> {remote_size})"
+                print(f"  {dest.name}{marker}")
+
+        print(f"Synced {count} files from CI to local.")
+
+    elif action == "push":
+        # "Push" local cache to CI = clear CI cache so next run rebuilds from scratch,
+        # but since CI can't directly import local files, we trigger a fresh run.
+        # The local cache stays as-is for local dev.
+        print("CI cannot directly import local cache files.")
+        print("Instead, the recommended workflow is:")
+        print("  1. Make fixes locally (geocache corrections, slug additions, etc.)")
+        print("  2. Commit code changes (geocoder.py OVERRIDES, njuko.py _SEED_SLUGS)")
+        print("  3. Clear CI cache:  python -m scrapers.cache_cli ci clear --all")
+        print("  4. Trigger fresh run: python -m scrapers.cache_cli ci run")
+        print()
+        if input("Do this now? [y/N] ").strip().lower() == "y":
+            args_run = argparse.Namespace(action="run", fresh=True)
+            cmd_ci(args_run)
+
+    elif action == "diff":
+        # Compare local vs CI cache (download CI to temp and compare)
+        print("Downloading CI cache for comparison...")
+
+        result = _gh("run", "list", "--workflow", "scrape.yml", "--status", "success",
+                      "--limit", "1", "--json", "databaseId")
+        if result.returncode != 0:
+            print(f"Error: {result.stderr.strip()}")
+            return
+        try:
+            runs = json.loads(result.stdout)
+        except Exception:
+            runs = []
+        if not runs:
+            print("No successful runs found.")
+            return
+
+        run_id = runs[0]["databaseId"]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            result = _gh("run", "download", str(run_id), "--name", "scraper-data", "--dir", tmp)
+            if result.returncode != 0:
+                print(f"  Error: {result.stderr.strip()}")
+                return
+
+            for filename in ["scrape_cache.json", "geocache.json", "njuko_slugs.json", "races.json"]:
+                local_path = DATA_DIR / filename
+                remote_path = None
+                for p in Path(tmp).rglob(filename):
+                    remote_path = p
+                    break
+
+                local_exists = local_path.exists()
+                remote_exists = remote_path is not None
+
+                if not local_exists and not remote_exists:
+                    continue
+
+                local_size = local_path.stat().st_size if local_exists else 0
+                remote_size = remote_path.stat().st_size if remote_exists else 0
+
+                if not local_exists:
+                    print(f"  {filename:25s}  LOCAL: missing  |  CI: {remote_size:,} bytes")
+                elif not remote_exists:
+                    print(f"  {filename:25s}  LOCAL: {local_size:,} bytes  |  CI: missing")
+                elif local_size == remote_size:
+                    print(f"  {filename:25s}  identical ({local_size:,} bytes)")
+                else:
+                    # Count entries for scrape_cache and geocache
+                    detail = ""
+                    if filename in ("scrape_cache.json", "geocache.json"):
+                        try:
+                            local_data = json.loads(local_path.read_text())
+                            remote_data = json.loads(remote_path.read_text())
+                            local_n = len(local_data)
+                            remote_n = len(remote_data)
+                            detail = f"  ({local_n} vs {remote_n} entries)"
+                        except Exception:
+                            pass
+                    print(f"  {filename:25s}  LOCAL: {local_size:,} bytes  |  CI: {remote_size:,} bytes{detail}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Manage scraper caches (local + CI)")
     sub = parser.add_subparsers(dest="command")
@@ -291,6 +432,10 @@ def main():
     p_ci.add_argument("--all", action="store_true", help="Clear all CI caches (not just latest)")
     p_ci.add_argument("--fresh", action="store_true", help="Clear cache before running")
 
+    # sync
+    p_sync = sub.add_parser("sync", help="Sync cache between local and CI")
+    p_sync.add_argument("action", choices=["pull", "push", "diff"])
+
     args = parser.parse_args()
 
     if args.command == "list":
@@ -303,6 +448,8 @@ def main():
         cmd_geocache(args)
     elif args.command == "ci":
         cmd_ci(args)
+    elif args.command == "sync":
+        cmd_sync(args)
     else:
         parser.print_help()
 
