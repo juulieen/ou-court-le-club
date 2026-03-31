@@ -50,8 +50,23 @@ class KlikegoScraper(BaseScraper):
 
         session = requests.Session()
 
-        # Search by club name via "ville" field
-        all_members = self._fetch_registrants(reference, "", url, session)
+        # Get available courses (with labels) to enrich bib info
+        courses = self._get_courses(url, session)
+        course_labels = {val: label for val, label in courses}
+
+        if courses:
+            # Search per course to get proper bib labels
+            all_members = []
+            seen = set()
+            for course_val, course_label in courses:
+                found = self._fetch_registrants(reference, course_val, url, session)
+                for m in found:
+                    if m.name not in seen:
+                        all_members.append(Member(name=m.name, bib=course_label))
+                        seen.add(m.name)
+        else:
+            # No course dropdown — search globally
+            all_members = self._fetch_registrants(reference, "", url, session)
 
         return RaceResult(
             id=f"klikego-{reference}",
@@ -129,8 +144,11 @@ class KlikegoScraper(BaseScraper):
 
         return members
 
-    def _get_courses(self, page_url: str, session: requests.Session) -> list[str]:
-        """Fetch the /inscrits/ page and extract epreuve option values."""
+    def _get_courses(self, page_url: str, session: requests.Session) -> list[tuple[str, str]]:
+        """Fetch the /inscrits/ page and extract epreuve options.
+
+        Returns list of (value, label) tuples.
+        """
         try:
             resp = session.get(page_url, timeout=15)
             resp.raise_for_status()
@@ -146,8 +164,9 @@ class KlikegoScraper(BaseScraper):
         courses = []
         for opt in select.find_all("option"):
             val = opt.get("value", "").strip()
+            label = opt.get_text(strip=True)
             if val:
-                courses.append(val)
+                courses.append((val, label))
         return courses
 
     def _fetch_registrants(self, reference: str, course: str, page_url: str,

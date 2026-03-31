@@ -99,26 +99,27 @@ class ChronoStartScraper(BaseScraper):
             # No sub-course dropdown: single course, parse directly
             return self._parse_table(html)
 
-        # Collect sub-course IDs (skip idEp=0 which is "Tous les Listing")
-        course_ids = []
+        # Collect sub-course IDs and names (skip idEp=0 which is "Tous les Listing")
+        courses = []
         for option in select.find_all("option"):
             val = option.get("value", "")
             if val and val != "0":
-                course_ids.append(val)
+                course_name = option.get_text(strip=True)
+                courses.append((val, course_name))
 
-        if not course_ids:
+        if not courses:
             return self._parse_table(html)
 
-        # If only one real course, parse the current page
-        if len(course_ids) == 1:
-            return self._parse_table(html)
+        # If only one real course, parse the current page with its name
+        if len(courses) == 1:
+            return self._parse_table(html, course_name=courses[0][1])
 
         # Multiple courses: fetch each individually
         all_members = []
         seen = set()
         session = self._get_session()
 
-        for ep_id in course_ids:
+        for ep_id, course_name in courses:
             ep_url = f"{self.BASE_FR}/Inscription/course/listing?c={event_id}&idEp={ep_id}"
             try:
                 if session:
@@ -129,7 +130,7 @@ class ChronoStartScraper(BaseScraper):
             except Exception:
                 continue
 
-            for member in self._parse_table(resp.text):
+            for member in self._parse_table(resp.text, course_name=course_name):
                 if member.name not in seen:
                     seen.add(member.name)
                     all_members.append(member)
@@ -157,7 +158,7 @@ class ChronoStartScraper(BaseScraper):
             return url
         return None
 
-    def _parse_table(self, html: str) -> list[Member]:
+    def _parse_table(self, html: str, course_name: str = "") -> list[Member]:
         """Parse #table_listing. Columns: idx|Nom|Prenom|Nat|Sexe|Cat|Dossard|Club|..."""
         soup = BeautifulSoup(html, "html.parser")
         members = []
@@ -212,7 +213,7 @@ class ChronoStartScraper(BaseScraper):
                 continue
             seen.add(name)
 
-            members.append(Member(name=name, bib=""))
+            members.append(Member(name=name, bib=course_name))
 
         return members
 
