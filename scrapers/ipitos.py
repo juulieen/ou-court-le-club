@@ -17,6 +17,8 @@ from bs4 import BeautifulSoup
 from .base import BaseScraper, Member, RaceResult, matches_club, matches_known_member
 
 LIVE_BASE = "https://live.ipitos.com"
+BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+HEADERS = {"User-Agent": BROWSER_UA}
 
 
 class IpitosScraper(BaseScraper):
@@ -67,7 +69,7 @@ class IpitosScraper(BaseScraper):
         """
         live_url = f"{LIVE_BASE}/{slug}/"
         try:
-            resp = requests.get(live_url, timeout=15, allow_redirects=True)
+            resp = requests.get(live_url, headers=HEADERS, timeout=15, allow_redirects=True)
             resp.raise_for_status()
         except requests.RequestException:
             return None
@@ -95,7 +97,7 @@ class IpitosScraper(BaseScraper):
                 else:
                     iframe_src = f"{LIVE_BASE}/{slug}/{iframe_src}"
             try:
-                iframe_resp = requests.get(iframe_src, timeout=15, allow_redirects=True)
+                iframe_resp = requests.get(iframe_src, headers=HEADERS, timeout=15, allow_redirects=True)
                 iframe_resp.raise_for_status()
             except requests.RequestException:
                 continue
@@ -127,7 +129,7 @@ class IpitosScraper(BaseScraper):
         names (n attribute).
         """
         try:
-            resp = requests.get(clax_url, timeout=15)
+            resp = requests.get(clax_url, headers=HEADERS, timeout=15)
             resp.raise_for_status()
         except requests.RequestException:
             return []
@@ -178,7 +180,7 @@ def discover_races() -> list[dict]:
     seen = set()
 
     try:
-        resp = requests.get(f"{LIVE_BASE}/", timeout=15)
+        resp = requests.get(f"{LIVE_BASE}/", headers=HEADERS, timeout=15)
         resp.raise_for_status()
     except requests.RequestException as e:
         print(f"  [ipitos] Erreur acces {LIVE_BASE}/: {e}")
@@ -213,26 +215,44 @@ def discover_races() -> list[dict]:
             continue
         seen.add(slug)
 
-        # Extract event name from link text or parent context
-        name = a.get_text(strip=True)
+        # Extract event name from div.nom inside the link
+        nom_div = a.select_one("div.nom, .nom")
+        if nom_div:
+            name = nom_div.get_text(strip=True)
+        else:
+            name = a.get_text(strip=True)
         if not name or len(name) < 3:
             name = slug.replace("_", " ").replace("-", " ").title()
 
-        # Try to extract date from surrounding text (parent row/cell)
+        # Extract date from div.dt inside the link
         date_str = ""
-        parent = a.parent
-        if parent:
-            parent_text = parent.get_text(" ", strip=True)
-            # Look for date patterns: DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD
-            dm = re.search(r"(\d{2})/(\d{2})/(\d{4})", parent_text)
+        dt_div = a.select_one("div.dt, .dt")
+        if dt_div:
+            dt_text = dt_div.get_text(strip=True)
+            # Parse French dates: "lundi 6 avril 2026", "dimanche 29 mars 2026"
+            _MONTHS = {
+                "janvier": "01", "février": "02", "mars": "03", "avril": "04",
+                "mai": "05", "juin": "06", "juillet": "07", "août": "08",
+                "septembre": "09", "octobre": "10", "novembre": "11", "décembre": "12",
+                "fevrier": "02", "aout": "08",
+            }
+            dm = re.search(r"(\d{1,2})\s+(\w+)\s+(\d{4})", dt_text)
             if dm:
-                date_str = f"{dm.group(3)}-{dm.group(2)}-{dm.group(1)}"
-            else:
-                dm = re.search(r"(\d{4})-(\d{2})-(\d{2})", parent_text)
-                if dm:
-                    date_str = dm.group(0)
+                day = dm.group(1).zfill(2)
+                month = _MONTHS.get(dm.group(2).lower(), "")
+                year = dm.group(3)
+                if month:
+                    date_str = f"{year}-{month}-{day}"
 
-        # Try to extract location from event name or surrounding text
+        if not date_str:
+            # Fallback: look for date patterns in parent text
+            parent = a.parent
+            if parent:
+                parent_text = parent.get_text(" ", strip=True)
+                dm = re.search(r"(\d{2})/(\d{2})/(\d{4})", parent_text)
+                if dm:
+                    date_str = f"{dm.group(3)}-{dm.group(2)}-{dm.group(1)}"
+
         location = ""
 
         races.append({
