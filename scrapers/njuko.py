@@ -22,6 +22,10 @@ class NjukoScraper(BaseScraper):
     """Scrape registered participants from Njuko via their public API."""
 
     API_BASE = "https://front-api.njuko.com"
+    # White-label domains that use a separate API base URL
+    _API_BASES = {
+        "sporkrono-inscriptions.fr": "https://front-api.sporkrono-inscriptions.fr",
+    }
     # Njuko's API returns 403 Forbidden when the default python-requests
     # User-Agent is used.  Sending a browser-like UA avoids the block.
     HEADERS = {
@@ -30,6 +34,17 @@ class NjukoScraper(BaseScraper):
             "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         ),
     }
+
+    def _api_base_for_url(self, url: str) -> str:
+        """Return the API base URL for a given registration page URL.
+
+        White-label Njuko platforms (e.g. sporkrono-inscriptions.fr) use
+        their own front-api subdomain instead of front-api.njuko.com.
+        """
+        for domain, api_base in self._API_BASES.items():
+            if domain in url:
+                return api_base
+        return self.API_BASE
 
     def scrape(self, race_config: dict) -> RaceResult | None:
         url = race_config.get("url", "")
@@ -42,8 +57,10 @@ class NjukoScraper(BaseScraper):
             print(f"  [njuko] Impossible d'extraire le slug depuis {url}")
             return None
 
+        api_base = self._api_base_for_url(url)
+
         # Step 1: Resolve edition
-        edition = self._get_edition(slug)
+        edition = self._get_edition(slug, api_base=api_base)
         if not edition:
             return None
 
@@ -64,7 +81,7 @@ class NjukoScraper(BaseScraper):
                 competitions[comp_id] = comp_name
 
         # Step 2: Fetch all registrations
-        registrations = self._get_registrations(edition_id)
+        registrations = self._get_registrations(edition_id, api_base=api_base)
         if registrations is None:
             return None
 
@@ -118,6 +135,7 @@ class NjukoScraper(BaseScraper):
         - https://www.njuko.net/{slug}/registrations-list
         - https://www.njuko.net/{slug}/check-registration
         - https://in.register-utmb.world/{slug}
+        - https://in.sporkrono-inscriptions.fr/{slug}
         """
         url = url.rstrip("/")
         # Remove query params
@@ -143,13 +161,22 @@ class NjukoScraper(BaseScraper):
                 if slug:
                     return slug
 
+        # sporkrono-inscriptions.fr/slug (Sporkrono is a Njuko white-label)
+        if "sporkrono-inscriptions.fr/" in url_path:
+            parts = url_path.split("sporkrono-inscriptions.fr/")
+            if len(parts) > 1:
+                slug = parts[1].split("/")[0]
+                if slug:
+                    return slug
+
         return None
 
-    def _get_edition(self, slug: str) -> dict | None:
+    def _get_edition(self, slug: str, *, api_base: str | None = None) -> dict | None:
         """Fetch edition data from the API."""
+        base = api_base or self.API_BASE
         try:
             resp = requests.get(
-                f"{self.API_BASE}/edition/url/{slug}",
+                f"{base}/edition/url/{slug}",
                 headers=self.HEADERS,
                 timeout=15,
             )
@@ -159,11 +186,12 @@ class NjukoScraper(BaseScraper):
             print(f"  [njuko] Erreur API edition '{slug}': {e}")
             return None
 
-    def _get_registrations(self, edition_id: str) -> list | None:
+    def _get_registrations(self, edition_id: str, *, api_base: str | None = None) -> list | None:
         """Fetch all registrations for an edition."""
+        base = api_base or self.API_BASE
         try:
             resp = requests.get(
-                f"{self.API_BASE}/registrations/{edition_id}/_search/{{}}",
+                f"{base}/registrations/{edition_id}/_search/{{}}",
                 headers=self.HEADERS,
                 timeout=30,
             )
