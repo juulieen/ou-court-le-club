@@ -183,6 +183,35 @@ body {
   color: #fff;
 }
 
+.filter-row {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-row select {
+  flex: 1;
+  width: 100%;
+  padding: 5px 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-family: "DM Sans", system-ui, sans-serif;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23aaa'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+
+.filter-row select:focus {
+  outline: none;
+  border-color: var(--orange);
+}
+
 .filter-dates {
   display: flex;
   gap: 8px;
@@ -321,6 +350,38 @@ body {
   font-weight: 700;
   margin-left: auto;
   white-space: nowrap;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  vertical-align: middle;
+  margin-left: 4px;
+  letter-spacing: 0.03em;
+}
+
+.type-trail {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.type-route {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.race-card .race-meta .dist {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+}
+
+.race-card .race-meta .dist::before {
+  content: "·";
+  margin-right: 6px;
 }
 
 .edition-badge {

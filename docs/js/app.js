@@ -394,9 +394,22 @@
   // --- Rendering ---
   let activeFilter = "all"; // "all", "upcoming", "past"
 
+  function matchesDistance(distances, range) {
+    if (!range || !distances || !distances.length) return !range;
+    const [minStr, maxStr] = range.split("-");
+    if (range === "42+") {
+      return distances.some((d) => d >= 42);
+    }
+    const min = parseFloat(minStr);
+    const max = parseFloat(maxStr);
+    return distances.some((d) => d >= min && d <= max);
+  }
+
   function renderAll() {
     const dateFrom = document.getElementById("date-from").value;
     const dateTo = document.getElementById("date-to").value;
+    const filterType = document.getElementById("filter-type").value;
+    const filterDist = document.getElementById("filter-distance").value;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toISOString().slice(0, 10);
@@ -408,6 +421,10 @@
       // Date range filters
       if (dateFrom && r.date < dateFrom) return false;
       if (dateTo && r.date > dateTo) return false;
+      // Type filter
+      if (filterType && r.race_type !== filterType) return false;
+      // Distance filter
+      if (filterDist && !matchesDistance(r.distances, filterDist)) return false;
       return true;
     });
 
@@ -474,12 +491,20 @@
           ? `${displayEd.member_count} membre${displayEd.member_count > 1 ? "s" : ""}`
           : `${r.member_count} membre${r.member_count > 1 ? "s" : ""}`;
 
+        const typeBadge = r.race_type && r.race_type !== "autre"
+          ? `<span class="type-badge type-${r.race_type}">${r.race_type}</span>`
+          : "";
+        const distLabel = r.distances && r.distances.length
+          ? r.distances.map((d) => `${d}km`).join(", ")
+          : "";
+
         return `
         <div class="race-card" data-id="${r.id}" data-temp="${temp}" data-lng="${r.lng}" data-lat="${r.lat}">
-          <div class="race-name">${displayName} ${editionBadge}</div>
+          <div class="race-name">${displayName} ${editionBadge} ${typeBadge}</div>
           <div class="race-meta">
             <span class="date">${dateFormatted}</span>
             <span class="location">${displayEd.location || r.location || ""}</span>
+            ${distLabel ? `<span class="dist">${distLabel}</span>` : ""}
             <span class="member-badge">${memberLabel}</span>
           </div>
         </div>`;
@@ -528,6 +553,8 @@
     }
     document.getElementById("date-from").addEventListener("change", debouncedRender);
     document.getElementById("date-to").addEventListener("change", debouncedRender);
+    document.getElementById("filter-type").addEventListener("change", debouncedRender);
+    document.getElementById("filter-distance").addEventListener("change", debouncedRender);
 
     // Event delegation for race cards
     document.getElementById("race-list").addEventListener("click", (e) => {

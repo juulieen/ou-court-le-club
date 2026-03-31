@@ -151,12 +151,57 @@ def load_config() -> dict:
     return yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
 
 
+def _detect_race_type(name: str, bibs: list[str]) -> str:
+    """Detect race type from name and bib fields: trail, route, or other."""
+    combined = (name + " " + " ".join(bibs)).lower()
+    if re.search(r"\btrail\b", combined):
+        return "trail"
+    if re.search(
+        r"\b(marathon|semi|foul[ée]es?|corrida|\d+\s*km|\d+\s*miles|course|run\b|relais|endorun)",
+        combined,
+    ):
+        return "route"
+    if re.search(r"\b(marche|rando)", combined):
+        return "marche"
+    return "autre"
+
+
+def _extract_distances(bibs: list[str]) -> list[float]:
+    """Extract distances (in km) from bib/race names."""
+    distances = set()
+    for b in bibs:
+        # Match "10KM", "21.1km", "27K", "45km", "80km"
+        for m in re.finditer(r"(\d+(?:[.,]\d+)?)\s*(?:km|k)\b", b, re.IGNORECASE):
+            distances.add(round(float(m.group(1).replace(",", ".")), 1))
+        # "Marathon" -> 42km, "Semi-Marathon" -> 21km
+        if re.search(r"\bmarathon\b", b, re.IGNORECASE) and not re.search(
+            r"\bsemi", b, re.IGNORECASE
+        ):
+            distances.add(42.0)
+        elif re.search(r"\bsemi", b, re.IGNORECASE):
+            distances.add(21.0)
+    return sorted(distances)
+
+
+def _enrich_race(race: dict) -> dict:
+    """Add race_type and distances fields to a race dict."""
+    bibs = [m.get("bib", "") for m in race.get("members", []) if m.get("bib")]
+    race["race_type"] = _detect_race_type(race.get("name", ""), bibs)
+    race["distances"] = _extract_distances(bibs)
+    return race
+
+
 def save_data(data: dict) -> None:
+    # Enrich races with type and distances before saving
+    for race in data.get("races", []):
+        _enrich_race(race)
+
     # Full version with member names (local only, gitignored)
     DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
     DATA_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
     # Anonymized version for GitHub Pages (no personal data)
+    # race_type and distances are race-level info, not personal data
     public_data = {
         "last_updated": data["last_updated"],
         "races": [
