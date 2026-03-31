@@ -15,6 +15,7 @@ from .base import BaseScraper, Member, RaceResult, matches_club, matches_known_m
 
 BASE_URL = "https://sportips.fr"
 API_URL = "https://inscription.sportips.fr/api/v2/endpoints/public/module/load.php"
+INSCRIPTIONS_URL = "https://inscription.sportips.fr/api/v2/endpoints/public/inscriptions/get.php"
 
 
 class SportipsScraper(BaseScraper):
@@ -59,7 +60,13 @@ class SportipsScraper(BaseScraper):
         return None
 
     def _scrape_api(self, code: str) -> list[Member] | None:
-        """Fetch from the new JSON API."""
+        """Fetch from the new JSON API.
+
+        Two-step process:
+        1. Call load.php?base={CODE} to get the id_module
+        2. Call get.php?id_module={id}&search=TERM to search for members
+        """
+        # Step 1: get id_module from load.php
         try:
             resp = requests.get(f"{API_URL}?base={code}", timeout=10)
             if resp.status_code != 200:
@@ -68,66 +75,146 @@ class SportipsScraper(BaseScraper):
         except Exception:
             return None
 
+        # Extract id_module from response (module.id)
+        id_module = None
+        if isinstance(data, dict):
+            module = data.get("module")
+            if isinstance(module, dict):
+                id_module = module.get("id")
+        if not id_module:
+            return None
+
         members = []
         seen = set()
 
-        # The API response structure varies; look for participant arrays
-        participants = self._find_participants(data)
+        # The Sportips "search" API parameter searches across name fields
+        # but NOT club. For club matching we'd need to paginate all 7000+
+        # participants which is too slow. Instead we search by each known
+        # member's last name (fast, targeted) and validate matches.
 
-        for p in participants:
-            club = ""
-            if isinstance(p, dict):
-                club = p.get("club", p.get("Club", ""))
-                if not club:
-                    # Try nested fields
-                    for key in ("societe", "team", "asso"):
-                        club = p.get(key, "")
-                        if club:
-                            break
-
-            nom = p.get("nom", p.get("Nom", ""))
-            prenom = p.get("prenom", p.get("Prenom", ""))
-            name = f"{prenom} {nom}".strip()
-
-            is_club = club and matches_club(club, self.patterns)
-            is_name = matches_known_member(name, self.known_members)
-            if not is_club and not is_name:
+        # Search by each known member's last name
+        for full_name in self.known_members:
+            parts = full_name.strip().split()
+            if not parts:
                 continue
+            # Use last name for search (first token if UPPERCASE, else last token)
+            last_name = parts[0] if parts[0].isupper() else parts[-1]
 
-            if not name or name in seen:
-                continue
-            seen.add(name)
+            found = self._search_inscriptions(id_module, last_name)
+            for name, bib in found:
+                if name in seen:
+                    continue
+                # Validate: must match a known member OR have a matching club
+                if matches_known_member(name, self.known_members):
+                    members.append(Member(name=name, bib=bib))
+                    seen.add(name)
 
-            course = p.get("course", p.get("parcours", ""))
-            members.append(Member(name=name, bib=course))
+        # Also do a broad club search with a small page size to catch
+        # members not in known_members who filled the club field
+        search_terms = self._get_club_search_terms()
+        for term in search_terms:
+            found = self._search_inscriptions(id_module, term)
+            for name, bib in found:
+                if name not in seen:
+                    members.append(Member(name=name, bib=bib))
+                    seen.add(name)
 
         return members
 
-    def _find_participants(self, data) -> list:
-        """Recursively find participant arrays in the API response."""
-        if isinstance(data, list):
-            # Check if it's a list of participant dicts
-            if data and isinstance(data[0], dict) and ("nom" in data[0] or "Nom" in data[0]):
-                return data
-            # Search nested
-            for item in data:
-                result = self._find_participants(item)
-                if result:
-                    return result
-        elif isinstance(data, dict):
-            # Look for common keys
-            for key in ("participants", "inscrits", "data", "list", "engages", "coureurs"):
-                if key in data:
-                    result = self._find_participants(data[key])
-                    if result:
-                        return result
-            # Try all values
-            for v in data.values():
-                if isinstance(v, (list, dict)):
-                    result = self._find_participants(v)
-                    if result:
-                        return result
-        return []
+    def _get_club_search_terms(self) -> list[str]:
+        """Derive simple search terms from regex club patterns."""
+        terms = []
+        seen = set()
+        for pattern in self.patterns:
+            term = pattern.replace("\\s*", " ").replace("\\s+", " ")
+            term = re.sub(r"[\\^$.*+?()[\]{}|'?]", "", term).strip()
+            if term and term not in seen:
+                terms.append(term)
+                seen.add(term)
+        return terms
+
+    def _search_inscriptions(self, id_module, search_term: str) -> list[tuple[str, str]]:
+        """Search inscriptions API for a given term, handling pagination.
+
+        Returns list of (name, bib) tuples for matching participants.
+        """
+        results = []
+        page = 1
+
+        while True:
+            try:
+                resp = requests.get(
+                    INSCRIPTIONS_URL,
+                    params={
+                        "id_module": id_module,
+                        "search": search_term,
+                        "perPage": 100,
+                        "page": page,
+                    },
+                    timeout=10,
+                )
+                if resp.status_code != 200:
+                    break
+                data = resp.json()
+            except Exception:
+                break
+
+            # Extract participant list from the response
+            participants = []
+            if isinstance(data, dict):
+                participants = data.get("list", data.get("data", data.get("inscriptions", [])))
+                if isinstance(participants, dict):
+                    participants = participants.get("data", [])
+            elif isinstance(data, list):
+                participants = data
+
+            if not participants:
+                break
+
+            for p in participants:
+                if not isinstance(p, dict):
+                    continue
+
+                nom = p.get("nom", p.get("Nom", ""))
+                prenom = p.get("prenom", p.get("Prenom", ""))
+                club = p.get("club", p.get("Club", ""))
+                name = f"{prenom} {nom}".strip()
+
+                if not name:
+                    continue
+
+                # Validate: must match club pattern or be a known member
+                is_club = club and matches_club(club, self.patterns)
+                is_name = matches_known_member(name, self.known_members)
+                if not is_club and not is_name:
+                    continue
+
+                course = p.get("course", p.get("parcours", p.get("epreuve", "")))
+                results.append((name, course))
+
+            # Check if there are more pages
+            total = None
+            if isinstance(data, dict):
+                total = data.get("total", data.get("totalCount"))
+                if total is None:
+                    meta = data.get("meta", {})
+                    if isinstance(meta, dict):
+                        total = meta.get("total")
+
+            if total is not None:
+                try:
+                    if page * 100 >= int(total):
+                        break
+                except (ValueError, TypeError):
+                    pass
+
+            # If we got fewer than perPage results, we're on the last page
+            if len(participants) < 100:
+                break
+
+            page += 1
+
+        return results
 
     def _scrape_html(self, code: str) -> list[Member] | None:
         """Fall back to old HTML system."""
