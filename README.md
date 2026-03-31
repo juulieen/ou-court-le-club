@@ -8,7 +8,7 @@ Carte interactive des courses ou les membres du club **[Run Event 86](https://ww
 
 ## Comment ca marche ?
 
-Un pipeline de scrapers parcourt chaque jour les listes d'inscription de **15 plateformes** de courses a pied en France (et a l'international via UTMB). Il detecte les membres du club via deux methodes :
+Un pipeline de scrapers parcourt chaque jour les listes d'inscription de **19 plateformes** de courses a pied en France et a l'international. Il detecte les membres du club via deux methodes :
 
 1. **Par club** — regex sur le champ "club" des inscriptions (ex: "Run Event 86", "RunEvent", etc.)
 2. **Par nom** — liste de membres connus pour ceux qui n'ont pas rempli le champ club
@@ -34,6 +34,9 @@ Les resultats sont affiches sur une carte MapLibre GL avec les tuiles MapTiler.
 | RunChrono | Decouverte locale (dept 86) -> OnSinscrit |
 | IPITOS | XML .clax via live.ipitos.com |
 | UTMB | Via API Njuko (register-utmb.world) |
+| Sporkrono | Via API Njuko (sporkrono-inscriptions.fr) |
+| Sports107 / SainteLyon | Via API Njuko (sports107.com) |
+| timeto / Marathon de Paris | Via API Njuko (timeto.com) |
 
 ## Stack technique
 
@@ -82,7 +85,7 @@ Plusieurs raisons possibles :
 
 - **La course est passee et le projet n'existait pas encore** — Le scraper ne decouvre que les evenements *a venir*. Les courses passees dont les listes d'inscrits ont ete desactivees sont invisibles. Tu peux les ajouter manuellement dans `config.yml` (section `races`).
 - **Le champ club n'est pas rempli (ou mal rempli)** — Si tu n'as pas mis "Run Event 86" (ou une variante) dans le champ club a l'inscription, le scraper ne te trouvera que si ton nom est dans la liste `known_members` de `config.yml`.
-- **La plateforme n'est pas supportee** — Seules 15 plateformes sont scannees (voir tableau ci-dessus). Si ta course utilise une autre plateforme, elle ne sera pas detectee.
+- **La plateforme n'est pas supportee** — Seules 19 plateformes sont scannees (voir tableau ci-dessus). Si ta course utilise une autre plateforme, elle ne sera pas detectee.
 - **La course est sur HelloAsso** — Les listes de participants HelloAsso sont privees. Les courses HelloAsso doivent etre ajoutees manuellement.
 - **Probleme de geocoding** — La course est peut-etre detectee mais n'a pas pu etre placee sur la carte (coordonnees manquantes).
 
