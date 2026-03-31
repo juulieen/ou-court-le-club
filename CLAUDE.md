@@ -179,3 +179,52 @@ The full pipeline takes several minutes due to the number of platforms and rate 
 - **Geocoding** -- BAN API sometimes matches race names to street names (e.g., "Marathon" → "Rue de Marathon"). Manual `OVERRIDES` dict in `geocoder.py` corrects known errors. Nominatim fallback uses free tier with 1 req/sec rate limit.
 - **No incremental updates** -- each run re-discovers all events nationally. The scrape cache mitigates this but discovery itself still runs every time.
 - **Date handling** -- Klikego dates assume the current year (no year in the source data), which may be incorrect near year boundaries.
+
+## Dev Workflow (Local vs CI)
+
+**Always test locally first** before pushing to CI. Use the cache CLI:
+
+```bash
+# Sync CI cache to local
+python -m scrapers.cache_cli sync pull
+
+# Clear specific entries and re-test
+python -m scrapers.cache_cli clear -u "marathon-paris"
+python -m scrapers.main
+
+# When satisfied, push to CI
+python -m scrapers.cache_cli ci run --fresh
+```
+
+Key commands:
+- `python -m scrapers.cache_cli stats` — overview of local cache
+- `python -m scrapers.cache_cli list -m` — races with members
+- `python -m scrapers.cache_cli clear -p <platform>` — clear platform cache
+- `python -m scrapers.cache_cli sync diff` — compare local vs CI
+- `python -m scrapers.cache_cli ci run --fresh` — clear CI cache + trigger run
+
+**Important:** Local and CI caches are independent. Code-level fixes (OVERRIDES in geocoder.py, _SEED_SLUGS in njuko.py) propagate automatically. Cache-level fixes (scrape_cache entries) do NOT sync — use `ci run --fresh` to rebuild CI cache.
+
+## Njuko White-Labels
+
+Several platforms are Njuko white-labels sharing the same API structure. Supported via `_API_BASES` dict and `_extract_slug()` in `njuko.py`:
+
+| Domain | API Base | Events |
+|---|---|---|
+| `njuko.com` (default) | `front-api.njuko.com` | Most races |
+| `register-utmb.world` | `front-api.njuko.com` | UTMB World Series |
+| `sporkrono-inscriptions.fr` | `front-api.sporkrono-inscriptions.fr` | L'Épopée Royale |
+| `sports107.com` | `front-api.sports107.com` | SaintéLyon |
+| `timeto.com` | `front-api.timeto.com` | Marathon de Paris (ASO) |
+
+To add a new white-label: add domain to `_API_BASES`, `_extract_slug()`, and optionally `_SEED_SLUGS`.
+
+**Large events (50k+):** Bulk `_search/{}` times out. NjukoScraper falls back to per-name search of known members. This means club-only matches are missed on very large events.
+
+## Geocoding Gotchas
+
+- **BAN API matches race names to street names** (e.g., "marathon" → "Rue de Marathon" in Rennes). Use `OVERRIDES` dict in `geocoder.py` for manual corrections.
+- **Geocoding pipeline:** OVERRIDES > geocache > BAN API > Nominatim. OVERRIDES are in code and always win.
+- **Race name extraction:** `_extract_location_from_name()` in `main.py` strips event-type prefixes/suffixes to extract city names.
+- **Scrape cache does NOT store lat/lng** — geocoding is always redone from geocache to allow corrections.
+- **Cache bust:** Increment `?v=N` in `docs/index.html` CSS/JS links after frontend changes.
