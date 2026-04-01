@@ -15,28 +15,56 @@ Un pipeline de scrapers parcourt chaque jour les listes d'inscription de **19 pl
 
 Les resultats sont affiches sur une carte MapLibre GL avec les tuiles MapTiler.
 
-## Plateformes scannees
+## Plateformes supportees (19)
 
-| Plateforme | Methode |
+### Plateformes principales (14 scrapers)
+
+| Plateforme | Courses typiques | Methode |
+|---|---|---|
+| **Klikego** | Trail des Chateaux Chauvigny, Trail de Pons | AJAX POST + recherche par club |
+| **Njuko** | Marathon Poitiers, EcoTrail, Veni Vici | API REST + cache de slugs |
+| **OnSinscrit** | Techno Trail, Foulees du Maraisthon | HTML scraping |
+| **Protiming** | Trail des Chateaux de la Loire | Filtre club en URL |
+| **Chronometrage.com** | Corrida, courses regionales | Next.js JSON |
+| **Chrono-Start** | Trail de la Cascade d'Ars, Course d'Enfert | HTML + cloudscraper (Cloudflare) |
+| **3wsport** | Courses departementales | HTML scraping |
+| **Espace-Competition** | Courses regionales | HTML pagine |
+| **Sportips** | Maxi-Race Annecy | API JSON recherche par nom |
+| **TimePulse** | La Demoniak, Foulee des Geants | HTML scraping |
+| **Endurance Chrono** | Courses Sud-Ouest | HTML tri par club |
+| **Listino** | Courses regionales | HTML pagine |
+| **IPITOS** | Semi Orvault, Foulees Angouleme, Defi Colline | XML .clax via live.ipitos.com |
+| **RunChrono** | Courses locales dept 86 | Decouverte -> OnSinscrit |
+
+### White-labels Njuko (5 plateformes via la meme API)
+
+Plusieurs plateformes utilisent l'API Njuko sous le capot. Le scraper Njuko les gere toutes :
+
+| Plateforme | Domaine | Courses typiques |
+|---|---|---|
+| **Njuko** (defaut) | njuko.com | Marathon Poitiers, EcoTrail Paris |
+| **UTMB** | register-utmb.world | Nice by UTMB, Trail Alsace |
+| **Sporkrono** | sporkrono-inscriptions.fr | L'Epopee Royale |
+| **Sports107** | sports107.com | SainteLyon |
+| **timeto** | timeto.com | Marathon de Paris (ASO) |
+
+### Plateforme decouverte-seulement
+
+| Plateforme | Raison |
 |---|---|
-| Klikego | AJAX POST + recherche par club |
-| Njuko | API REST + cache de slugs |
-| OnSinscrit | HTML scraping |
-| Protiming | Filtre club en URL |
-| Chronometrage.com | Next.js JSON |
-| Chrono-Start | HTML + cloudscraper (Cloudflare) |
-| 3wsport | HTML scraping par departement |
-| Espace-Competition | HTML pagine |
-| Sportips | API JSON / HTML ancien format |
-| TimePulse | HTML scraping |
-| Endurance Chrono | HTML tri par club |
-| Listino | HTML pagine |
-| RunChrono | Decouverte locale (dept 86) -> OnSinscrit |
-| IPITOS | XML .clax via live.ipitos.com |
-| UTMB | Via API Njuko (register-utmb.world) |
-| Sporkrono | Via API Njuko (sporkrono-inscriptions.fr) |
-| Sports107 / SainteLyon | Via API Njuko (sports107.com) |
-| timeto / Marathon de Paris | Via API Njuko (timeto.com) |
+| **HelloAsso** | Les listes de participants sont **privees par design**. Les courses HelloAsso (ex: Tic Tac Trail) doivent etre ajoutees manuellement dans `config.yml`. |
+
+## Plateformes non supportees
+
+Certaines courses utilisent des plateformes que le projet ne peut pas scanner :
+
+| Plateforme | Exemple de course | Raison |
+|---|---|---|
+| **Inscription sur place** | Zombi'run (Chatellerault) | Pas d'inscription en ligne. Inscription le jour J uniquement. |
+| **Site propre (custom)** | Semi-marathon Niort (coulee verte) | L'organisateur utilise son propre site (semi-marathon-niort.com) sans liste publique. Cependant, les resultats apparaissent sur IPITOS apres la course. |
+| **Plateforme inconnue** | Trail Haut Val de Sevres | Inscription pas encore ouverte, plateforme non identifiee. |
+
+> **Note :** Si ta course utilise une plateforme non supportee, tu peux l'ajouter manuellement dans `config.yml` (voir FAQ).
 
 ## Stack technique
 
