@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-03T07:15:52.224867+00:00",
+  "last_updated": "2026-04-04T06:29:20.258746+00:00",
   "races": [
     {
       "id": "klikego-1337120465909-38",
@@ -11,27 +11,11 @@
       "lat": 43.929864,
       "lng": 2.149681,
       "member_count": 2,
-      "last_scraped": "2026-04-03T06:30:56.058695+00:00",
+      "last_scraped": "2026-04-04T06:26:15.803400+00:00",
       "race_type": "route",
       "distances": [
         21.0,
         42.0
-      ]
-    },
-    {
-      "id": "klikego-1761801599707-1",
-      "name": "Traversée de la Baie",
-      "date": "2026-05-01",
-      "location": "St brieuc, 22",
-      "platform": "klikego",
-      "url": "https://www.klikego.com/inscrits/traversee-de-la-baie-2026/1761801599707-1",
-      "lat": 48.508238,
-      "lng": -2.766074,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:31:09.412223+00:00",
-      "race_type": "trail",
-      "distances": [
-        15.0
       ]
     },
     {
@@ -44,25 +28,9 @@
       "lat": 48.414964,
       "lng": -3.973223,
       "member_count": 1,
-      "last_scraped": "2026-04-03T06:31:11.612817+00:00",
+      "last_scraped": "2026-04-04T06:26:16.466831+00:00",
       "race_type": "trail",
       "distances": []
-    },
-    {
-      "id": "klikego-1701485071110-3",
-      "name": "Trail de Guerledan",
-      "date": "2026-05-23",
-      "location": "St gelven, 22",
-      "platform": "klikego",
-      "url": "https://www.klikego.com/inscrits/trail-de-guerledan-2026/1701485071110-3",
-      "lat": 48.231752,
-      "lng": -3.065038,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:31:42.323745+00:00",
-      "race_type": "trail",
-      "distances": [
-        26.0
-      ]
     },
     {
       "id": "klikego-1390877940915-19",
@@ -74,57 +42,40 @@
       "lat": 47.467471,
       "lng": -0.561615,
       "member_count": 1,
-      "last_scraped": "2026-04-03T06:32:09.215009+00:00",
+      "last_scraped": "2026-04-04T06:26:17.142088+00:00",
       "race_type": "trail",
       "distances": []
     },
     {
-      "id": "njuko-marathon-de-la-mer---ed20261756353391200",
-      "name": "Marathon de la Mer - Ed.2026",
+      "id": "klikego-1761801599707-1",
+      "name": "Traversée de la Baie",
       "date": "2026-05-01",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/marathon-de-la-mer---ed20261756353391200",
-      "lat": 50.73,
-      "lng": 1.61,
+      "location": "St brieuc, 22",
+      "platform": "klikego",
+      "url": "https://www.klikego.com/inscrits/traversee-de-la-baie-2026/1761801599707-1",
+      "lat": 48.508238,
+      "lng": -2.766074,
       "member_count": 1,
-      "last_scraped": "2026-04-03T06:44:47.666528+00:00",
-      "race_type": "route",
+      "last_scraped": "2026-04-04T06:26:17.993334+00:00",
+      "race_type": "trail",
       "distances": [
-        21.0
+        15.0
       ]
     },
     {
-      "id": "njuko-lavenivici-2026",
-      "name": "LA VENI VICI 2026",
-      "date": "2026-11-06",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/lavenivici-2026",
-      "lat": 45.000246,
-      "lng": -1.098815,
-      "member_count": 3,
-      "last_scraped": "2026-04-03T06:45:45.873371+00:00",
-      "race_type": "route",
-      "distances": [
-        52.0,
-        87.0
-      ]
-    },
-    {
-      "id": "njuko-epopee-royale-2026",
-      "name": "EPOPEE ROYALE 2026",
-      "date": "2026-11-20",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/epopee-royale-2026",
-      "lat": 42.451116,
-      "lng": 9.514401,
+      "id": "klikego-1701485071110-3",
+      "name": "Trail de Guerledan",
+      "date": "2026-05-23",
+      "location": "St gelven, 22",
+      "platform": "klikego",
+      "url": "https://www.klikego.com/inscrits/trail-de-guerledan-2026/1701485071110-3",
+      "lat": 48.231752,
+      "lng": -3.065038,
       "member_count": 1,
-      "last_scraped": "2026-04-03T06:46:42.200331+00:00",
-      "race_type": "route",
+      "last_scraped": "2026-04-04T06:26:20.773803+00:00",
+      "race_type": "trail",
       "distances": [
-        13.0
+        26.0
       ]
     },
     {
@@ -137,40 +88,25 @@
       "lat": 45.66,
       "lng": 0.2,
       "member_count": 1,
-      "last_scraped": "2026-04-03T06:46:59.358729+00:00",
+      "last_scraped": "2026-04-04T06:26:23.382504+00:00",
       "race_type": "autre",
       "distances": []
     },
     {
-      "id": "njuko-asml-marathon-eindhoven-20241699532048404",
-      "name": "ASML Marathon Eindhoven 2024",
-      "date": "2024-10-12",
+      "id": "njuko-lavenivici-2026",
+      "name": "LA VENI VICI 2026",
+      "date": "2026-11-06",
       "location": "",
       "platform": "njuko",
-      "url": "https://in.njuko.com/asml-marathon-eindhoven-20241699532048404",
-      "lat": 45.340727,
-      "lng": 5.343488,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:47:52.679308+00:00",
+      "url": "https://in.njuko.com/lavenivici-2026",
+      "lat": 45.000246,
+      "lng": -1.098815,
+      "member_count": 3,
+      "last_scraped": "2026-04-04T06:26:25.542916+00:00",
       "race_type": "route",
       "distances": [
-        42.0
-      ]
-    },
-    {
-      "id": "njuko-e-run63-la-course-des-peres-noel-de-st-benoit-le-20-decembre-2025",
-      "name": "La Course des Pères Noel de St Benoit le 20 décembre 2025",
-      "date": "2025-12-19",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/e-run63-la-course-des-peres-noel-de-st-benoit-le-20-decembre-2025",
-      "lat": 46.55,
-      "lng": 0.35,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:48:51.844086+00:00",
-      "race_type": "route",
-      "distances": [
-        7.5
+        52.0,
+        87.0
       ]
     },
     {
@@ -183,234 +119,10 @@
       "lat": 49.099162,
       "lng": 1.475943,
       "member_count": 1,
-      "last_scraped": "2026-04-03T06:49:01.418223+00:00",
+      "last_scraped": "2026-04-04T06:26:26.603920+00:00",
       "race_type": "route",
       "distances": [
         42.0
-      ]
-    },
-    {
-      "id": "njuko-le-belier-trail-rando-2025",
-      "name": " Le Bélier - Trail & Rando 2025",
-      "date": "2025-08-21",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/le-belier-trail-rando-2025",
-      "lat": null,
-      "lng": null,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:49:09.692445+00:00",
-      "race_type": "trail",
-      "distances": [
-        42.0
-      ]
-    },
-    {
-      "id": "njuko-marathon-poitiers-futuroscope-2025",
-      "name": "Marathon Poitiers-Futuroscope 2025",
-      "date": "2025-04-12",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/marathon-poitiers-futuroscope-2025",
-      "lat": 46.66,
-      "lng": 0.37,
-      "member_count": 11,
-      "last_scraped": "2026-04-03T06:49:12.917620+00:00",
-      "race_type": "route",
-      "distances": [
-        10.0,
-        21.0,
-        42.0
-      ]
-    },
-    {
-      "id": "njuko-laroutedulouvre2026",
-      "name": "La Route du Louvre - Dimanche 10 mai 2026",
-      "date": "2026-05-09",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/laroutedulouvre2026",
-      "lat": 50.44,
-      "lng": 2.82,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:50:02.120493+00:00",
-      "race_type": "route",
-      "distances": [
-        23.0
-      ]
-    },
-    {
-      "id": "njuko-course-de-la-jonquille-contre-le-cancer",
-      "name": "COURSE DE LA JONQUILLE CONTRE LE CANCER 2026",
-      "date": "2026-03-09",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/course-de-la-jonquille-contre-le-cancer",
-      "lat": 46.529557,
-      "lng": 0.260907,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:50:07.103731+00:00",
-      "race_type": "route",
-      "distances": []
-    },
-    {
-      "id": "njuko-asml-marathon-eindhoven-20231682333544914",
-      "name": "asml-marathon-eindhoven-20231682333544914",
-      "date": "2023-10-07",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/asml-marathon-eindhoven-20231682333544914",
-      "lat": null,
-      "lng": null,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:50:08.555353+00:00",
-      "race_type": "route",
-      "distances": [
-        42.0
-      ]
-    },
-    {
-      "id": "njuko-abalone-marathon-de-nantes-20251721120711923",
-      "name": "Abalone Marathon de Nantes 2025",
-      "date": "2025-04-25",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/abalone-marathon-de-nantes-20251721120711923",
-      "lat": 47.24,
-      "lng": -1.56,
-      "member_count": 2,
-      "last_scraped": "2026-04-03T06:50:52.830960+00:00",
-      "race_type": "route",
-      "distances": [
-        10.0,
-        21.0
-      ]
-    },
-    {
-      "id": "njuko-laroutedulouvre2025",
-      "name": "La Route du Louvre",
-      "date": "2025-05-10",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/laroutedulouvre2025",
-      "lat": 50.44,
-      "lng": 2.82,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:51:53.353256+00:00",
-      "race_type": "route",
-      "distances": [
-        14.0
-      ]
-    },
-    {
-      "id": "njuko-marathon-10-et-20-km-de-tours-1730796175287",
-      "name": "Marathon, 10 et 20 km de Tours - 2025",
-      "date": "2025-09-27",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/marathon-10-et-20-km-de-tours-1730796175287",
-      "lat": 43.326231,
-      "lng": 5.411429,
-      "member_count": 3,
-      "last_scraped": "2026-04-03T06:52:03.876220+00:00",
-      "race_type": "route",
-      "distances": [
-        10.0,
-        42.0
-      ]
-    },
-    {
-      "id": "njuko-half-on-the-head-2026",
-      "name": "Half on the Head 2026",
-      "date": "2026-06-12",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/half-on-the-head-2026",
-      "lat": null,
-      "lng": null,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:52:36.680296+00:00",
-      "race_type": "route",
-      "distances": [
-        42.0
-      ]
-    },
-    {
-      "id": "njuko-marseille-cassis-20241705933170021",
-      "name": "MARSEILLE-CASSIS 2024",
-      "date": "2024-10-26",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/marseille-cassis-20241705933170021",
-      "lat": 43.279615,
-      "lng": 5.389556,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:52:40.376322+00:00",
-      "race_type": "autre",
-      "distances": []
-    },
-    {
-      "id": "njuko-schneider-electric-marathon-de-paris-2026",
-      "name": "Schneider Electric Marathon de Paris 2026",
-      "date": "2026-04-11",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/schneider-electric-marathon-de-paris-2026",
-      "lat": 48.898717,
-      "lng": 2.338825,
-      "member_count": 4,
-      "last_scraped": "2026-04-03T06:52:44.712170+00:00",
-      "race_type": "route",
-      "distances": [
-        42.0
-      ]
-    },
-    {
-      "id": "njuko-marathon-international-cote-damour-amarris-20251736435041089",
-      "name": "Marathon International Côte d'Amour Amarris 2025",
-      "date": "2025-11-07",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/marathon-international-cote-damour-amarris-20251736435041089",
-      "lat": null,
-      "lng": null,
-      "member_count": 2,
-      "last_scraped": "2026-04-03T06:53:57.798694+00:00",
-      "race_type": "route",
-      "distances": [
-        42.0
-      ]
-    },
-    {
-      "id": "njuko-corrida-chateau-gontier1759580064975",
-      "name": "Corrida Chateau Gontier",
-      "date": "2025-12-27",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/corrida-chateau-gontier1759580064975",
-      "lat": 47.763979,
-      "lng": 0.39835,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:54:06.394628+00:00",
-      "race_type": "route",
-      "distances": [
-        5.0
-      ]
-    },
-    {
-      "id": "njuko-la-foulee-des-geants-20231668419821923",
-      "name": "La Foulée des Géants 2023",
-      "date": "2023-10-06",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/la-foulee-des-geants-20231668419821923",
-      "lat": 48.938794,
-      "lng": 2.8802,
-      "member_count": 2,
-      "last_scraped": "2026-04-03T06:54:20.670149+00:00",
-      "race_type": "route",
-      "distances": [
-        19.0
       ]
     },
     {
@@ -423,59 +135,75 @@
       "lat": 46.327975,
       "lng": -0.460665,
       "member_count": 3,
-      "last_scraped": "2026-04-03T06:54:33.733829+00:00",
+      "last_scraped": "2026-04-04T06:26:26.892366+00:00",
       "race_type": "route",
       "distances": [
         10.0
       ]
     },
     {
-      "id": "njuko-ecotrail-paris-2026",
-      "name": "Salomon EcoTrail Paris 2026",
-      "date": "2026-03-20",
+      "id": "njuko-e-run63-le-relais-des-garszelles-le-12-janvier-20251729093323413",
+      "name": "LE RELAIS DES GARS'Z'ELLES ",
+      "date": "2025-01-11",
       "location": "",
       "platform": "njuko",
-      "url": "https://in.njuko.com/ecotrail-paris-2026",
-      "lat": 48.867492,
-      "lng": 2.353961,
+      "url": "https://in.njuko.com/e-run63-le-relais-des-garszelles-le-12-janvier-20251729093323413",
+      "lat": 49.09668,
+      "lng": -0.968601,
       "member_count": 2,
-      "last_scraped": "2026-04-03T06:55:07.670693+00:00",
-      "race_type": "trail",
+      "last_scraped": "2026-04-04T06:26:27.808550+00:00",
+      "race_type": "route",
       "distances": [
-        45.0
+        20.0
       ]
     },
     {
-      "id": "njuko-abalone-marathon-de-nantes-20261747744270005",
-      "name": "Abalone Marathon de Nantes 2026",
-      "date": "2026-04-24",
+      "id": "njuko-course-de-la-paix-2025",
+      "name": "Course de la Paix 2025",
+      "date": "2025-05-07",
       "location": "",
       "platform": "njuko",
-      "url": "https://in.njuko.com/abalone-marathon-de-nantes-20261747744270005",
+      "url": "https://in.njuko.com/course-de-la-paix-2025",
+      "lat": 44.090412,
+      "lng": 6.854308,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:26:29.361529+00:00",
+      "race_type": "route",
+      "distances": [
+        10.0
+      ]
+    },
+    {
+      "id": "njuko-les-foulees-de-la-folie-2025",
+      "name": "LES FOULÉES DE LA FOLIE 2025",
+      "date": "2025-10-04",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/les-foulees-de-la-folie-2025",
+      "lat": 48.938794,
+      "lng": 2.8802,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:26:30.639342+00:00",
+      "race_type": "route",
+      "distances": [
+        10.0
+      ]
+    },
+    {
+      "id": "njuko-saumur-marathon-de-la-loire-2026",
+      "name": "Saumur Marathon de la Loire 2026",
+      "date": "2026-05-09",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/saumur-marathon-de-la-loire-2026",
       "lat": 48.083317,
       "lng": -1.65586,
-      "member_count": 3,
-      "last_scraped": "2026-04-03T06:55:10.049779+00:00",
+      "member_count": 7,
+      "last_scraped": "2026-04-04T06:26:33.591469+00:00",
       "race_type": "route",
       "distances": [
-        10.0,
+        21.0,
         42.0
-      ]
-    },
-    {
-      "id": "njuko-abalone-marathon-de-nantes-20241689843497239",
-      "name": "Abalone Marathon de Nantes 2024",
-      "date": "2024-04-19",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/abalone-marathon-de-nantes-20241689843497239",
-      "lat": 47.24,
-      "lng": -1.56,
-      "member_count": 2,
-      "last_scraped": "2026-04-03T06:55:48.480851+00:00",
-      "race_type": "route",
-      "distances": [
-        10.0
       ]
     },
     {
@@ -488,107 +216,28 @@
       "lat": 49.184316,
       "lng": -0.37193,
       "member_count": 1,
-      "last_scraped": "2026-04-03T06:56:07.174726+00:00",
+      "last_scraped": "2026-04-04T06:26:37.259970+00:00",
       "race_type": "trail",
       "distances": [
         24.0
       ]
     },
     {
-      "id": "njuko-la-foulee-des-geants-20261771423573439",
-      "name": "LA FOULÉE DES GÉANTS 2026",
-      "date": "2026-09-25",
+      "id": "njuko-marathon-poitiers-futuroscope-2025",
+      "name": "Marathon Poitiers-Futuroscope 2025",
+      "date": "2025-04-12",
       "location": "",
       "platform": "njuko",
-      "url": "https://in.njuko.com/la-foulee-des-geants-20261771423573439",
-      "lat": 48.938794,
-      "lng": 2.8802,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:57:05.040932+00:00",
-      "race_type": "route",
-      "distances": [
-        20.0
-      ]
-    },
-    {
-      "id": "njuko-la-foulee-des-geants-20251737453669622",
-      "name": "La Foulée des Géants 2025",
-      "date": "2025-09-26",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/la-foulee-des-geants-20251737453669622",
-      "lat": 48.938794,
-      "lng": 2.8802,
-      "member_count": 6,
-      "last_scraped": "2026-04-03T06:57:06.513773+00:00",
+      "url": "https://in.njuko.com/marathon-poitiers-futuroscope-2025",
+      "lat": 46.66,
+      "lng": 0.37,
+      "member_count": 11,
+      "last_scraped": "2026-04-04T06:26:39.319880+00:00",
       "race_type": "route",
       "distances": [
         10.0,
-        20.0
-      ]
-    },
-    {
-      "id": "njuko-montpellier-run-festival-2025",
-      "name": "MONTPELLIER RUN FESTIVAL 2025",
-      "date": "2025-04-11",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/montpellier-run-festival-2025",
-      "lat": 43.610476,
-      "lng": 3.87048,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:57:16.177727+00:00",
-      "race_type": "route",
-      "distances": [
-        21.0
-      ]
-    },
-    {
-      "id": "njuko-abalone-marathon-de-nantes-20231662716070298",
-      "name": "Abalone Marathon de Nantes 2023",
-      "date": "2023-04-22",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/abalone-marathon-de-nantes-20231662716070298",
-      "lat": 47.24,
-      "lng": -1.56,
-      "member_count": 3,
-      "last_scraped": "2026-04-03T06:57:20.941611+00:00",
-      "race_type": "route",
-      "distances": [
-        21.0
-      ]
-    },
-    {
-      "id": "njuko-fouleesg2a",
-      "name": "Schneider Electric Foulées Angoulême",
-      "date": "2026-03-27",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/fouleesg2a",
-      "lat": 45.644105,
-      "lng": 0.148008,
-      "member_count": 5,
-      "last_scraped": "2026-04-03T06:57:36.198326+00:00",
-      "race_type": "route",
-      "distances": [
-        10.0
-      ]
-    },
-    {
-      "id": "njuko-defi-de-la-colline",
-      "name": "Défi de la Colline",
-      "date": "2026-01-02",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/defi-de-la-colline",
-      "lat": 47.185788,
-      "lng": -0.870769,
-      "member_count": 2,
-      "last_scraped": "2026-04-03T06:57:59.564235+00:00",
-      "race_type": "route",
-      "distances": [
-        11.0
+        21.0,
+        42.0
       ]
     },
     {
@@ -601,37 +250,102 @@
       "lat": null,
       "lng": null,
       "member_count": 1,
-      "last_scraped": "2026-04-03T06:58:32.205573+00:00",
+      "last_scraped": "2026-04-04T06:26:44.691255+00:00",
       "race_type": "route",
       "distances": [
         21.0
       ]
     },
     {
-      "id": "njuko-10-miles-des-baines-20261767969394414",
-      "name": "10 MILES DES BAINES 2026",
-      "date": "2026-04-04",
+      "id": "njuko-le-belier-trail-rando-2025",
+      "name": " Le Bélier - Trail & Rando 2025",
+      "date": "2025-08-21",
       "location": "",
       "platform": "njuko",
-      "url": "https://in.njuko.com/10-miles-des-baines-20261767969394414",
-      "lat": 43.64,
-      "lng": -1.42,
+      "url": "https://in.njuko.com/le-belier-trail-rando-2025",
+      "lat": null,
+      "lng": null,
       "member_count": 1,
-      "last_scraped": "2026-04-03T06:58:46.946101+00:00",
-      "race_type": "route",
+      "last_scraped": "2026-04-04T06:26:45.670790+00:00",
+      "race_type": "trail",
+      "distances": [
+        42.0
+      ]
+    },
+    {
+      "id": "njuko-menzis-4-mijl-van-groningen-20231680008576088",
+      "name": "Menzis 4 Mijl van Groningen 2023",
+      "date": "2023-10-07",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/menzis-4-mijl-van-groningen-20231680008576088",
+      "lat": null,
+      "lng": null,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:26:53.426412+00:00",
+      "race_type": "autre",
       "distances": []
     },
     {
-      "id": "njuko-les-foulees-de-la-folie-2025",
-      "name": "LES FOULÉES DE LA FOLIE 2025",
-      "date": "2025-10-04",
+      "id": "njuko-la-foulee-des-geants-20241702305550398",
+      "name": "La Foulée des Géants 2024",
+      "date": "2024-10-04",
       "location": "",
       "platform": "njuko",
-      "url": "https://in.njuko.com/les-foulees-de-la-folie-2025",
+      "url": "https://in.njuko.com/la-foulee-des-geants-20241702305550398",
       "lat": 48.938794,
       "lng": 2.8802,
+      "member_count": 4,
+      "last_scraped": "2026-04-04T06:26:55.101248+00:00",
+      "race_type": "route",
+      "distances": [
+        10.0,
+        20.0
+      ]
+    },
+    {
+      "id": "njuko-marathon-de-la-mer---ed20261756353391200",
+      "name": "Marathon de la Mer - Ed.2026",
+      "date": "2026-05-01",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/marathon-de-la-mer---ed20261756353391200",
+      "lat": 50.73,
+      "lng": 1.61,
       "member_count": 1,
-      "last_scraped": "2026-04-03T06:58:48.498444+00:00",
+      "last_scraped": "2026-04-04T06:27:00.569943+00:00",
+      "race_type": "route",
+      "distances": [
+        21.0
+      ]
+    },
+    {
+      "id": "njuko-endorun-20251751641421892",
+      "name": "ENDORUN PARIS 2025",
+      "date": "2025-11-15",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/endorun-20251751641421892",
+      "lat": 48.85,
+      "lng": 2.41,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:27:02.678039+00:00",
+      "race_type": "route",
+      "distances": [
+        10.0
+      ]
+    },
+    {
+      "id": "njuko-la-duchesse-20221653034248467",
+      "name": "La Duchesse 2022",
+      "date": "2022-09-30",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/la-duchesse-20221653034248467",
+      "lat": 48.757921,
+      "lng": 5.752917,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:27:04.920398+00:00",
       "race_type": "route",
       "distances": [
         10.0
@@ -647,202 +361,59 @@
       "lat": 48.396438,
       "lng": -1.958765,
       "member_count": 1,
-      "last_scraped": "2026-04-03T06:59:46.968431+00:00",
+      "last_scraped": "2026-04-04T06:27:06.391013+00:00",
       "race_type": "route",
       "distances": [
         19.0
       ]
     },
     {
-      "id": "njuko-la-duchesse-20221653034248467",
-      "name": "La Duchesse 2022",
-      "date": "2022-09-30",
+      "id": "njuko-montpellier-run-festival-2025",
+      "name": "MONTPELLIER RUN FESTIVAL 2025",
+      "date": "2025-04-11",
       "location": "",
       "platform": "njuko",
-      "url": "https://in.njuko.com/la-duchesse-20221653034248467",
-      "lat": 48.757921,
-      "lng": 5.752917,
+      "url": "https://in.njuko.com/montpellier-run-festival-2025",
+      "lat": 43.610476,
+      "lng": 3.87048,
       "member_count": 1,
-      "last_scraped": "2026-04-03T06:59:49.523730+00:00",
-      "race_type": "route",
-      "distances": [
-        10.0
-      ]
-    },
-    {
-      "id": "njuko-les-foulees-du-saumur-champigny1746461940019",
-      "name": "Les Foulées du Saumur Champigny",
-      "date": "2025-09-13",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/les-foulees-du-saumur-champigny1746461940019",
-      "lat": 47.249144,
-      "lng": -0.062228,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:59:52.510730+00:00",
-      "race_type": "route",
-      "distances": [
-        9.0
-      ]
-    },
-    {
-      "id": "njuko-endorun-20251751641421892",
-      "name": "ENDORUN PARIS 2025",
-      "date": "2025-11-15",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/endorun-20251751641421892",
-      "lat": 48.85,
-      "lng": 2.41,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T06:59:52.765714+00:00",
-      "race_type": "route",
-      "distances": [
-        10.0
-      ]
-    },
-    {
-      "id": "njuko-la-foulee-des-geants-20241702305550398",
-      "name": "La Foulée des Géants 2024",
-      "date": "2024-10-04",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/la-foulee-des-geants-20241702305550398",
-      "lat": 48.938794,
-      "lng": 2.8802,
-      "member_count": 4,
-      "last_scraped": "2026-04-03T07:00:14.071927+00:00",
-      "race_type": "route",
-      "distances": [
-        10.0,
-        20.0
-      ]
-    },
-    {
-      "id": "njuko-marathondelille2026",
-      "name": "Marathon de Lille - Dimanche 25 octobre 2026",
-      "date": "2026-10-24",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/marathondelille2026",
-      "lat": 48.706285,
-      "lng": 6.169492,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:00:28.641428+00:00",
-      "race_type": "route",
-      "distances": [
-        42.0
-      ]
-    },
-    {
-      "id": "njuko-20km-de-maroilles-2026",
-      "name": "20km de Maroilles 2026",
-      "date": "2026-04-30",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/20km-de-maroilles-2026",
-      "lat": 50.115193,
-      "lng": 3.798258,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:00:33.944390+00:00",
-      "race_type": "route",
-      "distances": [
-        20.0
-      ]
-    },
-    {
-      "id": "njuko-marathon-poitiers-futuroscope-20261749544909462",
-      "name": "Marathon Poitiers-Futuroscope 2026",
-      "date": "2026-04-11",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/marathon-poitiers-futuroscope-20261749544909462",
-      "lat": 46.66,
-      "lng": 0.37,
-      "member_count": 13,
-      "last_scraped": "2026-04-03T07:00:48.865897+00:00",
-      "race_type": "route",
-      "distances": [
-        10.0,
-        21.0,
-        42.0
-      ]
-    },
-    {
-      "id": "njuko-course-de-la-paix-2025",
-      "name": "Course de la Paix 2025",
-      "date": "2025-05-07",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/course-de-la-paix-2025",
-      "lat": 44.090412,
-      "lng": 6.854308,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:00:49.749932+00:00",
-      "race_type": "route",
-      "distances": [
-        10.0
-      ]
-    },
-    {
-      "id": "njuko-marathon-international-de-la-cote-damour-amarris-20261765967676928",
-      "name": "Marathon International de la Côte d'Amour Amarris 2026",
-      "date": "2026-11-06",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/marathon-international-de-la-cote-damour-amarris-20261765967676928",
-      "lat": null,
-      "lng": null,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:01:10.459768+00:00",
+      "last_scraped": "2026-04-04T06:27:10.262941+00:00",
       "race_type": "route",
       "distances": [
         21.0
       ]
     },
     {
-      "id": "njuko-la-course-des-cretes-20261763566398100",
-      "name": "LA COURSE DES CRETES 2026",
-      "date": "2026-07-02",
+      "id": "njuko-marathon-10-et-20-km-de-tours-1730796175287",
+      "name": "Marathon, 10 et 20 km de Tours - 2025",
+      "date": "2025-09-27",
       "location": "",
       "platform": "njuko",
-      "url": "https://in.njuko.com/la-course-des-cretes-20261763566398100",
-      "lat": 43.34,
-      "lng": -1.45,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:01:19.483527+00:00",
-      "race_type": "route",
-      "distances": []
-    },
-    {
-      "id": "njuko-e-run63-le-relais-des-garszelles-le-12-janvier-20251729093323413",
-      "name": "LE RELAIS DES GARS'Z'ELLES ",
-      "date": "2025-01-11",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/e-run63-le-relais-des-garszelles-le-12-janvier-20251729093323413",
-      "lat": 49.09668,
-      "lng": -0.968601,
-      "member_count": 2,
-      "last_scraped": "2026-04-03T07:02:15.615069+00:00",
+      "url": "https://in.njuko.com/marathon-10-et-20-km-de-tours-1730796175287",
+      "lat": 43.326231,
+      "lng": 5.411429,
+      "member_count": 3,
+      "last_scraped": "2026-04-04T06:27:12.837746+00:00",
       "race_type": "route",
       "distances": [
-        20.0
+        10.0,
+        42.0
       ]
     },
     {
-      "id": "njuko-la-course-du-bien-public-2023",
-      "name": "La Course du Bien Public",
-      "date": "2023-09-08",
+      "id": "njuko-la-foulee-des-geants-20251737453669622",
+      "name": "La Foulée des Géants 2025",
+      "date": "2025-09-26",
       "location": "",
       "platform": "njuko",
-      "url": "https://in.njuko.com/la-course-du-bien-public-2023",
-      "lat": 48.643945,
-      "lng": 2.276987,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:02:36.553518+00:00",
+      "url": "https://in.njuko.com/la-foulee-des-geants-20251737453669622",
+      "lat": 48.938794,
+      "lng": 2.8802,
+      "member_count": 6,
+      "last_scraped": "2026-04-04T06:27:19.995012+00:00",
       "race_type": "route",
       "distances": [
+        10.0,
         20.0
       ]
     },
@@ -856,10 +427,106 @@
       "lat": 45.340727,
       "lng": 5.343488,
       "member_count": 1,
-      "last_scraped": "2026-04-03T07:03:03.906523+00:00",
+      "last_scraped": "2026-04-04T06:27:21.606182+00:00",
       "race_type": "route",
       "distances": [
         42.0
+      ]
+    },
+    {
+      "id": "njuko-la-foulee-des-geants-20261771423573439",
+      "name": "LA FOULÉE DES GÉANTS 2026",
+      "date": "2026-09-25",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/la-foulee-des-geants-20261771423573439",
+      "lat": 48.938794,
+      "lng": 2.8802,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:27:22.317758+00:00",
+      "race_type": "route",
+      "distances": [
+        20.0
+      ]
+    },
+    {
+      "id": "njuko-marathon-10-20-km-tours-24",
+      "name": "MARATHON, 10 ET 20 KM DE TOURS - 2024",
+      "date": "2024-09-21",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/marathon-10-20-km-tours-24",
+      "lat": 43.326231,
+      "lng": 5.411429,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:27:23.891160+00:00",
+      "race_type": "route",
+      "distances": [
+        10.0
+      ]
+    },
+    {
+      "id": "njuko-schneider-electric-marathon-de-paris-2026",
+      "name": "Schneider Electric Marathon de Paris 2026",
+      "date": "2026-04-11",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/schneider-electric-marathon-de-paris-2026",
+      "lat": 48.898717,
+      "lng": 2.338825,
+      "member_count": 4,
+      "last_scraped": "2026-04-04T06:27:25.295927+00:00",
+      "race_type": "route",
+      "distances": [
+        42.0
+      ]
+    },
+    {
+      "id": "njuko-fouleesg2a",
+      "name": "Schneider Electric Foulées Angoulême",
+      "date": "2026-03-27",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/fouleesg2a",
+      "lat": 45.644105,
+      "lng": 0.148008,
+      "member_count": 5,
+      "last_scraped": "2026-04-04T06:27:26.704130+00:00",
+      "race_type": "route",
+      "distances": [
+        10.0
+      ]
+    },
+    {
+      "id": "njuko-e-run63-la-course-des-peres-noel-de-st-benoit-le-20-decembre-2025",
+      "name": "La Course des Pères Noel de St Benoit le 20 décembre 2025",
+      "date": "2025-12-19",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/e-run63-la-course-des-peres-noel-de-st-benoit-le-20-decembre-2025",
+      "lat": 46.55,
+      "lng": 0.35,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:27:26.850830+00:00",
+      "race_type": "route",
+      "distances": [
+        7.5
+      ]
+    },
+    {
+      "id": "njuko-les-foulees-du-saumur-champigny1746461940019",
+      "name": "Les Foulées du Saumur Champigny",
+      "date": "2025-09-13",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/les-foulees-du-saumur-champigny1746461940019",
+      "lat": 47.249144,
+      "lng": -0.062228,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:27:27.231353+00:00",
+      "race_type": "route",
+      "distances": [
+        9.0
       ]
     },
     {
@@ -872,164 +539,57 @@
       "lat": 48.261903,
       "lng": -3.623572,
       "member_count": 3,
-      "last_scraped": "2026-04-03T07:03:18.593138+00:00",
+      "last_scraped": "2026-04-04T06:27:32.583761+00:00",
       "race_type": "autre",
       "distances": []
     },
     {
-      "id": "njuko-course-jonquille-2024",
-      "name": "Course de la Jonquille Contre le Cancer 2024",
-      "date": "2024-03-11",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/course-jonquille-2024",
-      "lat": 46.529557,
-      "lng": 0.260907,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:03:37.761851+00:00",
-      "race_type": "route",
-      "distances": []
-    },
-    {
-      "id": "njuko-marathon-10-20-km-tours-24",
-      "name": "MARATHON, 10 ET 20 KM DE TOURS - 2024",
-      "date": "2024-09-21",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/marathon-10-20-km-tours-24",
-      "lat": 43.326231,
-      "lng": 5.411429,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:03:52.167288+00:00",
-      "race_type": "route",
-      "distances": [
-        10.0
-      ]
-    },
-    {
-      "id": "njuko-montpellier-run-festival",
-      "name": "Montpellier Run Festival 2024",
-      "date": "2024-04-06",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/montpellier-run-festival",
-      "lat": 43.610476,
-      "lng": 3.87048,
-      "member_count": 2,
-      "last_scraped": "2026-04-03T07:04:23.267469+00:00",
-      "race_type": "route",
-      "distances": [
-        10.0,
-        42.0
-      ]
-    },
-    {
-      "id": "njuko-mimo-trail-20251741203729728",
-      "name": "Mimo Trail 2025",
-      "date": "2025-12-06",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/mimo-trail-20251741203729728",
-      "lat": 47.100572,
-      "lng": 3.124534,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:04:26.567331+00:00",
-      "race_type": "trail",
-      "distances": []
-    },
-    {
-      "id": "njuko-hendaia-trail-20261762937400379",
-      "name": "HENDAIA TRAIL 2026",
-      "date": "2026-02-07",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/hendaia-trail-20261762937400379",
-      "lat": 43.360838,
-      "lng": -1.759629,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:04:54.288872+00:00",
-      "race_type": "trail",
-      "distances": [
-        21.0
-      ]
-    },
-    {
-      "id": "njuko-saumur-marathon-de-la-loire-2026",
-      "name": "Saumur Marathon de la Loire 2026",
+      "id": "njuko-laroutedulouvre2026",
+      "name": "La Route du Louvre - Dimanche 10 mai 2026",
       "date": "2026-05-09",
       "location": "",
       "platform": "njuko",
-      "url": "https://in.njuko.com/saumur-marathon-de-la-loire-2026",
-      "lat": 48.083317,
-      "lng": -1.65586,
-      "member_count": 7,
-      "last_scraped": "2026-04-03T07:05:00.765042+00:00",
+      "url": "https://in.njuko.com/laroutedulouvre2026",
+      "lat": 50.44,
+      "lng": 2.82,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:27:35.432112+00:00",
       "race_type": "route",
       "distances": [
-        21.0,
-        42.0
+        23.0
       ]
     },
     {
-      "id": "njuko-gtn2025",
-      "name": "Grand Trail Nocturne des Hauts de France 2025",
-      "date": "2025-10-31",
+      "id": "njuko-abalone-marathon-de-nantes-20251721120711923",
+      "name": "Abalone Marathon de Nantes 2025",
+      "date": "2025-04-25",
       "location": "",
       "platform": "njuko",
-      "url": "https://in.njuko.com/gtn2025",
-      "lat": 50.191253,
-      "lng": 3.835463,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:05:08.927328+00:00",
-      "race_type": "trail",
-      "distances": [
-        36.0
-      ]
-    },
-    {
-      "id": "njuko-beerun-20251749066983838",
-      "name": "BEERUN 2025",
-      "date": "2025-10-03",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/beerun-20251749066983838",
-      "lat": 47.51,
-      "lng": -1.43,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:05:13.673551+00:00",
+      "url": "https://in.njuko.com/abalone-marathon-de-nantes-20251721120711923",
+      "lat": 47.24,
+      "lng": -1.56,
+      "member_count": 2,
+      "last_scraped": "2026-04-04T06:27:39.408162+00:00",
       "race_type": "route",
       "distances": [
-        6.0
-      ]
-    },
-    {
-      "id": "njuko-menzis-4-mijl-van-groningen-20231680008576088",
-      "name": "Menzis 4 Mijl van Groningen 2023",
-      "date": "2023-10-07",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/menzis-4-mijl-van-groningen-20231680008576088",
-      "lat": null,
-      "lng": null,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:05:18.028068+00:00",
-      "race_type": "autre",
-      "distances": []
-    },
-    {
-      "id": "njuko-marathonbiarritz2025",
-      "name": "Marathon International Biarritz Pays-Basque 2025",
-      "date": "2025-05-03",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.njuko.com/marathonbiarritz2025",
-      "lat": 43.480981,
-      "lng": -1.566525,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:05:46.216152+00:00",
-      "race_type": "route",
-      "distances": [
+        10.0,
         21.0
+      ]
+    },
+    {
+      "id": "njuko-epopee-royale-2026",
+      "name": "EPOPEE ROYALE 2026",
+      "date": "2026-11-20",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/epopee-royale-2026",
+      "lat": 42.451116,
+      "lng": 9.514401,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:27:43.887726+00:00",
+      "race_type": "route",
+      "distances": [
+        13.0
       ]
     },
     {
@@ -1042,9 +602,236 @@
       "lat": 48.261903,
       "lng": -3.623572,
       "member_count": 1,
-      "last_scraped": "2026-04-03T07:05:48.780240+00:00",
+      "last_scraped": "2026-04-04T06:27:46.759795+00:00",
       "race_type": "autre",
       "distances": []
+    },
+    {
+      "id": "njuko-la-course-du-bien-public-2023",
+      "name": "La Course du Bien Public",
+      "date": "2023-09-08",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/la-course-du-bien-public-2023",
+      "lat": 48.643945,
+      "lng": 2.276987,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:27:47.202495+00:00",
+      "race_type": "route",
+      "distances": [
+        20.0
+      ]
+    },
+    {
+      "id": "njuko-hendaia-trail-20261762937400379",
+      "name": "HENDAIA TRAIL 2026",
+      "date": "2026-02-07",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/hendaia-trail-20261762937400379",
+      "lat": 43.360838,
+      "lng": -1.759629,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:27:48.478368+00:00",
+      "race_type": "trail",
+      "distances": [
+        21.0
+      ]
+    },
+    {
+      "id": "njuko-abalone-marathon-de-nantes-20261747744270005",
+      "name": "Abalone Marathon de Nantes 2026",
+      "date": "2026-04-24",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/abalone-marathon-de-nantes-20261747744270005",
+      "lat": 48.083317,
+      "lng": -1.65586,
+      "member_count": 3,
+      "last_scraped": "2026-04-04T06:27:53.080218+00:00",
+      "race_type": "route",
+      "distances": [
+        10.0,
+        42.0
+      ]
+    },
+    {
+      "id": "njuko-marathon-poitiers-futuroscope-20261749544909462",
+      "name": "Marathon Poitiers-Futuroscope 2026",
+      "date": "2026-04-11",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/marathon-poitiers-futuroscope-20261749544909462",
+      "lat": 46.66,
+      "lng": 0.37,
+      "member_count": 13,
+      "last_scraped": "2026-04-04T06:27:54.969881+00:00",
+      "race_type": "route",
+      "distances": [
+        10.0,
+        21.0,
+        42.0
+      ]
+    },
+    {
+      "id": "njuko-half-on-the-head-2026",
+      "name": "Half on the Head 2026",
+      "date": "2026-06-12",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/half-on-the-head-2026",
+      "lat": null,
+      "lng": null,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:27:55.997888+00:00",
+      "race_type": "route",
+      "distances": [
+        42.0
+      ]
+    },
+    {
+      "id": "njuko-abalone-marathon-de-nantes-20231662716070298",
+      "name": "Abalone Marathon de Nantes 2023",
+      "date": "2023-04-22",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/abalone-marathon-de-nantes-20231662716070298",
+      "lat": 47.24,
+      "lng": -1.56,
+      "member_count": 3,
+      "last_scraped": "2026-04-04T06:27:58.252692+00:00",
+      "race_type": "route",
+      "distances": [
+        21.0
+      ]
+    },
+    {
+      "id": "njuko-gtn2025",
+      "name": "Grand Trail Nocturne des Hauts de France 2025",
+      "date": "2025-10-31",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/gtn2025",
+      "lat": 50.191253,
+      "lng": 3.835463,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:27:59.228795+00:00",
+      "race_type": "trail",
+      "distances": [
+        36.0
+      ]
+    },
+    {
+      "id": "njuko-corrida-chateau-gontier1759580064975",
+      "name": "Corrida Chateau Gontier",
+      "date": "2025-12-27",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/corrida-chateau-gontier1759580064975",
+      "lat": 47.763979,
+      "lng": 0.39835,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:28:02.727589+00:00",
+      "race_type": "route",
+      "distances": [
+        5.0
+      ]
+    },
+    {
+      "id": "njuko-beerun-20251749066983838",
+      "name": "BEERUN 2025",
+      "date": "2025-10-03",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/beerun-20251749066983838",
+      "lat": 47.51,
+      "lng": -1.43,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:28:04.058212+00:00",
+      "race_type": "route",
+      "distances": [
+        6.0
+      ]
+    },
+    {
+      "id": "njuko-asml-marathon-eindhoven-20231682333544914",
+      "name": "asml-marathon-eindhoven-20231682333544914",
+      "date": "2023-10-07",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/asml-marathon-eindhoven-20231682333544914",
+      "lat": null,
+      "lng": null,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:28:05.622955+00:00",
+      "race_type": "route",
+      "distances": [
+        42.0
+      ]
+    },
+    {
+      "id": "njuko-asml-marathon-eindhoven-20241699532048404",
+      "name": "ASML Marathon Eindhoven 2024",
+      "date": "2024-10-12",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/asml-marathon-eindhoven-20241699532048404",
+      "lat": 45.340727,
+      "lng": 5.343488,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:28:12.427479+00:00",
+      "race_type": "route",
+      "distances": [
+        42.0
+      ]
+    },
+    {
+      "id": "njuko-marathondelille2026",
+      "name": "Marathon de Lille - Dimanche 25 octobre 2026",
+      "date": "2026-10-24",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/marathondelille2026",
+      "lat": 48.706285,
+      "lng": 6.169492,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:28:13.406365+00:00",
+      "race_type": "route",
+      "distances": [
+        42.0
+      ]
+    },
+    {
+      "id": "njuko-laroutedulouvre2025",
+      "name": "La Route du Louvre",
+      "date": "2025-05-10",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/laroutedulouvre2025",
+      "lat": 50.44,
+      "lng": 2.82,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:28:15.834563+00:00",
+      "race_type": "route",
+      "distances": [
+        14.0
+      ]
+    },
+    {
+      "id": "njuko-la-foulee-des-geants-20231668419821923",
+      "name": "La Foulée des Géants 2023",
+      "date": "2023-10-06",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/la-foulee-des-geants-20231668419821923",
+      "lat": 48.938794,
+      "lng": 2.8802,
+      "member_count": 2,
+      "last_scraped": "2026-04-04T06:28:17.159934+00:00",
+      "race_type": "route",
+      "distances": [
+        19.0
+      ]
     },
     {
       "id": "njuko-harmonie-mutuelle-marathon-10-20k-tours",
@@ -1056,10 +843,180 @@
       "lat": 47.395476,
       "lng": 0.695848,
       "member_count": 1,
-      "last_scraped": "2026-04-03T07:06:02.380090+00:00",
+      "last_scraped": "2026-04-04T06:28:21.272907+00:00",
       "race_type": "route",
       "distances": [
         10.0
+      ]
+    },
+    {
+      "id": "njuko-defi-de-la-colline",
+      "name": "Défi de la Colline",
+      "date": "2026-01-02",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/defi-de-la-colline",
+      "lat": 47.185788,
+      "lng": -0.870769,
+      "member_count": 2,
+      "last_scraped": "2026-04-04T06:28:23.346579+00:00",
+      "race_type": "route",
+      "distances": [
+        11.0
+      ]
+    },
+    {
+      "id": "njuko-montpellier-run-festival",
+      "name": "Montpellier Run Festival 2024",
+      "date": "2024-04-06",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/montpellier-run-festival",
+      "lat": 43.610476,
+      "lng": 3.87048,
+      "member_count": 2,
+      "last_scraped": "2026-04-04T06:28:25.792878+00:00",
+      "race_type": "route",
+      "distances": [
+        10.0,
+        42.0
+      ]
+    },
+    {
+      "id": "njuko-ecotrail-paris-2026",
+      "name": "Salomon EcoTrail Paris 2026",
+      "date": "2026-03-20",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/ecotrail-paris-2026",
+      "lat": 48.867492,
+      "lng": 2.353961,
+      "member_count": 3,
+      "last_scraped": "2026-04-04T06:28:28.440653+00:00",
+      "race_type": "trail",
+      "distances": [
+        45.0,
+        80.0
+      ]
+    },
+    {
+      "id": "njuko-la-course-des-cretes-20261763566398100",
+      "name": "LA COURSE DES CRETES 2026",
+      "date": "2026-07-02",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/la-course-des-cretes-20261763566398100",
+      "lat": 43.34,
+      "lng": -1.45,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:28:29.989452+00:00",
+      "race_type": "route",
+      "distances": []
+    },
+    {
+      "id": "njuko-10-miles-des-baines-20261767969394414",
+      "name": "10 MILES DES BAINES 2026",
+      "date": "2026-04-04",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/10-miles-des-baines-20261767969394414",
+      "lat": 43.64,
+      "lng": -1.42,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:28:32.071048+00:00",
+      "race_type": "route",
+      "distances": []
+    },
+    {
+      "id": "njuko-course-de-la-jonquille-contre-le-cancer",
+      "name": "COURSE DE LA JONQUILLE CONTRE LE CANCER 2026",
+      "date": "2026-03-09",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/course-de-la-jonquille-contre-le-cancer",
+      "lat": 46.529557,
+      "lng": 0.260907,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:28:34.600691+00:00",
+      "race_type": "route",
+      "distances": []
+    },
+    {
+      "id": "njuko-abalone-marathon-de-nantes-20241689843497239",
+      "name": "Abalone Marathon de Nantes 2024",
+      "date": "2024-04-19",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/abalone-marathon-de-nantes-20241689843497239",
+      "lat": 47.24,
+      "lng": -1.56,
+      "member_count": 2,
+      "last_scraped": "2026-04-04T06:28:39.906944+00:00",
+      "race_type": "route",
+      "distances": [
+        10.0
+      ]
+    },
+    {
+      "id": "njuko-marathonbiarritz2025",
+      "name": "Marathon International Biarritz Pays-Basque 2025",
+      "date": "2025-05-03",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/marathonbiarritz2025",
+      "lat": 43.480981,
+      "lng": -1.566525,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:28:42.189155+00:00",
+      "race_type": "route",
+      "distances": [
+        21.0
+      ]
+    },
+    {
+      "id": "njuko-20km-de-maroilles-2026",
+      "name": "20km de Maroilles 2026",
+      "date": "2026-04-30",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/20km-de-maroilles-2026",
+      "lat": 50.115193,
+      "lng": 3.798258,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:28:43.089024+00:00",
+      "race_type": "route",
+      "distances": [
+        20.0
+      ]
+    },
+    {
+      "id": "njuko-mimo-trail-20251741203729728",
+      "name": "Mimo Trail 2025",
+      "date": "2025-12-06",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/mimo-trail-20251741203729728",
+      "lat": 47.100572,
+      "lng": 3.124534,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:28:43.161958+00:00",
+      "race_type": "trail",
+      "distances": []
+    },
+    {
+      "id": "njuko-marathon-international-de-la-cote-damour-amarris-20261765967676928",
+      "name": "Marathon International de la Côte d'Amour Amarris 2026",
+      "date": "2026-11-06",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/marathon-international-de-la-cote-damour-amarris-20261765967676928",
+      "lat": null,
+      "lng": null,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:28:45.126719+00:00",
+      "race_type": "route",
+      "distances": [
+        21.0
       ]
     },
     {
@@ -1072,26 +1029,10 @@
       "lat": 45.75,
       "lng": 3.6,
       "member_count": 1,
-      "last_scraped": "2026-04-03T07:06:32.857243+00:00",
+      "last_scraped": "2026-04-04T06:28:49.038361+00:00",
       "race_type": "trail",
       "distances": [
         27.0
-      ]
-    },
-    {
-      "id": "njuko-nice-cote-dazur-by-utmb-20261764673658977",
-      "name": "Nice Côte d'Azur by UTMB®",
-      "date": "",
-      "location": "",
-      "platform": "njuko",
-      "url": "https://in.register-utmb.world/nice-cote-dazur-by-utmb-20261764673658977",
-      "lat": null,
-      "lng": null,
-      "member_count": 1,
-      "last_scraped": "2026-04-03T07:07:20.419693+00:00",
-      "race_type": "autre",
-      "distances": [
-        50.0
       ]
     },
     {
@@ -1104,7 +1045,7 @@
       "lat": 46.327232,
       "lng": -0.466291,
       "member_count": 1,
-      "last_scraped": "2026-04-03T07:09:03.365435+00:00",
+      "last_scraped": "2026-04-04T06:28:53.033101+00:00",
       "race_type": "route",
       "distances": [
         10.0
@@ -1120,7 +1061,7 @@
       "lat": 42.793383,
       "lng": 1.332674,
       "member_count": 1,
-      "last_scraped": "2026-04-03T07:09:22.820527+00:00",
+      "last_scraped": "2026-04-04T06:28:55.291809+00:00",
       "race_type": "trail",
       "distances": [
         33.0
@@ -1136,7 +1077,7 @@
       "lat": 46.412912,
       "lng": -0.206888,
       "member_count": 1,
-      "last_scraped": "2026-04-03T07:09:35.048367+00:00",
+      "last_scraped": "2026-04-04T06:28:58.521645+00:00",
       "race_type": "route",
       "distances": [
         21.0
@@ -1152,25 +1093,27 @@
       "lat": 45.914371,
       "lng": -1.255426,
       "member_count": 1,
-      "last_scraped": "2026-04-03T07:10:01.340427+00:00",
+      "last_scraped": "2026-04-04T06:29:02.948172+00:00",
       "race_type": "trail",
       "distances": [
         28.0
       ]
     },
     {
-      "id": "sportips-MAXIRACE26",
-      "name": "29/05/2026adidas TERREX MaXi-Race 2026Inscription",
+      "id": "njuko-nice-cote-dazur-by-utmb-20261764673658977",
+      "name": "Nice Côte d'Azur by UTMB®",
       "date": "",
       "location": "",
-      "platform": "sportips",
-      "url": "https://sportips.fr/inscription/MAXIRACE26",
+      "platform": "njuko",
+      "url": "https://in.register-utmb.world/nice-cote-dazur-by-utmb-20261764673658977",
       "lat": null,
       "lng": null,
       "member_count": 1,
-      "last_scraped": "2026-04-03T07:12:39.064969+00:00",
+      "last_scraped": "2026-04-04T06:29:04.836708+00:00",
       "race_type": "autre",
-      "distances": []
+      "distances": [
+        50.0
+      ]
     },
     {
       "id": "ipitos-les_foulees_d_angouleme_2026",
@@ -1182,11 +1125,25 @@
       "lat": 48.73648,
       "lng": 2.293731,
       "member_count": 4,
-      "last_scraped": "2026-04-03T07:15:42.824907+00:00",
+      "last_scraped": "2026-04-04T06:29:07.717829+00:00",
       "race_type": "route",
       "distances": [
         10.0
       ]
+    },
+    {
+      "id": "njuko-course-jonquille-2024",
+      "name": "Course de la Jonquille Contre le Cancer 2024",
+      "date": "2024-03-11",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/course-jonquille-2024",
+      "lat": 46.529557,
+      "lng": 0.260907,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:29:08.211245+00:00",
+      "race_type": "route",
+      "distances": []
     },
     {
       "id": "ipitos-semi-marathon_d_orvault_2026",
@@ -1198,11 +1155,25 @@
       "lat": 47.28516,
       "lng": -1.580158,
       "member_count": 1,
-      "last_scraped": "2026-04-03T07:15:43.489156+00:00",
+      "last_scraped": "2026-04-04T06:29:09.191493+00:00",
       "race_type": "route",
       "distances": [
         21.0
       ]
+    },
+    {
+      "id": "njuko-marseille-cassis-20241705933170021",
+      "name": "MARSEILLE-CASSIS 2024",
+      "date": "2024-10-26",
+      "location": "",
+      "platform": "njuko",
+      "url": "https://in.njuko.com/marseille-cassis-20241705933170021",
+      "lat": 43.279615,
+      "lng": 5.389556,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:29:09.437484+00:00",
+      "race_type": "autre",
+      "distances": []
     },
     {
       "id": "ipitos-defi_de_la_colline_2026",
@@ -1214,7 +1185,7 @@
       "lat": 47.185788,
       "lng": -0.870769,
       "member_count": 2,
-      "last_scraped": "2026-04-03T07:15:45.646582+00:00",
+      "last_scraped": "2026-04-04T06:29:09.868952+00:00",
       "race_type": "route",
       "distances": [
         11.0
@@ -1230,7 +1201,7 @@
       "lat": 46.439407,
       "lng": 0.11313,
       "member_count": 2,
-      "last_scraped": "2026-04-03T07:15:46.020626+00:00",
+      "last_scraped": "2026-04-04T06:29:10.670149+00:00",
       "race_type": "trail",
       "distances": [
         13.0
@@ -1246,7 +1217,7 @@
       "lat": 46.278531,
       "lng": -0.588628,
       "member_count": 1,
-      "last_scraped": "2026-04-03T07:15:46.175147+00:00",
+      "last_scraped": "2026-04-04T06:29:10.806791+00:00",
       "race_type": "route",
       "distances": [
         21.1
@@ -1262,7 +1233,7 @@
       "lat": 46.8162,
       "lng": 0.551,
       "member_count": 2,
-      "last_scraped": "2026-04-03T07:15:47.222183+00:00",
+      "last_scraped": "2026-04-04T06:29:11.543230+00:00",
       "race_type": "route",
       "distances": [
         10.0
@@ -1278,11 +1249,25 @@
       "lat": null,
       "lng": null,
       "member_count": 5,
-      "last_scraped": "2026-04-03T07:15:48.616151+00:00",
+      "last_scraped": "2026-04-04T06:29:12.600884+00:00",
       "race_type": "route",
       "distances": [
         10.5
       ]
+    },
+    {
+      "id": "sportips-MAXIRACE26",
+      "name": "29/05/2026adidas TERREX MaXi-Race 2026Inscription",
+      "date": "",
+      "location": "",
+      "platform": "sportips",
+      "url": "https://sportips.fr/inscription/MAXIRACE26",
+      "lat": null,
+      "lng": null,
+      "member_count": 1,
+      "last_scraped": "2026-04-04T06:29:20.220480+00:00",
+      "race_type": "autre",
+      "distances": []
     }
   ]
 }
