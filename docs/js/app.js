@@ -40,6 +40,7 @@
         raceGroups = groupEditions(allRaces);
         updateLastUpdated(data.last_updated);
         updateStats(allRaces);
+        populateMemberFilter(allRaces);
         setupMapLayers();
         renderAll();
       })
@@ -48,6 +49,33 @@
         document.getElementById("race-list").innerHTML =
           '<div class="empty-state"><div class="empty-icon">&#128683;</div>Impossible de charger les donnees</div>';
       });
+  }
+
+  // --- Member filter ---
+  function populateMemberFilter(races) {
+    const select = document.getElementById("filter-member");
+    const nameSet = new Set();
+    let hasAnonymous = false;
+    for (const race of races) {
+      const names = race.first_names || [];
+      names.forEach((n) => nameSet.add(n));
+      if (race.member_count > names.length) hasAnonymous = true;
+    }
+    const sorted = [...nameSet].sort((a, b) => a.localeCompare(b, "fr"));
+    // Reset options (keep first default)
+    while (select.options.length > 1) select.remove(1);
+    for (const name of sorted) {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      select.appendChild(opt);
+    }
+    if (hasAnonymous) {
+      const opt = document.createElement("option");
+      opt.value = "__anonymous__";
+      opt.textContent = "Autres membres";
+      select.appendChild(opt);
+    }
   }
 
   // --- Group editions of the same event ---
@@ -272,12 +300,16 @@
           const linkHtml = ed.url
             ? `<a class="popup-link" href="${ed.url}" target="_blank" rel="noopener">${ed.platform} &rarr;</a>`
             : "";
+          const namesHtml = ed.first_names && ed.first_names.length
+            ? `<div class="timeline-names">${ed.first_names.join(", ")}</div>`
+            : "";
           return `
             <div class="timeline-item">
               <div class="timeline-dot" style="background: ${color}"></div>
               <div class="timeline-content">
                 <div class="timeline-year">${dateFormatted}</div>
                 <div class="timeline-members">${ed.member_count} membre${ed.member_count > 1 ? "s" : ""} ${linkHtml}</div>
+                ${namesHtml}
               </div>
             </div>`;
         }).join("");
@@ -300,6 +332,9 @@
         const membersHtml = ed.member_count > 0
           ? `<div class="popup-members-count">${ed.member_count} membre${ed.member_count > 1 ? "s" : ""} inscrit${ed.member_count > 1 ? "s" : ""}</div>`
           : "";
+        const namesHtml = ed.first_names && ed.first_names.length
+          ? `<div class="popup-names">${ed.first_names.join(", ")}</div>`
+          : "";
         const linkHtml = ed.url
           ? `<a class="popup-link" href="${ed.url}" target="_blank" rel="noopener">Voir sur ${ed.platform} &rarr;</a>`
           : "";
@@ -309,6 +344,7 @@
             <div class="popup-title" style="border-left: 3px solid ${ed.color || p.color}; padding-left: 10px">${ed.name}</div>
             <div class="popup-meta">${dateFormatted}${p.location ? " — " + p.location : ""}</div>
             ${membersHtml}
+            ${namesHtml}
             ${linkHtml}
           </div>`;
       }
@@ -347,6 +383,7 @@
             name: e.name,
             date: e.date || "",
             member_count: e.member_count,
+            first_names: e.first_names || [],
             platform: e.platform || "",
             url: e.url || "",
             color: getColor(getTemporality(e.date)),
@@ -410,6 +447,7 @@
     const dateTo = document.getElementById("date-to").value;
     const filterType = document.getElementById("filter-type").value;
     const filterDist = document.getElementById("filter-distance").value;
+    const filterMember = document.getElementById("filter-member").value;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toISOString().slice(0, 10);
@@ -425,6 +463,15 @@
       if (filterType && r.race_type !== filterType) return false;
       // Distance filter
       if (filterDist && !matchesDistance(r.distances, filterDist)) return false;
+      // Member filter
+      if (filterMember) {
+        const names = r.first_names || [];
+        if (filterMember === "__anonymous__") {
+          if (r.member_count <= names.length) return false;
+        } else {
+          if (!names.includes(filterMember)) return false;
+        }
+      }
       return true;
     });
 
@@ -491,6 +538,11 @@
           ? `${displayEd.member_count} membre${displayEd.member_count > 1 ? "s" : ""}`
           : `${r.member_count} membre${r.member_count > 1 ? "s" : ""}`;
 
+        const firstNames = (group.isMulti ? displayEd.first_names : r.first_names) || [];
+        const namesLine = firstNames.length
+          ? `<div class="race-names">${firstNames.join(", ")}</div>`
+          : "";
+
         const typeBadge = r.race_type && r.race_type !== "autre"
           ? `<span class="type-badge type-${r.race_type}">${r.race_type}</span>`
           : "";
@@ -507,6 +559,7 @@
             ${distLabel ? `<span class="dist">${distLabel}</span>` : ""}
             <span class="member-badge">${memberLabel}</span>
           </div>
+          ${namesLine}
         </div>`;
       })
       .join("");
@@ -555,6 +608,7 @@
     document.getElementById("date-to").addEventListener("change", debouncedRender);
     document.getElementById("filter-type").addEventListener("change", debouncedRender);
     document.getElementById("filter-distance").addEventListener("change", debouncedRender);
+    document.getElementById("filter-member").addEventListener("change", debouncedRender);
 
     // Event delegation for race cards
     document.getElementById("race-list").addEventListener("click", (e) => {
