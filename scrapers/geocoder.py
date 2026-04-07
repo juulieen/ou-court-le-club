@@ -59,6 +59,60 @@ OVERRIDES: dict[str, tuple[float, float] | None] = {
     # Half on the Head — Ireland, not in France
     "half on the head 2026": None,
     "on the head": None,
+    # Saumur Marathon de la Loire — Saumur (Maine-et-Loire), not Rennes
+    "saumur marathon de la loire 2026": (47.26, -0.08),
+    "saumur marathon de la loire": (47.26, -0.08),
+    # Marathon de Lille — Lille (Nord), not Nancy
+    "marathon de lille - dimanche 25 octobre 2026": (50.63, 3.06),
+    "lille - dimanche 25 octobre": (50.63, 3.06),
+    "lille - dimanche": (50.63, 3.06),
+    # Foulées d'Angoulême — Angoulême (Charente), not Paris suburbs
+    "foulees d'angouleme": (45.65, 0.15),
+    "foulées d'angoulême": (45.65, 0.15),
+    # La Pastourelle — Salers (Cantal), not Brittany
+    "la pastourelle 2026": (45.14, 2.50),
+    "la pastourelle 2025": (45.14, 2.50),
+    "la pastourelle": (45.14, 2.50),
+    "pastourelle": (45.14, 2.50),
+    # Épopée Royale — Saint-Cyr-sur-Loire / Tours, not Paris suburbs
+    "epopee royale 2026": (47.40, 0.67),
+    "epopee royale": (47.40, 0.67),
+    # La Veni Vici — Pont du Gard / Nîmes (Gard), not Médoc coast
+    "la veni vici 2026": (43.95, 4.54),
+    "veni vici": (43.95, 4.54),
+    # La Falaise (KTS Luberon) — Joucas (Vaucluse), not Brittany coast
+    "la falaise 2026": (43.93, 5.25),
+    "la falaise": (43.93, 5.25),
+    # Trail du Caillou — Sebourg (Nord), not Bordeaux area
+    "trail du caillou 2026": (50.35, 3.65),
+    "trail du caillou": (50.35, 3.65),
+    # Défi de la Colline — Saint-Georges-des-Gardes (Maine-et-Loire)
+    "defi de la colline": (47.21, -0.72),
+    "défi de la colline": (47.21, -0.72),
+    # Nice Côte d'Azur by UTMB — Nice (Alpes-Maritimes)
+    "nice côte d'azur by utmb®": (43.70, 7.27),
+    "nice cote d'azur by utmb": (43.70, 7.27),
+    # MaXi-Race — Annecy (Haute-Savoie)
+    "maxi-race": (45.90, 6.13),
+    "29/05/2026adidas terrex maxi-race 2026inscription": (45.90, 6.13),
+    # Hendaia Trail — Hendaye (Pays Basque)
+    "hendaia trail 2026": (43.36, -1.76),
+    "hendaia trail": (43.36, -1.76),
+    # Semi-Marathon d'Orvault — Orvault (Loire-Atlantique)
+    "semi-marathon d'orvault": (47.27, -1.62),
+    # Marathon 10-20km de Tours — Tours (Indre-et-Loire), not Marseille
+    "marathon, 10 et 20 km de tours - 2025": (47.39, 0.69),
+    "marathon, 10 et 20 km de tours - 2024": (47.39, 0.69),
+    "marathon, 10 et 20 km de tours": (47.39, 0.69),
+    "harmonie mutuelle marathon 10-20k tours 2026": (47.39, 0.69),
+    # ASML Marathon Eindhoven — Eindhoven (Netherlands), not Grenoble
+    "asml marathon eindhoven 2025": (51.44, 5.47),
+    "asml marathon eindhoven 2024": (51.44, 5.47),
+    "asml marathon eindhoven 2023": (51.44, 5.47),
+    "asml marathon eindhoven": (51.44, 5.47),
+    "asml-marathon-eindhoven-20231682333544914": (51.44, 5.47),
+    # Abalone Marathon de Nantes 2026 — Nantes, not Rennes
+    "abalone marathon de nantes 2026": (47.24, -1.56),
 }
 
 

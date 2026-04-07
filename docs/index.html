@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.css" />
   <script src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js"></script>
 
-  <link rel="stylesheet" href="css/style.css?v=2">
+  <link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body>
 
@@ -77,6 +77,13 @@
           </select>
         </div>
       </div>
+      <div class="filter-row">
+        <div class="filter-group">
+          <select id="filter-member">
+            <option value="">Membre</option>
+          </select>
+        </div>
+      </div>
       <div class="filter-dates">
         <div class="filter-group">
           <label for="date-from">Du</label>
@@ -118,13 +125,13 @@
       <h2>Mentions legales</h2>
       <div class="modal-divider"></div>
       <p><strong>Editeur</strong><br>Julien OLLIVIER, membre du club Run Event 86. Ce site est un projet personnel et n'est pas une initiative officielle du club.</p>
-      <p><strong>Donnees personnelles</strong><br>Ce site affiche uniquement le nombre de membres du club inscrits a des courses. Aucun nom ni donnee personnelle n'est publie sur ce site.</p>
-      <p>Les donnees sont collectees a partir de listes d'inscription publiques de plateformes de courses a pied, dans le but d'animer la vie du club.</p>
-      <p><strong>Droit d'opposition</strong><br>Conformement au RGPD, vous pouvez exercer vos droits (acces, rectification, suppression, opposition) en contactant l'editeur a <a href="mailto:runevent86@juulieen.fr">runevent86@juulieen.fr</a>.</p>
+      <p><strong>Donnees personnelles</strong><br>Ce site affiche les prenoms des membres du club inscrits a des courses, avec leur consentement. Aucun nom de famille n'est publie. Les prenoms ne sont pas stockes dans le code source du site ; ils sont generes a la volee lors du deploiement.</p>
+      <p>Les donnees sont collectees a partir de listes d'inscription publiques de plateformes de courses a pied, dans le but d'animer la vie du club. Base legale : consentement (art. 6.1.a RGPD).</p>
+      <p><strong>Droit d'opposition</strong><br>Tout membre peut demander le retrait de son prenom a tout moment. Conformement au RGPD, vous pouvez exercer vos droits (acces, rectification, suppression, opposition) en contactant l'editeur a <a href="mailto:runevent86@juulieen.fr">runevent86@juulieen.fr</a>.</p>
       <p><strong>Hebergement</strong><br>GitHub Pages (GitHub, Inc.).</p>
     </div>
   </div>
 
-  <script src="js/app.js?v=2"></script>
+  <script src="js/app.js?v=4"></script>
 </body>
 </html>

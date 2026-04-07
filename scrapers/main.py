@@ -17,7 +17,7 @@ from pathlib import Path
 
 import yaml
 
-from .base import Member, RaceResult
+from .base import Member, RaceResult, normalize_text, matches_known_member
 from .geocoder import geocode
 from .chronometrage import ChronometrageScraper
 from .chronometrage import discover_races as chronometrage_discover
@@ -142,6 +142,78 @@ def _extract_location_from_name(name: str) -> list[str]:
 
 
 
+def _extract_first_name(member_name: str, known_members: list[str]) -> str:
+    """Extract first name from a full name.
+
+    Strategy:
+    1. Match against known_members (format "NOM Prenom") to get reliable first name
+    2. Fallback: in French race data, uppercase parts = last name, mixed-case = first name
+    3. If all uppercase (e.g. "DUPONT JULIEN"), assume NOM PRENOM order, title-case the rest
+    """
+    # Try matching against known_members for reliable extraction
+    name_parts = set(normalize_text(member_name).lower().split())
+    if len(name_parts) >= 2:
+        for km in known_members:
+            km_parts_raw = km.split()
+            km_parts_norm = set(normalize_text(km).lower().split())
+            if len(km_parts_norm) < 2:
+                continue
+            shorter, longer = (
+                (name_parts, km_parts_norm)
+                if len(name_parts) <= len(km_parts_norm)
+                else (km_parts_norm, name_parts)
+            )
+            if shorter.issubset(longer):
+                # Found match — extract first name from config entry
+                first_parts = [p for p in km_parts_raw if not p.isupper()]
+                if first_parts:
+                    return " ".join(first_parts)
+
+    # Fallback: heuristic on the scraped name
+    parts = member_name.split()
+    first_parts = [p for p in parts if not p.isupper()]
+    if first_parts:
+        return " ".join(first_parts)
+
+    # All uppercase: assume NOM PRENOM, take everything except first word
+    if len(parts) >= 2:
+        return " ".join(p.title() for p in parts[1:])
+    return parts[0].title() if parts else ""
+
+
+def _is_opted_in(member_name: str, display_optin: list[str]) -> bool:
+    """Check if a member has opted in for first name display."""
+    if not display_optin:
+        return False
+    return matches_known_member(member_name, display_optin)
+
+
+def _build_display_names(optin: list[str], known_members: list[str]) -> dict[str, str]:
+    """Build display names for opted-in members, disambiguating duplicate first names.
+
+    E.g. if "FAITEAU Romain" and "RICHARD Romain" are both opted in,
+    returns {"FAITEAU Romain": "Romain F.", "RICHARD Romain": "Romain R."}.
+    """
+    from collections import Counter
+
+    # Extract raw first name for each optin entry
+    raw = {entry: _extract_first_name(entry, known_members) for entry in optin}
+
+    # Detect duplicates
+    counts = Counter(raw.values())
+
+    # Disambiguate with last name initial where needed
+    display = {}
+    for entry, first in raw.items():
+        if counts[first] > 1:
+            # First uppercase word in config entry = last name
+            last_initial = entry.split()[0][0]
+            display[entry] = f"{first} {last_initial}."
+        else:
+            display[entry] = first
+    return display
+
+
 MAX_WORKERS = 6
 
 # Cache TTL: avoid re-scraping the same URL too often
@@ -200,7 +272,11 @@ def _enrich_race(race: dict) -> dict:
     return race
 
 
-def save_data(data: dict) -> None:
+def save_data(
+    data: dict,
+    known_members: list[str] | None = None,
+    display_optin: list[str] | None = None,
+) -> None:
     # Enrich races with type and distances before saving
     for race in data.get("races", []):
         _enrich_race(race)
@@ -209,14 +285,34 @@ def save_data(data: dict) -> None:
     DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
     DATA_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    # Anonymized version for GitHub Pages (no personal data)
-    # race_type and distances are race-level info, not personal data
+    # Public version for GitHub Pages: first names only (no last names)
+    # Deployed via GitHub Actions artifact — never committed to Git.
+    # Only members who explicitly opted in have their first name shown.
+    km = known_members or []
+    optin = display_optin or []
+    display_names = _build_display_names(optin, km)
+    public_races = []
+    for race in data.get("races", []):
+        public_race = {k: v for k, v in race.items() if k != "members"}
+        # Build first_names list — only for members who consented (opt-in)
+        first_names = []
+        for member in race.get("members", []):
+            name = member.get("name", "") if isinstance(member, dict) else member.name
+            if not name:
+                continue
+            if not _is_opted_in(name, optin):
+                continue
+            # Find which optin entry this member matches for display name
+            for entry in optin:
+                if matches_known_member(name, [entry]):
+                    first_names.append(display_names[entry])
+                    break
+        public_race["first_names"] = first_names
+        public_races.append(public_race)
+
     public_data = {
         "last_updated": data["last_updated"],
-        "races": [
-            {k: v for k, v in race.items() if k != "members"}
-            for race in data.get("races", [])
-        ],
+        "races": public_races,
     }
     DOCS_DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
     DOCS_DATA_PATH.write_text(
@@ -498,7 +594,8 @@ def run():
         "last_updated": datetime.now(timezone.utc).isoformat(),
         "races": results,
     }
-    save_data(output)
+    display_optin = club.get("display_optin", [])
+    save_data(output, known_members=known_members, display_optin=display_optin)
 
     # --- Summary ---
     from collections import Counter

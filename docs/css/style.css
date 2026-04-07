@@ -620,6 +620,31 @@ body {
   font-size: 0.68rem;
 }
 
+.timeline-names {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 1px;
+}
+
+/* First names in popup */
+.popup-names {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
+/* First names in sidebar cards */
+.race-names {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 4px;
+  padding-left: 0;
+  line-height: 1.4;
+}
+
 /* ---- Modal ---- */
 .modal {
   position: fixed;
