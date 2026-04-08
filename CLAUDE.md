@@ -234,7 +234,7 @@ To add a new white-label: add domain to `_API_BASES`, `_extract_slug()`, and opt
 - **Geocoding pipeline:** OVERRIDES > geocache > BAN API > Nominatim. OVERRIDES are in code and always win.
 - **Race name extraction:** `_extract_location_from_name()` in `main.py` strips event-type prefixes/suffixes to extract city names.
 - **Scrape cache does NOT store lat/lng** — geocoding is always redone from geocache to allow corrections.
-- **Cache bust:** Increment `?v=N` in `docs/index.html` CSS/JS links after frontend changes (currently `?v=5`).
+- **Cache bust:** Increment `?v=N` in `docs/index.html` CSS/JS links after frontend changes (currently `?v=6`).
 
 ## Frontend UX
 
@@ -265,6 +265,16 @@ Three stats computed in `updateStats()`:
 - Full list shown in popup on click
 - Duplicate first names disambiguated with last name initial (e.g., "Romain F.", "Romain R.")
 
+### WhatsApp Share
+- Green share button on sidebar cards and map popups using `wa.me/?text=...` deep link
+- `buildWhatsAppUrl()` in `app.js` generates pre-filled message with race name, date, member count
+- `onclick="event.stopPropagation()"` on the button to prevent card click handler from firing
+
+### Countdown Badge
+- Red pulsing "J-N" / "Demain" / "Aujourd'hui" badge on races within 7 days
+- `getCountdownLabel()` in `app.js` computes the label from date string
+- Only shown in sidebar cards (not popups — redundant with full date display)
+
 ### Legend
 Map overlay (not in sidebar) — positioned bottom-left on desktop, top-left on mobile. Semi-transparent background with backdrop blur.
 
@@ -286,3 +296,30 @@ GitHub Pages is deployed via **GitHub Actions** (not from a branch). The workflo
 4. The JSON with first names is **never committed** to the repository
 
 **IMPORTANT:** In GitHub repo Settings > Pages, the source must be set to "GitHub Actions".
+
+### Deploy to production
+
+```bash
+# 1. Commit and push to main
+git push origin <branch>:main
+# 2. Update config secret if config.yml changed
+cd /home/julien/devs/RunEvent86 && gh secret set CONFIG_YML < config.yml
+# 3. Trigger workflow
+gh workflow run scrape.yml --repo juulieen/ou-court-le-club
+# 4. Watch progress
+gh run watch <run-id> --repo juulieen/ou-court-le-club --exit-status
+```
+
+## Scraper Maintenance
+
+Platform websites get redesigned periodically, breaking discovery and/or scraping. Diagnosis workflow:
+1. Run `python -m scrapers.main` and check Phase 1 output — any platform with 0 discoveries is likely broken
+2. Use Chrome DevTools MCP (`mcp__chrome-devtools__*`) to inspect the live site structure
+3. Compare HTML/API structure with the scraper's selectors/parsers
+4. Common breakage patterns: CSS class renames, pagination changes (HTML → AJAX), API restructuring (nested data)
+
+Known redesign history:
+- **Klikego** (Apr 2026): v8 Tailwind redesign, `.card-evenement` → AJAX API `/v8/evenements/search.jsp`
+- **Listino** (Apr 2026): `/recherche/evenement` removed, now `/evenements/inscriptions`
+- **Chronometrage** (Apr 2026): `__NEXT_DATA__` structure changed, `initialData` now list of race objects with embedded subscriptions
+- **OnSinscrit** (Apr 2026): subdomain URLs need year suffix from flyer image filename
