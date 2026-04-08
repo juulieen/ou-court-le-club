@@ -667,6 +667,64 @@ body {
   margin-bottom: 6px;
 }
 
+/* ---- Countdown badge ---- */
+.countdown-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #E53935;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  animation: pulse-countdown 2s ease-in-out infinite;
+}
+
+@keyframes pulse-countdown {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ---- Share button ---- */
+.race-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.whatsapp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #25D366;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, transform 0.1s;
+  cursor: pointer;
+  line-height: 1;
+  min-height: 28px;
+}
+
+.whatsapp-btn:hover {
+  background: #1DA851;
+}
+
+.whatsapp-btn:active {
+  transform: scale(0.95);
+}
+
+.popup-whatsapp {
+  display: inline-flex;
+  margin-top: 8px;
+  font-size: 0.72rem;
+}
+
 /* First names in sidebar cards */
 .race-names {
   font-size: 0.7rem;
