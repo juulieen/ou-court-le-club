@@ -5,7 +5,7 @@ Interactive map showing races where "Run Event 86" club members are registered a
 ## Architecture
 
 ```
-config.yml              -- club patterns (4 regex), known members (22), map settings
+config.yml              -- club patterns (4 regex), known members (23), map settings, display_optin
 scrapers/
   __init__.py
   main.py               -- orchestrator: discover -> scrape -> geocode -> JSON
@@ -34,9 +34,9 @@ data/
   geocache.json          -- persistent geocoding cache
   njuko_slugs.json       -- persistent Njuko slug cache
 docs/                    -- static frontend (GitHub Pages)
-  index.html             -- MapLibre GL map with sidebar, filters, marker clusters
-  js/app.js              -- map logic, fetches docs/data/races.json
-  css/style.css
+  index.html             -- MapLibre GL map with draggable sidebar, filters, marker clusters
+  js/app.js              -- map logic, member filter, draggable bottom sheet, fetches docs/data/races.json
+  css/style.css          -- responsive styles, mobile bottom sheet with 3 snap positions
   data/races.json        -- public version with first names only (no last names, gitignored, deployed via Actions artifact)
 ```
 
@@ -50,7 +50,7 @@ The `SCRAPERS` dict in `main.py` maps platform names to scraper classes (14 acti
 |---|---|---|---|---|
 | **Klikego** | `klikego.py` | Paginated search `/recherche?sport=0&page={N}` | AJAX POST to `findInInscrits.jsp`; searches by club name via "ville" field, falls back to known member name search | Name-based POST search returns 500 errors (broken server-side); club search via "ville" field works |
 | **Njuko** | `njuko.py` | Persistent slug cache (`njuko_slugs.json`) seeded from CDX + `_SEED_SLUGS`; validates each slug via API | REST API: `/edition/url/{slug}` then `/registrations/{id}/_search/{}`, club in `metaData` keys `STRNOM_CLU`, `STRNOMABR_CLU`, `utmb_information_club` | Also handles 4 white-labels: UTMB (`register-utmb.world`), Sporkrono (`sporkrono-inscriptions.fr`), Sports107 (`sports107.com`), timeto (`timeto.com`). For large events (50k+), falls back to per-name search when bulk fetch times out |
-| **OnSinscrit** | `onsinscrit.py` | National directory at `search.onsinscrit.com/evenements.php?p={page}` | HTML table at `{slug}.onsinscrit.com/listeinscrits.php?tous=1&dossards=1` | Also receives entries from RunChrono discovery |
+| **OnSinscrit** | `onsinscrit.py` | National directory at `search.onsinscrit.com/evenements.php?p={page}`; extracts subdomain slug from flyer image filename (includes year) | HTML table at `{slug}.onsinscrit.com/listeinscrits.php?tous=1&dossards=1` | Also receives entries from RunChrono discovery. Event name from `h5.event-title`, URL slug from `/images/affiches/{slug}.jpg` |
 | **Protiming** | `protiming.py` | Paginated list `/Runnings/liste/page:{N}` | HTML table `#lstParticipants` with server-side club filter via `searchclub` URL parameter; falls back to known member name search | Club filter in URL avoids downloading full participant list |
 | **Chronometrage** | `chronometrage.py` | Paginated `/events` page, data in `__NEXT_DATA__` JSON | `__NEXT_DATA__` on `/eventSubscription/{slug}`, club in `observations.infoPersonne.club` | Next.js app; all data embedded in page JSON |
 | **Chrono-Start** | `chronostart.py` | WP REST API `/wp-json/wp/v2/mec-events` | HTML table `#table_listing` | Cloudflare-protected; uses `cloudscraper` library to bypass |
@@ -91,6 +91,9 @@ club:
     - "DUPONT Jean"
     # ... (format: "LASTNAME Firstname")
 
+  display_optin: []    # Members who consented to first name display (GDPR)
+    # - "NOM Prenom"
+
 races:                 # Manual race entries (optional, overrides auto-discovery)
   # All platforms use auto-discovery (national).
   # Add manual entries here for races not found automatically,
@@ -105,9 +108,6 @@ races:                 # Manual race entries (optional, overrides auto-discovery
   #     - name: "NOM Prenom"
   #       bib: "7.5km"
 
-  display_optin: []        # Members who consented to first name display (GDPR)
-    # - "NOM Prenom"
-
 settings:
   map_center: [46.58, 0.34]   # Leaflet map default center (lat, lng)
   map_zoom: 9                   # Leaflet map default zoom
@@ -120,7 +120,7 @@ settings:
 3. **Scraping** -- Up to 6 concurrent threads (`ThreadPoolExecutor`, `MAX_WORKERS = 6`). Each scraper fetches the registration list and filters for club members using dual matching: `matches_club()` (regex on club name) and `matches_known_member()` (known member name matching).
 4. **Enrichment** -- Each race is enriched with `race_type` (trail/route/autre) and `distances` extracted from bib fields and platform-specific structured data (e.g., Chronometrage `tourism_category.type`).
 5. **Geocoding** -- Locations are geocoded via BAN API (`api-adresse.data.gouv.fr`, free, no API key, fast) as primary geocoder. Nominatim fallback for international addresses. Manual `OVERRIDES` dict in `geocoder.py` corrects known BAN errors (e.g., "Marathon" matching "Rue de Marathon"). For races without a location field, `_extract_location_from_name()` strips event-type prefixes/suffixes to extract a geocodable city name.
-6. **Output** -- Two versions: `data/races.json` (full, with member names, gitignored) and `docs/data/races.json` (first names only, gitignored, deployed via GitHub Actions Pages artifact — never committed to Git). Members in `config.yml`'s `display_optout` list are excluded from first name display. Typically ~70 races with members found.
+6. **Output** -- Two versions: `data/races.json` (full, with member names, gitignored) and `docs/data/races.json` (first names only for opted-in members, gitignored, deployed via GitHub Actions Pages artifact — never committed to Git). Only members in `config.yml`'s `display_optin` list have their first name shown; duplicate first names are disambiguated with last name initial (e.g., "Romain F.", "Romain R."). Typically ~70 races with members found.
 
 ## Cache Files (in `data/`)
 
@@ -154,6 +154,9 @@ The full pipeline takes several minutes due to the number of platforms and rate 
 - **`matches_club(club_name, patterns)`** -- regex match against normalized club name
 - **`matches_known_member(name, known_members)`** -- order-independent, accent-insensitive name matching
 - **`normalize_text(text)`** -- strips accents (NFD decomposition) and whitespace
+- **`_extract_first_name(member_name, known_members)`** -- extracts first name, cross-referencing with known_members for reliable extraction
+- **`_build_display_names(optin, known_members)`** -- builds display names with automatic disambiguation of duplicate first names (e.g., "Romain F." vs "Romain R.")
+- **`_is_opted_in(member_name, display_optin)`** -- checks if a member consented to first name display
 
 ## How to Add a New Scraper
 
@@ -182,6 +185,7 @@ The full pipeline takes several minutes due to the number of platforms and rate 
 - **Geocoding** -- BAN API sometimes matches race names to street names (e.g., "Marathon" → "Rue de Marathon"). Manual `OVERRIDES` dict in `geocoder.py` corrects known errors. Nominatim fallback uses free tier with 1 req/sec rate limit.
 - **No incremental updates** -- each run re-discovers all events nationally. The scrape cache mitigates this but discovery itself still runs every time.
 - **Date handling** -- Klikego dates assume the current year (no year in the source data), which may be incorrect near year boundaries.
+- **OnSinscrit** -- Discovery extracts subdomain slugs from flyer image filenames (`/images/affiches/{slug}.jpg`). Events without a flyer image (~4 out of ~60) fall back to the `onsinscr.it` short slug which may not match the actual subdomain (missing year suffix). These events will fail to scrape.
 
 ## Dev Workflow (Local vs CI)
 
@@ -230,7 +234,39 @@ To add a new white-label: add domain to `_API_BASES`, `_extract_slug()`, and opt
 - **Geocoding pipeline:** OVERRIDES > geocache > BAN API > Nominatim. OVERRIDES are in code and always win.
 - **Race name extraction:** `_extract_location_from_name()` in `main.py` strips event-type prefixes/suffixes to extract city names.
 - **Scrape cache does NOT store lat/lng** — geocoding is always redone from geocache to allow corrections.
-- **Cache bust:** Increment `?v=N` in `docs/index.html` CSS/JS links after frontend changes.
+- **Cache bust:** Increment `?v=N` in `docs/index.html` CSS/JS links after frontend changes (currently `?v=5`).
+
+## Frontend UX
+
+### Mobile Bottom Sheet
+On mobile (`max-width: 768px`), the sidebar is a draggable bottom sheet with 3 snap positions:
+- **Peek** (~70px visible) — just the header/drag handle, map fills the screen
+- **Half** (55% viewport) — default, shows header + stats + 2-3 race cards
+- **Full** (92vh) — almost full screen, for scrolling the race list
+
+Touch drag is handled in `setupSidebar()` in `app.js` with `touchstart/touchmove/touchend` events. Fast swipes snap by velocity; slow drags snap to nearest position.
+
+### Stats Bar
+Three stats computed in `updateStats()`:
+- **À venir** — upcoming races with club members
+- **Ce mois** — races this calendar month (creates urgency)
+- **Coureurs** — unique runners registered for upcoming races (distinct `first_names` + estimated anonymous count)
+
+### Filters
+- **Default filter: "À venir"** — users see upcoming races first
+- **"Récentes"** — past 3 months only (not full history)
+- **"Toutes"** — complete history
+- On mobile, filters are hidden behind a collapsible "Filtres" button with active filter count badge
+- Type/Distance/Membre on one compact row; date filters behind a secondary "+ Dates" toggle
+- **Member filter** — dropdown dynamically populated from `first_names` across all races + "Autres membres" entry (matches races where `member_count > first_names.length`)
+
+### First Name Display
+- Truncated to 3 names + "+N" in sidebar cards and popups (e.g., "Lucas, Xavier, Florian +4")
+- Full list shown in popup on click
+- Duplicate first names disambiguated with last name initial (e.g., "Romain F.", "Romain R.")
+
+### Legend
+Map overlay (not in sidebar) — positioned bottom-left on desktop, top-left on mobile. Semi-transparent background with backdrop blur.
 
 ## Privacy & GDPR
 
