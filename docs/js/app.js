@@ -160,8 +160,8 @@
       type: "geojson",
       data: buildGeoJSON(raceGroups),
       cluster: true,
-      clusterMaxZoom: 13,
-      clusterRadius: 50,
+      clusterMaxZoom: 8,
+      clusterRadius: 18,
       clusterProperties: {
         sum_members: ["+", ["get", "member_count"]],
       },
