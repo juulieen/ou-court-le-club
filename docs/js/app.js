@@ -11,6 +11,12 @@
   let raceGroups = []; // grouped by event (multi-edition)
   let currentPopup = null;
 
+  function truncateNames(names, max) {
+    if (!names || !names.length) return "";
+    if (names.length <= max) return names.join(", ");
+    return names.slice(0, max).join(", ") + ` +${names.length - max}`;
+  }
+
   // --- Init ---
   function init() {
     map = new maplibregl.Map({
@@ -110,13 +116,26 @@
   function updateStats(races) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const totalMembers = races.reduce((s, r) => s + r.member_count, 0);
+    const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     const upcoming = races.filter(
       (r) => r.date && new Date(r.date + "T00:00:00") >= today
     ).length;
-    animateCounter("stat-races", races.length);
-    animateCounter("stat-members", totalMembers);
+    const thisMonth = races.filter(
+      (r) => r.date && new Date(r.date + "T00:00:00") >= today && new Date(r.date + "T00:00:00") <= thisMonthEnd
+    ).length;
+    // Unique runners: count distinct first_names + anonymous members
+    const nameSet = new Set();
+    let anonymousCount = 0;
+    for (const r of races) {
+      if (!r.date || new Date(r.date + "T00:00:00") < today) continue;
+      (r.first_names || []).forEach((n) => nameSet.add(n));
+      const anon = r.member_count - (r.first_names || []).length;
+      if (anon > 0) anonymousCount = Math.max(anonymousCount, anon);
+    }
+    const uniqueRunners = nameSet.size + anonymousCount;
     animateCounter("stat-upcoming", upcoming);
+    animateCounter("stat-this-month", thisMonth);
+    animateCounter("stat-runners", uniqueRunners);
   }
 
   function animateCounter(id, target) {
@@ -301,7 +320,7 @@
             ? `<a class="popup-link" href="${ed.url}" target="_blank" rel="noopener">${ed.platform} &rarr;</a>`
             : "";
           const namesHtml = ed.first_names && ed.first_names.length
-            ? `<div class="timeline-names">${ed.first_names.join(", ")}</div>`
+            ? `<div class="timeline-names">${truncateNames(ed.first_names, 3)}</div>`
             : "";
           return `
             <div class="timeline-item">
@@ -333,7 +352,7 @@
           ? `<div class="popup-members-count">${ed.member_count} membre${ed.member_count > 1 ? "s" : ""} inscrit${ed.member_count > 1 ? "s" : ""}</div>`
           : "";
         const namesHtml = ed.first_names && ed.first_names.length
-          ? `<div class="popup-names">${ed.first_names.join(", ")}</div>`
+          ? `<div class="popup-names">${truncateNames(ed.first_names, 3)}</div>`
           : "";
         const linkHtml = ed.url
           ? `<a class="popup-link" href="${ed.url}" target="_blank" rel="noopener">Voir sur ${ed.platform} &rarr;</a>`
@@ -429,7 +448,7 @@
   }
 
   // --- Rendering ---
-  let activeFilter = "all"; // "all", "upcoming", "past"
+  let activeFilter = "upcoming"; // "upcoming", "recent", "all"
 
   function matchesDistance(distances, range) {
     if (!range || !distances || !distances.length) return !range;
@@ -452,10 +471,15 @@
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toISOString().slice(0, 10);
 
+    // "Récentes" = 3 months ago to today
+    const threeMonthsAgo = new Date(today);
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const threeMonthsAgoStr = threeMonthsAgo.toISOString().slice(0, 10);
+
     let filtered = allRaces.filter((r) => {
       // Quick filter buttons
       if (activeFilter === "upcoming" && r.date && r.date < todayStr) return false;
-      if (activeFilter === "past" && r.date && r.date >= todayStr) return false;
+      if (activeFilter === "recent" && r.date && (r.date >= todayStr || r.date < threeMonthsAgoStr)) return false;
       // Date range filters
       if (dateFrom && r.date < dateFrom) return false;
       if (dateTo && r.date > dateTo) return false;
@@ -487,6 +511,21 @@
     }
 
     renderList(filteredGroups);
+    updateFilterBadge();
+  }
+
+  function updateFilterBadge() {
+    const badge = document.getElementById("filter-badge");
+    if (!badge) return;
+    let count = 0;
+    if (activeFilter !== "all") count++;
+    if (document.getElementById("filter-type").value) count++;
+    if (document.getElementById("filter-distance").value) count++;
+    if (document.getElementById("filter-member").value) count++;
+    if (document.getElementById("date-from").value) count++;
+    if (document.getElementById("date-to").value) count++;
+    badge.textContent = count;
+    badge.style.display = count > 0 ? "inline-block" : "none";
   }
 
   function renderList(groups) {
@@ -540,7 +579,7 @@
 
         const firstNames = (group.isMulti ? displayEd.first_names : r.first_names) || [];
         const namesLine = firstNames.length
-          ? `<div class="race-names">${firstNames.join(", ")}</div>`
+          ? `<div class="race-names">${truncateNames(firstNames, 3)}</div>`
           : "";
 
         const typeBadge = r.race_type && r.race_type !== "autre"
@@ -588,6 +627,87 @@
       }
     });
 
+    // --- Mobile bottom sheet drag ---
+    if (window.innerWidth <= 768) {
+      // Snap positions: translateY in px
+      // peek = only header, half = ~55% visible, full = nearly all
+      function getSnapPositions() {
+        const h = sidebar.offsetHeight;
+        const vh = window.innerHeight;
+        return {
+          full: 0,
+          half: Math.max(0, h - vh * 0.55),
+          peek: h - 70,
+        };
+      }
+      // Also expose for fitBounds padding
+      window.__sidebarSnap = getSnapPositions;
+
+      let startY = 0;
+      let startTranslate = 0;
+      let currentTranslate = 0;
+      let isDragging = false;
+      let dragStartTime = 0;
+
+      function getTranslateY() {
+        const matrix = new DOMMatrixReadOnly(getComputedStyle(sidebar).transform);
+        return matrix.m42;
+      }
+
+      function snapTo(position) {
+        sidebar.classList.remove("dragging", "collapsed");
+        sidebar.style.transform = `translateY(${position}px)`;
+        currentTranslate = position;
+        setTimeout(() => map.resize(), 350);
+      }
+
+      header.addEventListener("touchstart", (e) => {
+        isDragging = true;
+        dragStartTime = Date.now();
+        startY = e.touches[0].clientY;
+        startTranslate = getTranslateY();
+        sidebar.classList.add("dragging");
+        sidebar.classList.remove("collapsed");
+      }, { passive: true });
+
+      header.addEventListener("touchmove", (e) => {
+        if (!isDragging) return;
+        const snaps = getSnapPositions();
+        const deltaY = e.touches[0].clientY - startY;
+        let newTranslate = startTranslate + deltaY;
+        newTranslate = Math.max(snaps.full, Math.min(newTranslate, snaps.peek));
+        sidebar.style.transform = `translateY(${newTranslate}px)`;
+        currentTranslate = newTranslate;
+      }, { passive: true });
+
+      header.addEventListener("touchend", () => {
+        if (!isDragging) return;
+        isDragging = false;
+        sidebar.classList.remove("dragging");
+
+        const snaps = getSnapPositions();
+        const elapsed = Date.now() - dragStartTime;
+        const velocity = (currentTranslate - startTranslate) / Math.max(elapsed, 1);
+
+        // Fast swipe
+        if (Math.abs(velocity) > 0.4) {
+          if (velocity > 0) {
+            snapTo(currentTranslate > snaps.half ? snaps.peek : snaps.half);
+          } else {
+            snapTo(currentTranslate < snaps.half ? snaps.full : snaps.half);
+          }
+        } else {
+          // Snap to nearest
+          const positions = [snaps.full, snaps.half, snaps.peek];
+          positions.sort((a, b) => Math.abs(currentTranslate - a) - Math.abs(currentTranslate - b));
+          snapTo(positions[0]);
+        }
+      }, { passive: true });
+
+      // Initialize at half
+      setTimeout(() => snapTo(getSnapPositions().half), 100);
+    }
+
     // Quick filter buttons
     document.querySelectorAll(".filter-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -609,6 +729,27 @@
     document.getElementById("filter-type").addEventListener("change", debouncedRender);
     document.getElementById("filter-distance").addEventListener("change", debouncedRender);
     document.getElementById("filter-member").addEventListener("change", debouncedRender);
+
+    // Mobile: filter panel toggle
+    const filterToggle = document.getElementById("filter-toggle");
+    const filtersPanel = document.getElementById("filters");
+    if (filterToggle) {
+      filterToggle.addEventListener("click", () => {
+        filtersPanel.classList.toggle("filters-open");
+        filterToggle.classList.toggle("active");
+      });
+    }
+
+    // Mobile: date filter toggle
+    const dateToggle = document.getElementById("date-toggle");
+    const datesPanel = document.getElementById("filter-dates-panel");
+    if (dateToggle && datesPanel) {
+      dateToggle.addEventListener("click", () => {
+        datesPanel.classList.toggle("dates-open");
+        dateToggle.classList.toggle("active");
+        dateToggle.textContent = datesPanel.classList.contains("dates-open") ? "- Dates" : "+ Dates";
+      });
+    }
 
     // Event delegation for race cards
     document.getElementById("race-list").addEventListener("click", (e) => {

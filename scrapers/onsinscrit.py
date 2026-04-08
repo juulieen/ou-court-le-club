@@ -216,20 +216,36 @@ def discover_races() -> list[dict]:
 
 
 def _parse_event_row(row) -> dict | None:
-    """Parse a single event row from the OnSinscrit events directory."""
-    # Look for event-text content
+    """Parse a single event row from the OnSinscrit events directory.
+
+    HTML structure:
+        <div class="event-body">
+            <h5 class="event-title">Race Name</h5>
+            <p class="event-text">
+                <span class="badge">Événement futur</span>
+                Date : 11-04-2026
+                Lieu : CITY (dept)
+                <a href="https://onsinscr.it/slug">onsinscr.it/...</a>
+            </p>
+            <img src="/images/affiches/slug-with-year.jpg" ...>
+        </div>
+    """
     text_el = row.select_one(".event-text")
     if not text_el:
         return None
 
-    # Event name: usually in a heading or strong/bold
+    # Event name: in h5.event-title (sibling of .event-text)
     name = ""
-    for tag in text_el.select("h4, h3, h2, strong, b, a"):
-        t = tag.get_text(strip=True)
-        if t and len(t) > 3:
-            name = t
-            break
-
+    title_el = row.select_one(".event-title")
+    if title_el:
+        name = title_el.get_text(strip=True)
+    if not name:
+        # Fallback: look for heading/bold inside text
+        for tag in text_el.select("h4, h3, h2, strong, b"):
+            t = tag.get_text(strip=True)
+            if t and len(t) > 3:
+                name = t
+                break
     if not name:
         return None
 
@@ -259,35 +275,45 @@ def _parse_event_row(row) -> dict | None:
         dept = loc_match.group(2)
         location = f"{city}, {dept}"
 
-    # Short link: onsinscr.it/slug
-    slug = ""
+    # Extract slug from flyer image filename (most reliable for subdomain)
+    # e.g. <img src="/images/affiches/ronde-des-fontaines-2026.jpg"> -> "ronde-des-fontaines-2026"
+    img_slug = ""
+    img_el = row.select_one("img[src*='/images/affiches/']")
+    if img_el:
+        src = img_el.get("src", "")
+        img_match = re.search(r"/images/affiches/([^/.]+)", src)
+        if img_match:
+            img_slug = img_match.group(1)
+
+    # Short link: onsinscr.it/slug (used for dedup, fallback URL)
+    short_slug = ""
     url = ""
     for link in text_el.select("a[href]"):
         href = link.get("href", "")
         if "onsinscr.it" in href:
             slug_match = re.search(r"onsinscr\.it/(.+?)/?$", href)
             if slug_match:
-                slug = slug_match.group(1)
+                short_slug = slug_match.group(1)
             break
         if "onsinscrit.com" in href:
             url = href
             slug_match = re.search(r"//([^.]+)\.onsinscrit\.com", href)
             if slug_match:
-                slug = slug_match.group(1)
+                short_slug = slug_match.group(1)
             else:
                 slug_match = re.search(r"onsinscrit\.com/\d{4}/([^/]+)", href)
                 if slug_match:
-                    slug = slug_match.group(1)
+                    short_slug = slug_match.group(1)
             break
 
+    # Use image slug for URL (includes year, matches actual subdomain)
+    # Fall back to short slug if no image
+    slug = img_slug or short_slug
     if not slug:
-        # Derive slug from name
         slug = re.sub(r"[^a-z0-9-]", "-", name.lower())
         slug = re.sub(r"-+", "-", slug).strip("-")
 
-    # Build URL if not found
     if not url:
-        # Try subdomain pattern first (most common)
         url = f"https://{slug}.onsinscrit.com/"
 
     return {
@@ -297,5 +323,5 @@ def _parse_event_row(row) -> dict | None:
         "date": date_str,
         "location": location,
         "source": "onsinscrit-directory",
-        "_slug": slug,
+        "_slug": short_slug or slug,
     }
