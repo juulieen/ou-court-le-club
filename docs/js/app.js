@@ -2,9 +2,8 @@
 (function () {
   "use strict";
 
-  const MAPTILER_KEY = window.location.hostname === "localhost"
-    ? "MAPTILER_KEY_REDACTED"   // dev (localhost only)
-    : "MAPTILER_KEY_REDACTED";  // prod (juulieen.github.io)
+  const MAPTILER_KEY = "MAPTILER_KEY_REDACTED";
+  const MAPTILER_STYLE = "MAPTILER_STYLE_REDACTED";
 
   let map;
   let allRaces = [];
@@ -21,7 +20,7 @@
   function init() {
     map = new maplibregl.Map({
       container: "map",
-      style: `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${MAPTILER_KEY}`,
+      style: `https://api.maptiler.com/maps/${MAPTILER_STYLE}/style.json?key=${MAPTILER_KEY}`,
       center: [0.34, 46.58],
       zoom: 6,
       maxZoom: 17,
