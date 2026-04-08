@@ -13,7 +13,7 @@ Un pipeline de scrapers parcourt chaque jour les listes d'inscription de **19 pl
 1. **Par club** — regex sur le champ "club" des inscriptions (ex: "Run Event 86", "RunEvent", etc.)
 2. **Par nom** — liste de membres connus pour ceux qui n'ont pas rempli le champ club
 
-Les resultats sont affiches sur une carte MapLibre GL avec les tuiles MapTiler.
+Les resultats sont affiches sur une carte MapLibre GL avec les tuiles MapTiler. Les prenoms des membres qui ont donne leur consentement sont affiches a cote des courses.
 
 ## Plateformes supportees (19)
 
@@ -66,12 +66,22 @@ Certaines courses utilisent des plateformes que le projet ne peut pas scanner :
 
 > **Note :** Si ta course utilise une plateforme non supportee, tu peux l'ajouter manuellement dans `config.yml` (voir FAQ).
 
+## Fonctionnalites
+
+- **Carte interactive** avec marqueurs, clusters, popups multi-editions
+- **Prenoms opt-in** : les membres qui ont donne leur consentement voient leur prenom affiche (RGPD art. 6.1.a)
+- **Filtre par membre** : dropdown pour voir les courses d'un membre specifique ou "Autres membres" (anonymes)
+- **Filtres** : a venir / recentes (3 mois) / toutes, type (trail/route), distance, dates
+- **Stats en direct** : courses a venir, ce mois, nombre de coureurs uniques
+- **Mobile-first** : sidebar draggable (bottom sheet) avec 3 positions, filtres pliables, legende en overlay
+- **Desambiguisation** automatique des prenoms doublons (ex: "Romain F." / "Romain R.")
+
 ## Stack technique
 
 - **Frontend** : MapLibre GL JS + MapTiler (outdoor-v2) + HTML/CSS/JS statique
 - **Backend** : Python (requests, BeautifulSoup, cloudscraper, xml.etree)
-- **Geocoding** : API BAN (primaire) + Nominatim (fallback)
-- **Hebergement** : GitHub Pages
+- **Geocoding** : API BAN (primaire) + Nominatim (fallback), 30+ OVERRIDES manuels
+- **Hebergement** : GitHub Pages (deploiement via GitHub Actions artifact — les prenoms ne sont jamais commites)
 - **CI/CD** : GitHub Actions (scraping quotidien a 6h UTC)
 
 ## Installation locale
@@ -103,6 +113,7 @@ Copier `config.example.yml` en `config.yml` et remplir :
 
 - `club.patterns` — expressions regulieres pour matcher le nom du club
 - `club.known_members` — liste des membres connus (format "NOM Prenom")
+- `club.display_optin` — membres ayant consenti a l'affichage de leur prenom (RGPD)
 - `races` — courses manuelles (optionnel, pour les plateformes non supportees)
 
 ## FAQ
@@ -142,12 +153,19 @@ Deux options :
 1. Remplir correctement le champ "club" a l'inscription (ex: "Run Event 86")
 2. Demander a l'administrateur d'ajouter ton nom dans `known_members` de `config.yml`
 
+**Comment afficher mon prenom sur la carte ?**
+
+Donner ton consentement a l'administrateur (message sur le groupe du club). Ton nom sera ajoute dans `display_optin` de `config.yml`. Tu peux demander le retrait a tout moment.
+
 ## Vie privee
 
-Ce projet respecte le RGPD :
+Ce projet respecte le RGPD (base legale : consentement, art. 6.1.a) :
 
-- **Aucun nom** n'est publie sur le site — seul le nombre de membres par course est affiche
-- Le fichier `config.yml` (contenant les noms) est **gitignore** et stocke en secret GitHub
+- **Prenoms uniquement** — seuls les prenoms des membres ayant donne leur consentement sont affiches. Aucun nom de famille n'est publie.
+- **Pas dans Git** — le fichier `docs/data/races.json` (contenant les prenoms) est deploye via GitHub Actions artifact et **n'est jamais commite** dans le depot. Les prenoms n'apparaissent dans aucun historique Git.
+- **Opt-in explicite** — les membres non listes dans `display_optin` sont comptes mais restent anonymes
+- **Droit de retrait** — tout membre peut demander le retrait de son prenom a tout moment
+- Le fichier `config.yml` (contenant les noms complets) est **gitignore** et stocke en secret GitHub
 - Les donnees sont collectees a partir de listes d'inscription **publiques**
 
 ## Licence
