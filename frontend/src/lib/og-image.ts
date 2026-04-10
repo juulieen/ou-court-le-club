@@ -74,7 +74,7 @@ async function fetchStaticMap(lat: number, lng: number): Promise<string> {
 
   if (grid.length < 4) return '';
 
-  // Compose 3x3 tiles into 768x768 image, then crop center to 400x580
+  // Compose 3x3 tiles into 768x768 image, then crop to 340x630
   const composite = await sharp({
     create: { width: 768, height: 768, channels: 4, background: { r: 240, g: 235, b: 230, alpha: 1 } },
   })
@@ -85,7 +85,7 @@ async function fetchStaticMap(lat: number, lng: number): Promise<string> {
         top: t.dy * 256,
       }))
     )
-    .extract({ left: 184, top: 94, width: 400, height: 580 })
+    .extract({ left: 214, top: 69, width: 340, height: 630 })
     .png()
     .toBuffer();
 
@@ -110,14 +110,13 @@ function formatDate(dateStr: string): string {
   if (!dateStr) return '';
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString('fr-FR', {
-    weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
 }
 
-function formatNames(names: string[], max = 4): string {
+function formatNames(names: string[], max = 3): string {
   if (!names || !names.length) return '';
   if (names.length <= max) return names.join(', ');
   return names.slice(0, max).join(', ') + ` +${names.length - max}`;
@@ -154,14 +153,17 @@ export async function generateOgImage(race: RaceData): Promise<Buffer> {
   const distLabel = race.distances?.length
     ? race.distances.map(d => `${d}km`).join(' / ')
     : '';
+  const metaLine = [dateFormatted, race.location].filter(Boolean).join(' — ');
 
-  // Fetch static map if coordinates available
+  // Fetch static map
   let mapDataUri = '';
   if (race.lat && race.lng) {
     mapDataUri = await fetchStaticMap(race.lat, race.lng);
   }
 
-  // Build the markup
+  // Compute font size based on name length — must be readable at WhatsApp preview size (~300px wide)
+  const nameFontSize = race.name.length > 50 ? 42 : race.name.length > 35 ? 48 : 56;
+
   const markup = {
     type: 'div',
     props: {
@@ -169,8 +171,7 @@ export async function generateOgImage(race: RaceData): Promise<Buffer> {
         width: '1200px',
         height: '630px',
         display: 'flex',
-        flexDirection: 'column',
-        background: 'linear-gradient(135deg, #ffffff 0%, #f8f7f6 100%)',
+        background: '#ffffff',
         fontFamily: 'DM Sans',
         position: 'relative',
         overflow: 'hidden',
@@ -185,308 +186,284 @@ export async function generateOgImage(race: RaceData): Promise<Buffer> {
               top: 0,
               left: 0,
               right: 0,
-              height: '6px',
+              height: '8px',
               background: 'linear-gradient(90deg, #F57C20, #6B2D5B)',
             },
           },
         },
-        // Main content: left text + right map
+        // Left: text content
         {
           type: 'div',
           props: {
             style: {
               display: 'flex',
+              flexDirection: 'column',
               flex: 1,
-              padding: '48px 0 40px 56px',
+              padding: '40px 40px 36px 48px',
             },
             children: [
-              // Left column: text content
+              // Club header — compact
               {
                 type: 'div',
                 props: {
                   style: {
                     display: 'flex',
-                    flexDirection: 'column',
-                    flex: 1,
-                    paddingRight: '32px',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '24px',
                   },
                   children: [
-                    // Header: logo + club name
                     {
-                      type: 'div',
+                      type: 'img',
                       props: {
-                        style: {
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '14px',
-                          marginBottom: '28px',
-                        },
-                        children: [
-                          {
-                            type: 'img',
-                            props: {
-                              src: logoDataUri,
-                              width: 44,
-                              height: 44,
-                              style: {
-                                borderRadius: '10px',
-                                objectFit: 'contain',
-                              },
-                            },
-                          },
-                          {
-                            type: 'div',
-                            props: {
-                              style: { display: 'flex', flexDirection: 'column' },
-                              children: [
-                                {
-                                  type: 'div',
-                                  props: {
-                                    style: {
-                                      fontFamily: 'Bebas Neue',
-                                      fontSize: '20px',
-                                      color: '#1a1a1a',
-                                      lineHeight: 1,
-                                    },
-                                    children: 'Ou court le club ?',
-                                  },
-                                },
-                                {
-                                  type: 'div',
-                                  props: {
-                                    style: {
-                                      fontSize: '11px',
-                                      fontWeight: 600,
-                                      color: '#F57C20',
-                                      textTransform: 'uppercase' as const,
-                                      letterSpacing: '0.1em',
-                                    },
-                                    children: 'Run Event 86',
-                                  },
-                                },
-                              ],
-                            },
-                          },
-                        ],
+                        src: logoDataUri,
+                        width: 38,
+                        height: 38,
+                        style: { borderRadius: '8px', objectFit: 'contain' },
                       },
                     },
-                    // Race name
                     {
                       type: 'div',
                       props: {
                         style: {
-                          fontSize: race.name.length > 40 ? '34px' : '42px',
-                          fontWeight: 700,
-                          color: '#1a1a1a',
-                          lineHeight: 1.15,
-                          marginBottom: '14px',
-                          display: 'flex',
-                          flexWrap: 'wrap' as const,
-                          gap: '10px',
-                          alignItems: 'center',
+                          fontSize: '15px',
+                          fontWeight: 600,
+                          color: '#F57C20',
+                          textTransform: 'uppercase' as const,
+                          letterSpacing: '0.08em',
                         },
-                        children: [
-                          race.name,
-                          ...(typeLabel ? [{
-                            type: 'div',
-                            props: {
-                              style: {
-                                fontSize: '15px',
-                                fontWeight: 700,
-                                padding: '3px 10px',
-                                borderRadius: '20px',
-                                background: getTypeBg(race.race_type),
-                                color: getTypeColor(race.race_type),
-                                textTransform: 'uppercase' as const,
-                              },
-                              children: typeLabel,
-                            },
-                          }] : []),
-                        ],
-                      },
-                    },
-                    // Date + location
-                    {
-                      type: 'div',
-                      props: {
-                        style: {
-                          fontSize: '20px',
-                          color: '#777',
-                          marginBottom: '6px',
-                        },
-                        children: [dateFormatted, race.location].filter(Boolean).join(' — '),
-                      },
-                    },
-                    // Distances
-                    ...(distLabel ? [{
-                      type: 'div',
-                      props: {
-                        style: {
-                          fontSize: '17px',
-                          color: '#aaa',
-                          marginBottom: '6px',
-                        },
-                        children: distLabel,
-                      },
-                    }] : []),
-                    // Spacer
-                    { type: 'div', props: { style: { flex: 1 } } },
-                    // Bottom: members
-                    {
-                      type: 'div',
-                      props: {
-                        style: {
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '14px',
-                          flexWrap: 'wrap' as const,
-                        },
-                        children: [
-                          {
-                            type: 'div',
-                            props: {
-                              style: {
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                background: 'rgba(245, 124, 32, 0.1)',
-                                color: '#F57C20',
-                                padding: '7px 16px',
-                                borderRadius: '24px',
-                                fontSize: '20px',
-                                fontWeight: 700,
-                              },
-                              children: `${race.member_count} membre${race.member_count > 1 ? 's' : ''} inscrit${race.member_count > 1 ? 's' : ''}`,
-                            },
-                          },
-                          ...(namesStr ? [{
-                            type: 'div',
-                            props: {
-                              style: {
-                                fontSize: '18px',
-                                color: '#999',
-                                fontStyle: 'italic',
-                              },
-                              children: namesStr,
-                            },
-                          }] : []),
-                        ],
+                        children: 'Run Event 86',
                       },
                     },
                   ],
                 },
               },
-              // Right column: static map or location placeholder
+              // Race name — BIG
               {
                 type: 'div',
                 props: {
                   style: {
-                    width: '380px',
+                    fontSize: `${nameFontSize}px`,
+                    fontWeight: 700,
+                    color: '#1a1a1a',
+                    lineHeight: 1.1,
+                    marginBottom: '20px',
+                  },
+                  children: race.name,
+                },
+              },
+              // Type + distance badges row
+              ...(typeLabel || distLabel ? [{
+                type: 'div',
+                props: {
+                  style: {
+                    display: 'flex',
+                    gap: '10px',
+                    alignItems: 'center',
+                    marginBottom: '12px',
+                    flexWrap: 'wrap' as const,
+                  },
+                  children: [
+                    ...(typeLabel ? [{
+                      type: 'div',
+                      props: {
+                        style: {
+                          fontSize: '18px',
+                          fontWeight: 700,
+                          padding: '4px 14px',
+                          borderRadius: '20px',
+                          background: getTypeBg(race.race_type),
+                          color: getTypeColor(race.race_type),
+                          textTransform: 'uppercase' as const,
+                        },
+                        children: typeLabel,
+                      },
+                    }] : []),
+                    ...(distLabel ? [{
+                      type: 'div',
+                      props: {
+                        style: {
+                          fontSize: '20px',
+                          color: '#999',
+                          fontWeight: 500,
+                        },
+                        children: distLabel,
+                      },
+                    }] : []),
+                  ],
+                },
+              }] : []),
+              // Date + location
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    fontSize: '24px',
+                    color: '#555',
+                    marginBottom: '8px',
+                  },
+                  children: metaLine,
+                },
+              },
+              // Spacer
+              { type: 'div', props: { style: { flex: 1 } } },
+              // Members — BIG badge
+              {
+                type: 'div',
+                props: {
+                  style: {
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative' as const,
+                    gap: '16px',
+                    flexWrap: 'wrap' as const,
                   },
-                  children: mapDataUri ? [
-                    {
-                      type: 'img',
-                      props: {
-                        src: mapDataUri,
-                        width: 380,
-                        height: 580,
-                        style: {
-                          borderRadius: '16px 0 0 16px',
-                          objectFit: 'cover',
-                          opacity: 0.85,
-                        },
-                      },
-                    },
-                    // Orange pin dot overlay (center of map)
+                  children: [
                     {
                       type: 'div',
                       props: {
                         style: {
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          transform: 'translate(-50%, -50%)',
-                          width: '22px',
-                          height: '22px',
-                          borderRadius: '50%',
-                          background: '#F57C20',
-                          border: '3px solid #fff',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                        },
-                      },
-                    },
-                  ] : [
-                    // Placeholder: gradient background with location pin
-                    {
-                      type: 'div',
-                      props: {
-                        style: {
-                          width: '380px',
-                          height: '580px',
-                          borderRadius: '16px 0 0 16px',
-                          background: 'linear-gradient(160deg, #f0ebe6 0%, #e8e0d8 100%)',
                           display: 'flex',
-                          flexDirection: 'column',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '12px',
+                          background: 'rgba(245, 124, 32, 0.12)',
+                          color: '#F57C20',
+                          padding: '10px 22px',
+                          borderRadius: '28px',
+                          fontSize: '26px',
+                          fontWeight: 700,
                         },
-                        children: [
-                          // Pin icon circle
-                          {
-                            type: 'div',
-                            props: {
-                              style: {
-                                width: '64px',
-                                height: '64px',
-                                borderRadius: '50%',
-                                background: 'rgba(245, 124, 32, 0.15)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              },
-                              children: {
-                                type: 'div',
-                                props: {
-                                  style: {
-                                    width: '24px',
-                                    height: '24px',
-                                    borderRadius: '50%',
-                                    background: '#F57C20',
-                                    border: '3px solid #fff',
-                                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                                  },
-                                },
-                              },
-                            },
-                          },
-                          // Location text
-                          ...(race.location ? [{
-                            type: 'div',
-                            props: {
-                              style: {
-                                fontSize: '16px',
-                                color: '#999',
-                                textAlign: 'center' as const,
-                                padding: '0 24px',
-                              },
-                              children: race.location,
-                            },
-                          }] : []),
-                        ],
+                        children: `${race.member_count} membre${race.member_count > 1 ? 's' : ''}`,
                       },
                     },
+                    ...(namesStr ? [{
+                      type: 'div',
+                      props: {
+                        style: {
+                          fontSize: '22px',
+                          color: '#888',
+                          fontStyle: 'italic',
+                        },
+                        children: namesStr,
+                      },
+                    }] : []),
                   ],
                 },
               },
             ],
           },
         },
-        // Bottom decorative bar
+        // Right: map
+        ...(mapDataUri ? [{
+          type: 'div',
+          props: {
+            style: {
+              width: '340px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative' as const,
+            },
+            children: [
+              {
+                type: 'img',
+                props: {
+                  src: mapDataUri,
+                  width: 340,
+                  height: 630,
+                  style: { objectFit: 'cover', opacity: 0.9 },
+                },
+              },
+              // Gradient overlay to blend with left
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    width: '60px',
+                    background: 'linear-gradient(90deg, #ffffff, rgba(255,255,255,0))',
+                  },
+                },
+              },
+              // Pin
+              {
+                type: 'div',
+                props: {
+                  style: {
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    background: '#F57C20',
+                    border: '4px solid #fff',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+                  },
+                },
+              },
+            ],
+          },
+        }] : [
+          // Placeholder when no map
+          {
+            type: 'div',
+            props: {
+              style: {
+                width: '340px',
+                background: 'linear-gradient(160deg, #f0ebe6 0%, #e8e0d8 100%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+              },
+              children: [
+                {
+                  type: 'div',
+                  props: {
+                    style: {
+                      width: '64px',
+                      height: '64px',
+                      borderRadius: '50%',
+                      background: 'rgba(245, 124, 32, 0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    },
+                    children: {
+                      type: 'div',
+                      props: {
+                        style: {
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          background: '#F57C20',
+                          border: '3px solid #fff',
+                        },
+                      },
+                    },
+                  },
+                },
+                ...(race.location ? [{
+                  type: 'div',
+                  props: {
+                    style: {
+                      fontSize: '18px',
+                      color: '#999',
+                      textAlign: 'center' as const,
+                      padding: '0 24px',
+                    },
+                    children: race.location,
+                  },
+                }] : []),
+              ],
+            },
+          },
+        ]),
+        // Bottom accent bar
         {
           type: 'div',
           props: {
@@ -495,7 +472,7 @@ export async function generateOgImage(race: RaceData): Promise<Buffer> {
               bottom: 0,
               left: 0,
               right: 0,
-              height: '4px',
+              height: '6px',
               background: 'linear-gradient(90deg, #6B2D5B, #F57C20)',
             },
           },
