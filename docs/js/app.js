@@ -9,6 +9,7 @@
   let allRaces = [];
   let raceGroups = []; // grouped by event (multi-edition)
   let currentPopup = null;
+  let detailMode = false;
 
   function truncateNames(names, max) {
     if (!names || !names.length) return "";
@@ -18,13 +19,16 @@
 
   const WHATSAPP_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>';
 
-  function buildWhatsAppUrl(name, dateStr, memberCount) {
+  const SITE_URL = "https://juulieen.github.io/ou-court-le-club/";
+
+  function buildWhatsAppUrl(name, dateStr, memberCount, raceId) {
     const dateFormatted = dateStr
       ? new Date(dateStr + "T00:00:00").toLocaleDateString("fr-FR", {
           day: "numeric", month: "short", year: "numeric",
         })
       : "";
-    const text = `\u{1F3C3} ${name}${dateFormatted ? " \u2014 " + dateFormatted : ""} \u2014 ${memberCount} membre${memberCount > 1 ? "s" : ""} du club inscrit${memberCount > 1 ? "s" : ""} !\nhttps://juulieen.github.io/ou-court-le-club/`;
+    const link = raceId ? `${SITE_URL}#race/${encodeURIComponent(raceId)}` : SITE_URL;
+    const text = `\u{1F3C3} ${name}${dateFormatted ? " \u2014 " + dateFormatted : ""} \u2014 ${memberCount} membre${memberCount > 1 ? "s" : ""} du club inscrit${memberCount > 1 ? "s" : ""} !\n${link}`;
     return `https://wa.me/?text=${encodeURIComponent(text)}`;
   }
 
@@ -58,6 +62,7 @@
 
     setupSidebar();
     setupLegalModal();
+    window.addEventListener("hashchange", handleRoute);
   }
 
   // --- Data loading ---
@@ -72,6 +77,7 @@
         populateMemberFilter(allRaces);
         setupMapLayers();
         renderAll();
+        handleRoute();
       })
       .catch((err) => {
         console.error("Erreur chargement donnees:", err);
@@ -362,7 +368,7 @@
             <div class="popup-meta">${p.location || ""}</div>
             <div class="popup-edition-badge">${editions.length} editions</div>
             <div class="timeline">${timelineHtml}</div>
-            <a class="share-btn whatsapp-btn popup-whatsapp" href="${buildWhatsAppUrl(title, editions[0].date, editions[0].member_count)}" target="_blank" rel="noopener">${WHATSAPP_SVG} Partager</a>
+            <a class="share-btn whatsapp-btn popup-whatsapp" href="${buildWhatsAppUrl(title, editions[0].date, editions[0].member_count, editions[0].id)}" target="_blank" rel="noopener">${WHATSAPP_SVG} Partager</a>
           </div>`;
       } else {
         // Single edition
@@ -389,7 +395,7 @@
             ${membersHtml}
             ${namesHtml}
             ${linkHtml}
-            <a class="share-btn whatsapp-btn popup-whatsapp" href="${buildWhatsAppUrl(ed.name, ed.date, ed.member_count)}" target="_blank" rel="noopener">${WHATSAPP_SVG} Partager</a>
+            <a class="share-btn whatsapp-btn popup-whatsapp" href="${buildWhatsAppUrl(ed.name, ed.date, ed.member_count, ed.id)}" target="_blank" rel="noopener">${WHATSAPP_SVG} Partager</a>
           </div>`;
       }
 
@@ -424,6 +430,7 @@
 
           // Build compact editions data for popup
           const editionsData = g.editions.map((e) => ({
+            id: e.id || "",
             name: e.name,
             date: e.date || "",
             member_count: e.member_count,
@@ -487,6 +494,7 @@
   }
 
   function renderAll() {
+    if (detailMode) return;
     const dateFrom = document.getElementById("date-from").value;
     const dateTo = document.getElementById("date-to").value;
     const filterType = document.getElementById("filter-type").value;
@@ -619,7 +627,7 @@
           ? r.distances.map((d) => `${d}km`).join(", ")
           : "";
 
-        const shareUrl = buildWhatsAppUrl(displayName, displayEd.date, group.isMulti ? displayEd.member_count : r.member_count);
+        const shareUrl = buildWhatsAppUrl(displayName, displayEd.date, group.isMulti ? displayEd.member_count : r.member_count, displayEd.id || r.id);
 
         return `
         <div class="race-card" data-id="${r.id}" data-temp="${temp}" data-lng="${r.lng}" data-lat="${r.lat}">
@@ -787,16 +795,134 @@
       });
     }
 
-    // Event delegation for race cards
+    // Event delegation for race cards -> open detail view
     document.getElementById("race-list").addEventListener("click", (e) => {
       const card = e.target.closest(".race-card");
       if (!card) return;
-      const lng = parseFloat(card.dataset.lng);
-      const lat = parseFloat(card.dataset.lat);
-      if (!isNaN(lng) && !isNaN(lat)) {
-        map.flyTo({ center: [lng, lat], zoom: 13, duration: 800 });
+      const raceId = card.dataset.id;
+      if (raceId) {
+        window.location.hash = `race/${raceId}`;
       }
     });
+  }
+
+  // --- Routing ---
+  function handleRoute() {
+    const hash = window.location.hash;
+    const match = hash.match(/^#race\/(.+)$/);
+    if (match && allRaces.length > 0) {
+      const raceId = decodeURIComponent(match[1]);
+      showRaceDetail(raceId);
+    } else if (allRaces.length > 0 && detailMode) {
+      showDefaultView();
+    }
+  }
+
+  function showRaceDetail(raceId) {
+    const race = allRaces.find((r) => r.id === raceId);
+    if (!race) {
+      history.replaceState(null, "", window.location.pathname);
+      if (detailMode) showDefaultView();
+      return;
+    }
+
+    detailMode = true;
+
+    const dateFormatted = race.date
+      ? new Date(race.date + "T00:00:00").toLocaleDateString("fr-FR", {
+          weekday: "long", day: "numeric", month: "long", year: "numeric",
+        })
+      : "Date inconnue";
+
+    const temp = getTemporality(race.date);
+    const countdownLabel = getCountdownLabel(race.date);
+    const countdownBadge = countdownLabel
+      ? `<span class="countdown-badge">${countdownLabel}</span>`
+      : "";
+
+    const typeBadge = race.race_type && race.race_type !== "autre"
+      ? `<span class="type-badge type-${race.race_type}">${race.race_type}</span>`
+      : "";
+
+    const distLabel = race.distances && race.distances.length
+      ? race.distances.map((d) => `${d} km`).join(", ")
+      : "";
+
+    const namesHtml = race.first_names && race.first_names.length
+      ? `<div class="detail-names">${race.first_names.join(", ")}</div>`
+      : "";
+
+    const linkHtml = race.url
+      ? `<a class="detail-link" href="${race.url}" target="_blank" rel="noopener">S'inscrire sur ${race.platform} &rarr;</a>`
+      : "";
+
+    const shareUrl = buildWhatsAppUrl(race.name, race.date, race.member_count, raceId);
+
+    const html = `
+      <div class="race-detail" data-temp="${temp}">
+        <button class="detail-back" id="detail-back">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+          Retour
+        </button>
+        <h2 class="detail-title">${race.name}</h2>
+        <div class="detail-badges">${typeBadge} ${countdownBadge}</div>
+        <div class="detail-meta">
+          <div class="detail-date">${dateFormatted}</div>
+          <div class="detail-location">${race.location || ""}</div>
+          ${distLabel ? `<div class="detail-distances">${distLabel}</div>` : ""}
+        </div>
+        <div class="detail-members">
+          <span class="member-badge">${race.member_count} membre${race.member_count > 1 ? "s" : ""} inscrit${race.member_count > 1 ? "s" : ""}</span>
+        </div>
+        ${namesHtml}
+        ${linkHtml}
+        <div class="detail-actions">
+          <a class="share-btn whatsapp-btn" href="${shareUrl}" target="_blank" rel="noopener">${WHATSAPP_SVG} Partager sur WhatsApp</a>
+        </div>
+      </div>`;
+
+    document.getElementById("race-list").innerHTML = html;
+
+    document.getElementById("detail-back").addEventListener("click", () => {
+      history.pushState(null, "", window.location.pathname);
+      showDefaultView();
+    });
+
+    // Hide filters in detail mode
+    const filters = document.getElementById("filters");
+    const filterToggle = document.getElementById("filter-toggle");
+    filters.classList.remove("filters-open");
+    filters.style.display = "none";
+    if (filterToggle) filterToggle.style.display = "none";
+
+    // Zoom map to race
+    if (race.lat != null && race.lng != null) {
+      map.flyTo({ center: [race.lng, race.lat], zoom: 13, duration: 800 });
+    }
+
+    // Mobile: snap to half
+    if (window.innerWidth <= 768) {
+      const sidebar = document.getElementById("sidebar");
+      sidebar.classList.remove("collapsed");
+      if (window.__sidebarSnap) {
+        const snaps = window.__sidebarSnap();
+        sidebar.style.transform = `translateY(${snaps.half}px)`;
+      }
+    }
+  }
+
+  function showDefaultView() {
+    if (!detailMode) return;
+    detailMode = false;
+
+    // Restore filters
+    const filters = document.getElementById("filters");
+    const filterToggle = document.getElementById("filter-toggle");
+    filters.style.display = "";
+    if (filterToggle) filterToggle.style.display = "";
+
+    renderAll();
+    fitBounds(allRaces);
   }
 
   function updateLastUpdated(ts) {
