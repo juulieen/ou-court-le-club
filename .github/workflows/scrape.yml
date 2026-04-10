@@ -6,7 +6,9 @@ on:
   workflow_dispatch:        # Manual trigger
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   scrape:
@@ -53,9 +55,9 @@ jobs:
           key: scraper-data-${{ github.run_id }}
 
       # Note: save_data() in main.py generates two versions:
-      # - data/races.json (full, with member names — gitignored)
-      # - docs/data/races.json (anonymized, no names — public)
-      # No manual copy needed.
+      # - data/races.json (full, with member names — cached, never published)
+      # - docs/data/races.json (first names only — deployed via Pages artifact)
+      # First names are never committed to Git history.
 
       - name: Upload cache as artifact (for local sync)
         uses: actions/upload-artifact@v4
@@ -68,11 +70,41 @@ jobs:
             data/races.json
           retention-days: 7
 
-      - name: Commit and push if changed
+      # --- Astro frontend build ---
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci
+
+      - name: Copy races.json for Astro build
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f docs/data/races.json
-          git diff --staged --quiet || git commit -m "Update race data [$(date -u +%Y-%m-%dT%H:%M:%SZ)]"
-          git pull --rebase
-          git push
+          mkdir -p frontend/public/data frontend/src/data
+          cp docs/data/races.json frontend/public/data/races.json
+          cp docs/data/races.json frontend/src/data/races.json
+
+      - name: Build Astro site
+        run: cd frontend && npm run build
+
+      # --- Deploy to GitHub Pages ---
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    needs: scrape
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

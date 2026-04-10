@@ -1,33 +1,16 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ou court le club ? — Run Event 86</title>
-  <meta name="description" content="Carte interactive des courses ou les membres du club Run Event 86 sont inscrits">
-  <link rel="icon" href="favicon.ico" sizes="32x32">
-  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+---
+import Base from '../layouts/Base.astro';
 
-  <!-- Preconnect -->
-  <link rel="preconnect" href="https://unpkg.com">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+const title = 'Ou court le club ? — Run Event 86';
+const description = 'Carte interactive des courses ou les membres du club Run Event 86 sont inscrits';
+---
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
-
-  <!-- MapLibre GL -->
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.css" />
-  <script src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js"></script>
-
-  <link rel="stylesheet" href="css/style.css?v=4">
-</head>
-<body>
+<Base title={title} description={description}>
 
   <div id="sidebar">
     <div id="sidebar-header">
       <div class="header-content">
-        <img src="img/logo.jpg" alt="Run Event 86" class="club-logo" onerror="this.style.display='none'">
+        <img src={`${import.meta.env.BASE_URL}img/logo.jpg`} alt="Run Event 86" class="club-logo" onerror="this.style.display='none'">
         <div class="header-text">
           <h1>Ou court le club ?</h1>
           <div class="subtitle">Run Event 86</div>
@@ -55,8 +38,8 @@
     <div id="filters">
       <div class="filter-toggles">
         <button class="filter-btn active" data-filter="all">Toutes</button>
-        <button class="filter-btn" data-filter="upcoming">À venir</button>
-        <button class="filter-btn" data-filter="past">Passées</button>
+        <button class="filter-btn" data-filter="upcoming">A venir</button>
+        <button class="filter-btn" data-filter="past">Passees</button>
       </div>
       <div class="filter-row">
         <div class="filter-group">
@@ -70,7 +53,7 @@
         <div class="filter-group">
           <select id="filter-distance">
             <option value="">Distance</option>
-            <option value="0-10">< 10 km</option>
+            <option value="0-10">&lt; 10 km</option>
             <option value="10-21">10 — 21 km</option>
             <option value="21-42">21 — 42 km</option>
             <option value="42+">42 km +</option>
@@ -132,6 +115,8 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=4"></script>
-</body>
-</html>
+  <script is:inline define:vars={{ BASE_URL: import.meta.env.BASE_URL }}>
+    window.__BASE_URL__ = BASE_URL;
+  </script>
+  <script src="../scripts/app.ts"></script>
+</Base>

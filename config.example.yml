@@ -17,6 +17,12 @@ club:
     - "DUPONT Jean"
     # Ajoutez vos membres ici...
 
+  # Membres ayant consenti a l'affichage de leur prenom sur la carte (opt-in RGPD)
+  # Meme format que known_members. Seuls les membres listes ici voient
+  # leur prenom affiche sur le site. Les autres sont comptes mais anonymes.
+  display_optin: []
+    # - "NOM Prenom"
+
 races:
   # Courses manuelles (optionnel) - pour les courses non decouvertes automatiquement
   # Utile pour HelloAsso (participants prives) ou autres plateformes non supportees

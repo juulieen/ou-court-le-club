@@ -37,7 +37,7 @@ docs/                    -- static frontend (GitHub Pages)
   index.html             -- MapLibre GL map with sidebar, filters, marker clusters
   js/app.js              -- map logic, fetches docs/data/races.json
   css/style.css
-  data/races.json        -- anonymized version of data/races.json (no member names)
+  data/races.json        -- public version with first names only (no last names, gitignored, deployed via Actions artifact)
 ```
 
 ## Scraper Platforms
@@ -105,6 +105,9 @@ races:                 # Manual race entries (optional, overrides auto-discovery
   #     - name: "NOM Prenom"
   #       bib: "7.5km"
 
+  display_optin: []        # Members who consented to first name display (GDPR)
+    # - "NOM Prenom"
+
 settings:
   map_center: [46.58, 0.34]   # Leaflet map default center (lat, lng)
   map_zoom: 9                   # Leaflet map default zoom
@@ -117,7 +120,7 @@ settings:
 3. **Scraping** -- Up to 6 concurrent threads (`ThreadPoolExecutor`, `MAX_WORKERS = 6`). Each scraper fetches the registration list and filters for club members using dual matching: `matches_club()` (regex on club name) and `matches_known_member()` (known member name matching).
 4. **Enrichment** -- Each race is enriched with `race_type` (trail/route/autre) and `distances` extracted from bib fields and platform-specific structured data (e.g., Chronometrage `tourism_category.type`).
 5. **Geocoding** -- Locations are geocoded via BAN API (`api-adresse.data.gouv.fr`, free, no API key, fast) as primary geocoder. Nominatim fallback for international addresses. Manual `OVERRIDES` dict in `geocoder.py` corrects known BAN errors (e.g., "Marathon" matching "Rue de Marathon"). For races without a location field, `_extract_location_from_name()` strips event-type prefixes/suffixes to extract a geocodable city name.
-6. **Output** -- Two versions: `data/races.json` (full, with member names, gitignored) and `docs/data/races.json` (anonymized, no member names, public). Typically ~70 races with members found.
+6. **Output** -- Two versions: `data/races.json` (full, with member names, gitignored) and `docs/data/races.json` (first names only, gitignored, deployed via GitHub Actions Pages artifact — never committed to Git). Members in `config.yml`'s `display_optout` list are excluded from first name display. Typically ~70 races with members found.
 
 ## Cache Files (in `data/`)
 
@@ -228,3 +231,22 @@ To add a new white-label: add domain to `_API_BASES`, `_extract_slug()`, and opt
 - **Race name extraction:** `_extract_location_from_name()` in `main.py` strips event-type prefixes/suffixes to extract city names.
 - **Scrape cache does NOT store lat/lng** — geocoding is always redone from geocache to allow corrections.
 - **Cache bust:** Increment `?v=N` in `docs/index.html` CSS/JS links after frontend changes.
+
+## Privacy & GDPR
+
+- **First names only** -- The public site (`docs/data/races.json`) shows first names of members, never last names. Full names remain in `data/races.json` (gitignored, never published).
+- **No Git history exposure** -- `docs/data/races.json` is in `.gitignore` and deployed via GitHub Actions Pages artifact (`actions/upload-pages-artifact` + `actions/deploy-pages`). First names never appear in Git commits or history.
+- **GitHub Pages source** must be set to **"GitHub Actions"** (not "Deploy from a branch") in repo Settings > Pages.
+- **Consent-based (opt-in)** -- Base légale: consentement des membres (art. 6.1.a RGPD). Only members listed in `display_optin` in `config.yml` have their first name shown.
+- **Opt-in** -- Only members listed in `config.yml`'s `club.display_optin` have their first name in `first_names` in the public JSON. All others are still counted in `member_count` but remain anonymous.
+- **First name extraction** -- `_extract_first_name()` in `main.py` uses known_members (format "NOM Prenom") for reliable extraction, with a heuristic fallback (uppercase parts = last name, mixed-case = first name).
+
+## Deployment
+
+GitHub Pages is deployed via **GitHub Actions** (not from a branch). The workflow:
+1. Runs the scraper pipeline, generating `docs/data/races.json` (with first names)
+2. Uploads the entire `docs/` folder as a Pages artifact
+3. Deploys to GitHub Pages via `actions/deploy-pages`
+4. The JSON with first names is **never committed** to the repository
+
+**IMPORTANT:** In GitHub repo Settings > Pages, the source must be set to "GitHub Actions".

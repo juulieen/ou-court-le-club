@@ -334,7 +334,7 @@ body {
 }
 
 .race-card .race-meta .location::before {
-  content: "·";
+  content: "\00B7";
   margin-right: 6px;
 }
 
@@ -380,7 +380,7 @@ body {
 }
 
 .race-card .race-meta .dist::before {
-  content: "·";
+  content: "\00B7";
   margin-right: 6px;
 }
 
@@ -643,6 +643,87 @@ body {
   margin-top: 4px;
   padding-left: 0;
   line-height: 1.4;
+}
+
+/* Popup header with share button */
+.popup-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.popup-header .popup-title {
+  flex: 1;
+}
+
+/* WhatsApp share button in popup */
+.popup-share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #25D366;
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.popup-share-btn:hover {
+  opacity: 0.8;
+}
+
+/* Share link in sidebar cards */
+.card-share-btn {
+  display: inline-block;
+  font-size: 0.7rem;
+  text-decoration: none;
+  color: var(--text-dim);
+  margin-left: 4px;
+  vertical-align: middle;
+  transition: color 0.15s;
+}
+
+.card-share-btn:hover {
+  color: var(--orange);
+}
+
+/* Countdown badge */
+.countdown-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  vertical-align: middle;
+  margin-left: 4px;
+  letter-spacing: 0.03em;
+}
+
+.countdown-today {
+  background: #E53935;
+  color: #fff;
+}
+
+.countdown-tomorrow {
+  background: #F57C20;
+  color: #fff;
+}
+
+.countdown-soon {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+/* Highlighted race card (deep link) */
+.race-card.highlighted {
+  background: var(--orange-soft) !important;
+  transition: background 0.3s;
 }
 
 /* ---- Modal ---- */
