@@ -250,44 +250,12 @@ body {
   border-color: var(--orange);
 }
 
-/* ---- Filter toggle (mobile only) ---- */
-#filter-toggle {
-  display: none;
-}
-
-.filter-badge {
-  background: var(--orange);
-  color: #fff;
-  font-size: 0.6rem;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 10px;
-  margin-left: 4px;
-}
-
-/* ---- Date toggle (mobile only) ---- */
-#date-toggle {
-  display: none;
-}
-
-/* ---- Legend (map overlay) ---- */
+/* ---- Legend ---- */
 #legend {
-  position: absolute;
-  bottom: 30px;
-  left: calc(var(--sidebar-w) + 12px);
-  z-index: 10;
   display: flex;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(4px);
-  padding: 6px 12px;
-  border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-#sidebar.collapsed ~ #sidebar-toggle ~ #map ~ #legend {
-  left: 12px;
+  gap: 14px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--border);
 }
 
 .legend-item {
@@ -366,7 +334,7 @@ body {
 }
 
 .race-card .race-meta .location::before {
-  content: "·";
+  content: "\00B7";
   margin-right: 6px;
 }
 
@@ -412,7 +380,7 @@ body {
 }
 
 .race-card .race-meta .dist::before {
-  content: "·";
+  content: "\00B7";
   margin-right: 6px;
 }
 
@@ -667,168 +635,6 @@ body {
   margin-bottom: 6px;
 }
 
-/* ---- Countdown badge ---- */
-.countdown-badge {
-  display: inline-flex;
-  align-items: center;
-  background: #E53935;
-  color: #fff;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  animation: pulse-countdown 2s ease-in-out infinite;
-}
-
-@keyframes pulse-countdown {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-/* ---- Share button ---- */
-.race-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 4px;
-}
-
-.whatsapp-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  background: #25D366;
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background 0.15s, transform 0.1s;
-  cursor: pointer;
-  line-height: 1;
-  min-height: 28px;
-}
-
-.whatsapp-btn:hover {
-  background: #1DA851;
-}
-
-.whatsapp-btn:active {
-  transform: scale(0.95);
-}
-
-.popup-whatsapp {
-  display: inline-flex;
-  margin-top: 8px;
-  font-size: 0.72rem;
-}
-
-/* ---- Race detail panel ---- */
-.race-detail {
-  padding: 20px;
-}
-
-.detail-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-family: "DM Sans", system-ui, sans-serif;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s;
-  margin-bottom: 16px;
-}
-
-.detail-back:hover {
-  border-color: var(--orange);
-  color: var(--orange);
-}
-
-.detail-title {
-  font-family: "Bebas Neue", sans-serif;
-  font-size: 1.4rem;
-  color: var(--text);
-  line-height: 1.2;
-  margin-bottom: 8px;
-}
-
-.detail-badges {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.detail-meta {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  margin-bottom: 12px;
-}
-
-.detail-date {
-  font-weight: 600;
-  color: var(--text);
-}
-
-.detail-distances {
-  color: var(--text-dim);
-  font-size: 0.78rem;
-}
-
-.detail-members {
-  margin-bottom: 8px;
-}
-
-.detail-names {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  font-style: italic;
-  margin-bottom: 12px;
-  line-height: 1.5;
-}
-
-.detail-link {
-  display: inline-block;
-  font-size: 0.82rem;
-  color: var(--orange);
-  text-decoration: none;
-  font-weight: 600;
-  margin-bottom: 16px;
-  transition: color 0.15s;
-}
-
-.detail-link:hover {
-  color: var(--purple);
-}
-
-.detail-actions {
-  margin-top: 8px;
-}
-
-.race-detail[data-temp="this-week"] {
-  border-left: 4px solid #E53935;
-}
-
-.race-detail[data-temp="this-month"] {
-  border-left: 4px solid var(--orange);
-}
-
-.race-detail[data-temp="future"] {
-  border-left: 4px solid var(--purple);
-}
-
-.race-detail[data-temp="past"] {
-  border-left: 4px solid #ddd;
-}
-
 /* First names in sidebar cards */
 .race-names {
   font-size: 0.7rem;
@@ -837,6 +643,87 @@ body {
   margin-top: 4px;
   padding-left: 0;
   line-height: 1.4;
+}
+
+/* Popup header with share button */
+.popup-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.popup-header .popup-title {
+  flex: 1;
+}
+
+/* WhatsApp share button in popup */
+.popup-share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #25D366;
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.popup-share-btn:hover {
+  opacity: 0.8;
+}
+
+/* Share link in sidebar cards */
+.card-share-btn {
+  display: inline-block;
+  font-size: 0.7rem;
+  text-decoration: none;
+  color: var(--text-dim);
+  margin-left: 4px;
+  vertical-align: middle;
+  transition: color 0.15s;
+}
+
+.card-share-btn:hover {
+  color: var(--orange);
+}
+
+/* Countdown badge */
+.countdown-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  vertical-align: middle;
+  margin-left: 4px;
+  letter-spacing: 0.03em;
+}
+
+.countdown-today {
+  background: #E53935;
+  color: #fff;
+}
+
+.countdown-tomorrow {
+  background: #F57C20;
+  color: #fff;
+}
+
+.countdown-soon {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+/* Highlighted race card (deep link) */
+.race-card.highlighted {
+  background: var(--orange-soft) !important;
+  transition: background 0.3s;
 }
 
 /* ---- Modal ---- */
@@ -915,25 +802,17 @@ body {
 
   #sidebar {
     position: fixed;
+    top: auto;
     bottom: 0;
     left: 0;
     width: 100%;
-    top: 8dvh;
+    height: 55vh;
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
-    /* Default half: top at 45% of viewport */
-    transform: translateY(45%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform;
-    height: auto;
-  }
-
-  #sidebar.dragging {
-    transition: none;
   }
 
   #sidebar.collapsed {
-    transform: translateY(calc(100% - 70px));
+    transform: translateY(calc(55vh - 52px));
   }
 
   #sidebar-toggle {
@@ -949,9 +828,9 @@ body {
   #sidebar-header::before {
     content: "";
     display: block;
-    width: 36px;
-    height: 4px;
-    background: #ccc;
+    width: 32px;
+    height: 3px;
+    background: var(--border);
     border-radius: 2px;
     margin: 0 auto 8px;
   }
@@ -965,95 +844,7 @@ body {
     font-size: 1.2rem;
   }
 
-  /* Map fills full screen; sidebar overlays from bottom */
-
-  #filter-toggle {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    width: calc(100% - 40px);
-    margin: 8px 20px 0;
-    padding: 8px 12px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: #fff;
-    font-family: "DM Sans", system-ui, sans-serif;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  #filter-toggle:hover,
-  #filter-toggle.active {
-    border-color: var(--orange);
-    color: var(--orange);
-  }
-
-  #filters {
-    display: none;
-  }
-
-  #filters.filters-open {
-    display: flex;
-  }
-
-  .filter-row-main {
-    display: flex;
-    gap: 4px;
-  }
-
-  .filter-row-main select {
-    font-size: 0.68rem;
-    padding: 5px 4px;
-    padding-right: 18px;
-    background-position: right 4px center;
-  }
-
-  #date-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: #fff;
-    font-family: "DM Sans", system-ui, sans-serif;
-    font-size: 0.68rem;
-    font-weight: 600;
-    color: var(--text-dim);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  #date-toggle:hover,
-  #date-toggle.active {
-    border-color: var(--orange);
-    color: var(--orange);
-  }
-
-  #filter-dates-panel {
-    display: none;
-  }
-
-  #filter-dates-panel.dates-open {
-    display: flex;
-    gap: 8px;
-    margin-top: 6px;
-  }
-
-  #legend {
-    bottom: auto;
-    top: 10px;
-    left: 10px;
-    gap: 8px;
-    padding: 5px 10px;
-    font-size: 0.6rem;
-  }
-
-  #legend .legend-dot {
-    width: 7px;
-    height: 7px;
+  #map {
+    height: 50vh;
   }
 }

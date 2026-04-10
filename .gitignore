@@ -5,6 +5,9 @@ config.yml
 data/races.json
 data/scrape_cache.json
 
+# Public data (contains first names, deployed via GitHub Actions artifact — not committed)
+docs/data/races.json
+
 # Geocoding & slug caches (no personal data, but regenerable)
 data/geocache.json
 data/njuko_slugs.json
@@ -34,7 +37,16 @@ env/
 # OS
 .DS_Store
 Thumbs.db
-node_modules/
-package-lock.json
-package.json
 test-results/
+
+# Frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.astro/
+frontend/src/data/races.json
+frontend/public/data/races.json
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
