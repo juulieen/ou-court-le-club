@@ -45,3 +45,8 @@ frontend/dist/
 frontend/.astro/
 frontend/src/data/races.json
 frontend/public/data/races.json
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
