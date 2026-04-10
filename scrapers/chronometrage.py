@@ -71,25 +71,40 @@ class ChronometrageScraper(BaseScraper):
             .get("initialData", {})
         )
 
-        # initialData can be a dict with challenges, or a list
+        # initialData can be:
+        # - a dict with "challenges" (old format)
+        # - a list of race objects each with "subscriptions" (v2 format)
+        # - a dict with flat "subscriptions"
         challenges = []
         if isinstance(initial, dict):
             challenges = initial.get("challenges", [])
             if not challenges:
-                # Try flat subscriptions
                 subs = initial.get("subscriptions", [])
                 if subs:
                     challenges = [{"subscriptions": subs}]
         elif isinstance(initial, list):
-            challenges = [{"subscriptions": initial}]
+            # v2 format: list of race objects with subscriptions inside
+            for item in initial:
+                if isinstance(item, dict) and "subscriptions" in item:
+                    challenges.append(item)
+            # Fallback: treat as flat subscriptions list
+            if not challenges:
+                challenges = [{"subscriptions": initial}]
 
         for challenge in challenges:
-            race_name = challenge.get("name", "")
+            race_name = challenge.get("title", challenge.get("name", ""))
             for sub in challenge.get("subscriptions", []):
                 club = self._extract_club(sub)
+                # Name can be in top-level fields or inside observations
                 firstname = sub.get("firstname", "")
                 lastname = sub.get("lastname", "")
-                name = f"{firstname} {lastname}".strip()
+                if not firstname and not lastname:
+                    obs = self._parse_observations(sub)
+                    info = obs.get("infoPersonne", {})
+                    if isinstance(info, dict):
+                        lastname = info.get("nom", "")
+                        firstname = info.get("prenom", "")
+                name = f"{lastname} {firstname}".strip() if lastname.isupper() else f"{firstname} {lastname}".strip()
 
                 is_club = club and matches_club(club, self.patterns)
                 is_name = matches_known_member(name, self.known_members)
@@ -105,20 +120,21 @@ class ChronometrageScraper(BaseScraper):
 
         return members
 
-    def _extract_club(self, sub: dict) -> str:
-        """Extract club from subscription's observations.infoPersonne."""
+    def _parse_observations(self, sub: dict) -> dict:
+        """Parse the observations field (can be a JSON string or dict)."""
         obs_raw = sub.get("observations", "")
         if not obs_raw:
-            return ""
-
+            return {}
         try:
             if isinstance(obs_raw, str):
-                obs = json.loads(obs_raw)
-            else:
-                obs = obs_raw
+                return json.loads(obs_raw)
+            return obs_raw
         except (json.JSONDecodeError, TypeError):
-            return ""
+            return {}
 
+    def _extract_club(self, sub: dict) -> str:
+        """Extract club from subscription's observations.infoPersonne."""
+        obs = self._parse_observations(sub)
         info = obs.get("infoPersonne", {})
         if isinstance(info, dict):
             return info.get("club", "") or info.get("team", "")
