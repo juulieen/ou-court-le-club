@@ -6,14 +6,13 @@ declare const maplibregl: any;
 
   const BASE_URL = (window as any).__BASE_URL__ || "/";
 
-  const MAPTILER_KEY = window.location.hostname === "localhost"
-    ? "MAPTILER_KEY_REDACTED"   // dev (localhost only)
-    : "MAPTILER_KEY_REDACTED";  // prod (juulieen.github.io)
+  const MAPTILER_KEY = import.meta.env.PUBLIC_MAPTILER_KEY || "";
 
   let map: any;
   let allRaces: any[] = [];
   let raceGroups: any[] = []; // grouped by event (multi-edition)
   let currentPopup: any = null;
+  const counterIntervals: Record<string, ReturnType<typeof setInterval>> = {};
 
   // --- Init ---
   function init() {
@@ -110,6 +109,16 @@ declare const maplibregl: any;
     return result;
   }
 
+  // --- HTML escaping ---
+  function escapeHtml(str: string): string {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   // --- Stats ---
   function updateStats(races: any[]) {
     const today = new Date();
@@ -126,12 +135,17 @@ declare const maplibregl: any;
   function animateCounter(id: string, target: number) {
     const el = document.getElementById(id);
     if (!el) return;
+    if (counterIntervals[id]) { clearInterval(counterIntervals[id]); delete counterIntervals[id]; }
     if (target === 0) { el.textContent = "0"; return; }
     let current = 0;
     const step = Math.max(1, Math.floor(target / 20));
-    const interval = setInterval(() => {
+    counterIntervals[id] = setInterval(() => {
       current += step;
-      if (current >= target) { current = target; clearInterval(interval); }
+      if (current >= target) {
+        current = target;
+        clearInterval(counterIntervals[id]);
+        delete counterIntervals[id];
+      }
       el.textContent = String(current);
     }, 30);
   }
@@ -349,31 +363,31 @@ declare const maplibregl: any;
         const temp = getTemporality(ed.date);
         const color = getColor(temp);
         const linkHtml = ed.url
-          ? `<a class="popup-link" href="${ed.url}" target="_blank" rel="noopener">${ed.platform} &rarr;</a>`
+          ? `<a class="popup-link" href="${escapeHtml(ed.url)}" target="_blank" rel="noopener">${escapeHtml(ed.platform)} &rarr;</a>`
           : "";
         const namesHtml = ed.first_names && ed.first_names.length
-          ? `<div class="timeline-names">${formatFirstNames(ed.first_names)}</div>`
+          ? `<div class="timeline-names">${escapeHtml(formatFirstNames(ed.first_names))}</div>`
           : "";
         return `
           <div class="timeline-item">
-            <div class="timeline-dot" style="background: ${color}"></div>
+            <div class="timeline-dot" style="background: ${escapeHtml(color)}"></div>
             <div class="timeline-content">
-              <div class="timeline-year">${dateFormatted}</div>
+              <div class="timeline-year">${escapeHtml(dateFormatted)}</div>
               <div class="timeline-members">${ed.member_count} membre${ed.member_count > 1 ? "s" : ""} ${linkHtml}</div>
               ${namesHtml}
             </div>
           </div>`;
       }).join("");
 
-      const whatsappBtn = `<a class="popup-share-btn" href="${buildWhatsAppLink(title, p.id)}" target="_blank" rel="noopener" title="Partager sur WhatsApp">&#128172;</a>`;
+      const whatsappBtn = `<a class="popup-share-btn" href="${escapeHtml(buildWhatsAppLink(title, p.id))}" target="_blank" rel="noopener" title="Partager sur WhatsApp">&#128172;</a>`;
 
       popupHtml = `
         <div class="race-popup">
           <div class="popup-header">
-            <div class="popup-title" style="border-left: 3px solid ${p.color}; padding-left: 10px">${title}</div>
+            <div class="popup-title" style="border-left: 3px solid ${escapeHtml(p.color)}; padding-left: 10px">${escapeHtml(title)}</div>
             ${whatsappBtn}
           </div>
-          <div class="popup-meta">${p.location || ""}</div>
+          <div class="popup-meta">${escapeHtml(p.location || "")}</div>
           <div class="popup-edition-badge">${editions.length} editions</div>
           <div class="timeline">${timelineHtml}</div>
         </div>`;
@@ -389,20 +403,20 @@ declare const maplibregl: any;
         ? `<div class="popup-members-count">${ed.member_count} membre${ed.member_count > 1 ? "s" : ""} inscrit${ed.member_count > 1 ? "s" : ""}</div>`
         : "";
       const namesHtml = ed.first_names && ed.first_names.length
-        ? `<div class="popup-names">${formatFirstNames(ed.first_names)}</div>`
+        ? `<div class="popup-names">${escapeHtml(formatFirstNames(ed.first_names))}</div>`
         : "";
       const linkHtml = ed.url
-        ? `<a class="popup-link" href="${ed.url}" target="_blank" rel="noopener">Voir sur ${ed.platform} &rarr;</a>`
+        ? `<a class="popup-link" href="${escapeHtml(ed.url)}" target="_blank" rel="noopener">Voir sur ${escapeHtml(ed.platform)} &rarr;</a>`
         : "";
-      const whatsappBtn = `<a class="popup-share-btn" href="${buildWhatsAppLink(ed.name, p.id)}" target="_blank" rel="noopener" title="Partager sur WhatsApp">&#128172;</a>`;
+      const whatsappBtn = `<a class="popup-share-btn" href="${escapeHtml(buildWhatsAppLink(ed.name, p.id))}" target="_blank" rel="noopener" title="Partager sur WhatsApp">&#128172;</a>`;
 
       popupHtml = `
         <div class="race-popup">
           <div class="popup-header">
-            <div class="popup-title" style="border-left: 3px solid ${ed.color || p.color}; padding-left: 10px">${ed.name}</div>
+            <div class="popup-title" style="border-left: 3px solid ${escapeHtml(ed.color || p.color)}; padding-left: 10px">${escapeHtml(ed.name)}</div>
             ${whatsappBtn}
           </div>
-          <div class="popup-meta">${dateFormatted}${p.location ? " \u2014 " + p.location : ""}</div>
+          <div class="popup-meta">${escapeHtml(dateFormatted)}${p.location ? " \u2014 " + escapeHtml(p.location) : ""}</div>
           ${membersHtml}
           ${namesHtml}
           ${linkHtml}
@@ -644,11 +658,13 @@ declare const maplibregl: any;
 
         const firstNames = (group.isMulti ? displayEd.first_names : r.first_names) || [];
         const namesLine = firstNames.length
-          ? `<div class="race-names">${formatFirstNames(firstNames)}</div>`
+          ? `<div class="race-names">${escapeHtml(formatFirstNames(firstNames))}</div>`
           : "";
 
-        const typeBadge = r.race_type && r.race_type !== "autre"
-          ? `<span class="type-badge type-${r.race_type}">${r.race_type}</span>`
+        const VALID_RACE_TYPES = ["trail", "route", "autre"] as const;
+        const safeRaceType = VALID_RACE_TYPES.includes(r.race_type) ? r.race_type : "";
+        const typeBadge = safeRaceType && safeRaceType !== "autre"
+          ? `<span class="type-badge type-${safeRaceType}">${escapeHtml(safeRaceType)}</span>`
           : "";
         const distLabel = r.distances && r.distances.length
           ? r.distances.map((d: number) => `${d}km`).join(", ")
@@ -657,15 +673,15 @@ declare const maplibregl: any;
         const whatsappLink = buildWhatsAppLink(displayName, r.id);
 
         return `
-        <div class="race-card" data-id="${r.id}" data-temp="${temp}" data-lng="${r.lng}" data-lat="${r.lat}">
+        <div class="race-card" data-id="${escapeHtml(r.id)}" data-temp="${escapeHtml(temp)}" data-lng="${escapeHtml(String(r.lng))}" data-lat="${escapeHtml(String(r.lat))}">
           <div class="race-name">
-            ${displayName} ${editionBadge} ${typeBadge} ${countdown}
-            <a class="card-share-btn" href="${whatsappLink}" target="_blank" rel="noopener" title="Partager" onclick="event.stopPropagation()">&#128279;</a>
+            ${escapeHtml(displayName)} ${editionBadge} ${typeBadge} ${countdown}
+            <a class="card-share-btn" href="${escapeHtml(whatsappLink)}" target="_blank" rel="noopener" title="Partager" onclick="event.stopPropagation()">&#128279;</a>
           </div>
           <div class="race-meta">
-            <span class="date">${dateFormatted}</span>
-            <span class="location">${displayEd.location || r.location || ""}</span>
-            ${distLabel ? `<span class="dist">${distLabel}</span>` : ""}
+            <span class="date">${escapeHtml(dateFormatted)}</span>
+            <span class="location">${escapeHtml(displayEd.location || r.location || "")}</span>
+            ${distLabel ? `<span class="dist">${escapeHtml(distLabel)}</span>` : ""}
             <span class="member-badge">${memberLabel}</span>
           </div>
           ${namesLine}

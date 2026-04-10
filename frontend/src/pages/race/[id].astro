@@ -11,15 +11,24 @@ export async function getStaticPaths() {
     path.resolve(process.cwd(), '../data/races.json'),
   ];
 
-  let data: { races: any[] } = { races: [] };
+  let data: { races: any[] } | null = null;
+  const loadErrors: string[] = [];
+
   for (const candidate of candidates) {
     try {
       const raw = fs.readFileSync(candidate, 'utf-8');
       data = JSON.parse(raw);
       break;
-    } catch {
-      // Try next candidate
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      loadErrors.push(`${candidate}: ${message}`);
     }
+  }
+
+  if (!data) {
+    throw new Error(
+      `Unable to load races data from any candidate path. Tried: ${candidates.join(', ')}. Errors: ${loadErrors.join(' | ')}`
+    );
   }
 
   return (data.races || [])

@@ -118,5 +118,7 @@ const description = 'Carte interactive des courses ou les membres du club Run Ev
   <script is:inline define:vars={{ BASE_URL: import.meta.env.BASE_URL }}>
     window.__BASE_URL__ = BASE_URL;
   </script>
-  <script src="../scripts/app.ts"></script>
+  <script>
+    import '../scripts/app.ts';
+  </script>
 </Base>

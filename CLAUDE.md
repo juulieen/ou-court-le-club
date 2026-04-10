@@ -108,9 +108,6 @@ races:                 # Manual race entries (optional, overrides auto-discovery
   #     - name: "NOM Prenom"
   #       bib: "7.5km"
 
-  display_optin: []        # Members who consented to first name display (GDPR)
-    # - "NOM Prenom"
-
 settings:
   map_center: [46.58, 0.34]   # Leaflet map default center (lat, lng)
   map_zoom: 9                   # Leaflet map default zoom
