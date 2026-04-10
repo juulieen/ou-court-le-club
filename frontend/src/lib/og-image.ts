@@ -20,6 +20,42 @@ async function loadFonts() {
   bebasNeue = bebas;
 }
 
+// Load club logo as base64
+import fs from 'node:fs';
+import path from 'node:path';
+
+let logoDataUri = '';
+function loadLogo() {
+  if (logoDataUri) return;
+  const logoPath = path.resolve(process.cwd(), 'public/img/logo.jpg');
+  const buf = fs.readFileSync(logoPath);
+  logoDataUri = `data:image/jpeg;base64,${buf.toString('base64')}`;
+}
+
+// Cache static map images to avoid re-fetching
+const mapCache = new Map<string, string>();
+
+async function fetchStaticMap(lat: number, lng: number, key: string): Promise<string> {
+  const cacheKey = `${lat},${lng}`;
+  if (mapCache.has(cacheKey)) return mapCache.get(cacheKey)!;
+
+  const style = 'outdoor-v2';
+  const url = `https://api.maptiler.com/maps/${style}/static/${lng},${lat},9/400x400@2x.png?key=${key}&attribution=false`;
+
+  try {
+    // Try without Referer first (works when key has no domain restriction)
+    // If key is domain-restricted, this will 403 — caught gracefully below
+    const res = await fetch(url);
+    const buf = Buffer.from(await res.arrayBuffer());
+    const dataUri = `data:image/png;base64,${buf.toString('base64')}`;
+    mapCache.set(cacheKey, dataUri);
+    return dataUri;
+  } catch (err) {
+    console.warn(`Static map fetch failed for ${lat},${lng}:`, err);
+    return '';
+  }
+}
+
 interface RaceData {
   name: string;
   date: string;
@@ -72,6 +108,9 @@ function getTypeBg(type?: string): string {
 
 export async function generateOgImage(race: RaceData): Promise<Buffer> {
   await loadFonts();
+  loadLogo();
+
+  const maptilerKey = import.meta.env.PUBLIC_MAPTILER_KEY || process.env.PUBLIC_MAPTILER_KEY || '';
 
   const dateFormatted = formatDate(race.date);
   const namesStr = formatNames(race.first_names || []);
@@ -80,7 +119,13 @@ export async function generateOgImage(race: RaceData): Promise<Buffer> {
     ? race.distances.map(d => `${d}km`).join(' / ')
     : '';
 
-  // Build the JSX-like structure for satori
+  // Fetch static map if coordinates available
+  let mapDataUri = '';
+  if (race.lat && race.lng && maptilerKey) {
+    mapDataUri = await fetchStaticMap(race.lat, race.lng, maptilerKey);
+  }
+
+  // Build the markup
   const markup = {
     type: 'div',
     props: {
@@ -109,188 +154,296 @@ export async function generateOgImage(race: RaceData): Promise<Buffer> {
             },
           },
         },
-        // Content area
+        // Main content: left text + right map
         {
           type: 'div',
           props: {
             style: {
               display: 'flex',
-              flexDirection: 'column',
-              padding: '48px 56px 40px',
               flex: 1,
+              padding: '48px 0 40px 56px',
             },
             children: [
-              // Header: logo + club name
+              // Left column: text content
               {
                 type: 'div',
                 props: {
                   style: {
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    marginBottom: '32px',
+                    flexDirection: 'column',
+                    flex: 1,
+                    paddingRight: '32px',
                   },
                   children: [
+                    // Header: logo + club name
                     {
                       type: 'div',
                       props: {
                         style: {
-                          width: '44px',
-                          height: '44px',
-                          borderRadius: '10px',
-                          background: '#F57C20',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#fff',
-                          fontSize: '22px',
-                          fontFamily: 'Bebas Neue',
+                          gap: '14px',
+                          marginBottom: '28px',
                         },
-                        children: 'RE',
+                        children: [
+                          {
+                            type: 'img',
+                            props: {
+                              src: logoDataUri,
+                              width: 44,
+                              height: 44,
+                              style: {
+                                borderRadius: '10px',
+                                objectFit: 'contain',
+                              },
+                            },
+                          },
+                          {
+                            type: 'div',
+                            props: {
+                              style: { display: 'flex', flexDirection: 'column' },
+                              children: [
+                                {
+                                  type: 'div',
+                                  props: {
+                                    style: {
+                                      fontFamily: 'Bebas Neue',
+                                      fontSize: '20px',
+                                      color: '#1a1a1a',
+                                      lineHeight: 1,
+                                    },
+                                    children: 'Ou court le club ?',
+                                  },
+                                },
+                                {
+                                  type: 'div',
+                                  props: {
+                                    style: {
+                                      fontSize: '11px',
+                                      fontWeight: 600,
+                                      color: '#F57C20',
+                                      textTransform: 'uppercase' as const,
+                                      letterSpacing: '0.1em',
+                                    },
+                                    children: 'Run Event 86',
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        ],
                       },
                     },
+                    // Race name
+                    {
+                      type: 'div',
+                      props: {
+                        style: {
+                          fontSize: race.name.length > 40 ? '34px' : '42px',
+                          fontWeight: 700,
+                          color: '#1a1a1a',
+                          lineHeight: 1.15,
+                          marginBottom: '14px',
+                          display: 'flex',
+                          flexWrap: 'wrap' as const,
+                          gap: '10px',
+                          alignItems: 'center',
+                        },
+                        children: [
+                          race.name,
+                          ...(typeLabel ? [{
+                            type: 'div',
+                            props: {
+                              style: {
+                                fontSize: '15px',
+                                fontWeight: 700,
+                                padding: '3px 10px',
+                                borderRadius: '20px',
+                                background: getTypeBg(race.race_type),
+                                color: getTypeColor(race.race_type),
+                                textTransform: 'uppercase' as const,
+                              },
+                              children: typeLabel,
+                            },
+                          }] : []),
+                        ],
+                      },
+                    },
+                    // Date + location
+                    {
+                      type: 'div',
+                      props: {
+                        style: {
+                          fontSize: '20px',
+                          color: '#777',
+                          marginBottom: '6px',
+                        },
+                        children: [dateFormatted, race.location].filter(Boolean).join(' — '),
+                      },
+                    },
+                    // Distances
+                    ...(distLabel ? [{
+                      type: 'div',
+                      props: {
+                        style: {
+                          fontSize: '17px',
+                          color: '#aaa',
+                          marginBottom: '6px',
+                        },
+                        children: distLabel,
+                      },
+                    }] : []),
+                    // Spacer
+                    { type: 'div', props: { style: { flex: 1 } } },
+                    // Bottom: members
                     {
                       type: 'div',
                       props: {
                         style: {
                           display: 'flex',
-                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '14px',
+                          flexWrap: 'wrap' as const,
                         },
                         children: [
                           {
                             type: 'div',
                             props: {
                               style: {
-                                fontFamily: 'Bebas Neue',
-                                fontSize: '22px',
-                                color: '#1a1a1a',
-                                lineHeight: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                background: 'rgba(245, 124, 32, 0.1)',
+                                color: '#F57C20',
+                                padding: '7px 16px',
+                                borderRadius: '24px',
+                                fontSize: '20px',
+                                fontWeight: 700,
                               },
-                              children: 'Ou court le club ?',
+                              children: `${race.member_count} membre${race.member_count > 1 ? 's' : ''} inscrit${race.member_count > 1 ? 's' : ''}`,
                             },
                           },
-                          {
+                          ...(namesStr ? [{
                             type: 'div',
                             props: {
                               style: {
-                                fontSize: '11px',
-                                fontWeight: 600,
-                                color: '#F57C20',
-                                textTransform: 'uppercase' as const,
-                                letterSpacing: '0.1em',
+                                fontSize: '18px',
+                                color: '#999',
+                                fontStyle: 'italic',
                               },
-                              children: 'Run Event 86',
+                              children: namesStr,
                             },
-                          },
+                          }] : []),
                         ],
                       },
                     },
                   ],
                 },
               },
-              // Race name
+              // Right column: static map or location placeholder
               {
                 type: 'div',
                 props: {
                   style: {
-                    fontSize: race.name.length > 40 ? '38px' : '46px',
-                    fontWeight: 700,
-                    color: '#1a1a1a',
-                    lineHeight: 1.15,
-                    marginBottom: '16px',
+                    width: '380px',
                     display: 'flex',
-                    flexWrap: 'wrap' as const,
-                    gap: '12px',
                     alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative' as const,
                   },
-                  children: [
-                    race.name,
-                    ...(typeLabel ? [{
-                      type: 'div',
+                  children: mapDataUri ? [
+                    {
+                      type: 'img',
                       props: {
+                        src: mapDataUri,
+                        width: 380,
+                        height: 580,
                         style: {
-                          fontSize: '16px',
-                          fontWeight: 700,
-                          padding: '4px 12px',
-                          borderRadius: '20px',
-                          background: getTypeBg(race.race_type),
-                          color: getTypeColor(race.race_type),
-                          textTransform: 'uppercase' as const,
+                          borderRadius: '16px 0 0 16px',
+                          objectFit: 'cover',
+                          opacity: 0.85,
                         },
-                        children: typeLabel,
                       },
-                    }] : []),
-                  ],
-                },
-              },
-              // Date + location
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    fontSize: '22px',
-                    color: '#777',
-                    marginBottom: '8px',
-                    display: 'flex',
-                    gap: '8px',
-                  },
-                  children: [dateFormatted, race.location].filter(Boolean).join(' — '),
-                },
-              },
-              // Distances
-              ...(distLabel ? [{
-                type: 'div',
-                props: {
-                  style: {
-                    fontSize: '18px',
-                    color: '#aaa',
-                    marginBottom: '8px',
-                  },
-                  children: distLabel,
-                },
-              }] : []),
-              // Spacer
-              { type: 'div', props: { style: { flex: 1 } } },
-              // Bottom: members
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                  },
-                  children: [
-                    // Member count badge
+                    },
+                    // Orange pin dot overlay (center of map)
                     {
                       type: 'div',
                       props: {
                         style: {
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          background: 'rgba(245, 124, 32, 0.1)',
-                          color: '#F57C20',
-                          padding: '8px 18px',
-                          borderRadius: '24px',
-                          fontSize: '22px',
-                          fontWeight: 700,
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          width: '22px',
+                          height: '22px',
+                          borderRadius: '50%',
+                          background: '#F57C20',
+                          border: '3px solid #fff',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                         },
-                        children: `${race.member_count} membre${race.member_count > 1 ? 's' : ''} inscrit${race.member_count > 1 ? 's' : ''}`,
                       },
                     },
-                    // First names
-                    ...(namesStr ? [{
+                  ] : [
+                    // Placeholder: gradient background with location pin
+                    {
                       type: 'div',
                       props: {
                         style: {
-                          fontSize: '20px',
-                          color: '#999',
-                          fontStyle: 'italic',
+                          width: '380px',
+                          height: '580px',
+                          borderRadius: '16px 0 0 16px',
+                          background: 'linear-gradient(160deg, #f0ebe6 0%, #e8e0d8 100%)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '12px',
                         },
-                        children: namesStr,
+                        children: [
+                          // Pin icon circle
+                          {
+                            type: 'div',
+                            props: {
+                              style: {
+                                width: '64px',
+                                height: '64px',
+                                borderRadius: '50%',
+                                background: 'rgba(245, 124, 32, 0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              },
+                              children: {
+                                type: 'div',
+                                props: {
+                                  style: {
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    background: '#F57C20',
+                                    border: '3px solid #fff',
+                                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                                  },
+                                },
+                              },
+                            },
+                          },
+                          // Location text
+                          ...(race.location ? [{
+                            type: 'div',
+                            props: {
+                              style: {
+                                fontSize: '16px',
+                                color: '#999',
+                                textAlign: 'center' as const,
+                                padding: '0 24px',
+                              },
+                              children: race.location,
+                            },
+                          }] : []),
+                        ],
                       },
-                    }] : []),
+                    },
                   ],
                 },
               },
