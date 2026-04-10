@@ -32,28 +32,66 @@ function loadLogo() {
   logoDataUri = `data:image/jpeg;base64,${buf.toString('base64')}`;
 }
 
-// Cache static map images to avoid re-fetching
+// --- Static map from OSM tiles (free, no API key) ---
+import sharp from 'sharp';
+
 const mapCache = new Map<string, string>();
 
-async function fetchStaticMap(lat: number, lng: number, key: string): Promise<string> {
-  const cacheKey = `${lat},${lng}`;
+function latLngToTile(lat: number, lng: number, zoom: number) {
+  const n = Math.pow(2, zoom);
+  const x = Math.floor((lng + 180) / 360 * n);
+  const latRad = lat * Math.PI / 180;
+  const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+  return { x, y };
+}
+
+async function fetchTile(z: number, x: number, y: number): Promise<Buffer | null> {
+  try {
+    const res = await fetch(`https://tile.openstreetmap.org/${z}/${x}/${y}.png`, {
+      headers: { 'User-Agent': 'RunEvent86-OG/1.0 (https://github.com/juulieen/ou-court-le-club)' },
+    });
+    if (!res.ok) return null;
+    return Buffer.from(await res.arrayBuffer());
+  } catch { return null; }
+}
+
+async function fetchStaticMap(lat: number, lng: number): Promise<string> {
+  const cacheKey = `${lat.toFixed(2)},${lng.toFixed(2)}`;
   if (mapCache.has(cacheKey)) return mapCache.get(cacheKey)!;
 
-  const style = 'outdoor-v2';
-  const url = `https://api.maptiler.com/maps/${style}/static/${lng},${lat},9/400x400@2x.png?key=${key}&attribution=false`;
+  const zoom = 9;
+  const center = latLngToTile(lat, lng, zoom);
 
-  try {
-    // Try without Referer first (works when key has no domain restriction)
-    // If key is domain-restricted, this will 403 — caught gracefully below
-    const res = await fetch(url);
-    const buf = Buffer.from(await res.arrayBuffer());
-    const dataUri = `data:image/png;base64,${buf.toString('base64')}`;
-    mapCache.set(cacheKey, dataUri);
-    return dataUri;
-  } catch (err) {
-    console.warn(`Static map fetch failed for ${lat},${lng}:`, err);
-    return '';
-  }
+  // Fetch 3x3 grid of tiles
+  const grid: { dx: number; dy: number; buf: Buffer }[] = [];
+  const offsets = [-1, 0, 1];
+  await Promise.all(
+    offsets.flatMap(dy => offsets.map(async dx => {
+      const buf = await fetchTile(zoom, center.x + dx, center.y + dy);
+      if (buf) grid.push({ dx: dx + 1, dy: dy + 1, buf });
+    }))
+  );
+
+  if (grid.length < 4) return '';
+
+  // Compose 3x3 tiles into 768x768 image, then crop center to 400x580
+  const composite = await sharp({
+    create: { width: 768, height: 768, channels: 4, background: { r: 240, g: 235, b: 230, alpha: 1 } },
+  })
+    .composite(
+      grid.map(t => ({
+        input: t.buf,
+        left: t.dx * 256,
+        top: t.dy * 256,
+      }))
+    )
+    .extract({ left: 184, top: 94, width: 400, height: 580 })
+    .png()
+    .toBuffer();
+
+  const dataUri = `data:image/png;base64,${composite.toString('base64')}`;
+  mapCache.set(cacheKey, dataUri);
+  return dataUri;
 }
 
 interface RaceData {
@@ -110,8 +148,6 @@ export async function generateOgImage(race: RaceData): Promise<Buffer> {
   await loadFonts();
   loadLogo();
 
-  const maptilerKey = import.meta.env.PUBLIC_MAPTILER_KEY || process.env.PUBLIC_MAPTILER_KEY || '';
-
   const dateFormatted = formatDate(race.date);
   const namesStr = formatNames(race.first_names || []);
   const typeLabel = getTypeLabel(race.race_type);
@@ -121,8 +157,8 @@ export async function generateOgImage(race: RaceData): Promise<Buffer> {
 
   // Fetch static map if coordinates available
   let mapDataUri = '';
-  if (race.lat && race.lng && maptilerKey) {
-    mapDataUri = await fetchStaticMap(race.lat, race.lng, maptilerKey);
+  if (race.lat && race.lng) {
+    mapDataUri = await fetchStaticMap(race.lat, race.lng);
   }
 
   // Build the markup
