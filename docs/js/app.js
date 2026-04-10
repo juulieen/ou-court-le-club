@@ -2,8 +2,9 @@
 (function () {
   "use strict";
 
-  const MAPTILER_KEY = "MAPTILER_KEY_REDACTED";
-  const MAPTILER_STYLE = "MAPTILER_STYLE_REDACTED";
+  // Injected at build time via CI — see .github/workflows/scrape.yml
+  const MAPTILER_KEY = window.__MAPTILER_KEY__ || "";
+  const MAPTILER_STYLE = window.__MAPTILER_STYLE__ || "";
 
   let map;
   let allRaces = [];
