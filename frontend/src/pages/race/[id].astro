@@ -73,7 +73,7 @@ const siteBase = import.meta.env.BASE_URL;
 const siteUrl = import.meta.env.SITE || 'https://juulieen.github.io';
 const raceUrl = `${siteUrl}${siteBase}race/${race.id}/`.replace(/([^:])\/\//g, '$1/');
 const homeUrl = `${siteUrl}${siteBase}`.replace(/([^:])\/\//g, '$1/');
-const ogImage = `${siteUrl}${siteBase}img/screenshot.png`.replace(/([^:])\/\//g, '$1/');
+const ogImage = `${siteUrl}${siteBase}og/${race.id}.png`.replace(/([^:])\/\//g, '$1/');
 
 // Redirect target: SPA with hash fragment
 const redirectTarget = `${siteBase}#race/${race.id}`;
