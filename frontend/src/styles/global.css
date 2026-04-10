@@ -645,51 +645,37 @@ body {
   line-height: 1.4;
 }
 
-/* Popup header with share button */
-.popup-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.popup-header .popup-title {
-  flex: 1;
-}
-
-/* WhatsApp share button in popup */
-.popup-share-btn {
+/* WhatsApp share button */
+.whatsapp-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
   background: #25D366;
   color: #fff;
-  text-decoration: none;
-  font-size: 14px;
-  flex-shrink: 0;
-  transition: opacity 0.15s;
-}
-
-.popup-share-btn:hover {
-  opacity: 0.8;
-}
-
-/* Share link in sidebar cards */
-.card-share-btn {
-  display: inline-block;
   font-size: 0.7rem;
+  font-weight: 600;
   text-decoration: none;
-  color: var(--text-dim);
-  margin-left: 4px;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
   vertical-align: middle;
-  transition: color 0.15s;
+  cursor: pointer;
+  border: none;
 }
 
-.card-share-btn:hover {
-  color: var(--orange);
+.whatsapp-btn:hover {
+  background: #1DA851;
+}
+
+.whatsapp-btn:active {
+  transform: scale(0.95);
+}
+
+.popup-whatsapp {
+  display: inline-flex;
+  margin-top: 8px;
+  font-size: 0.72rem;
 }
 
 /* Countdown badge */
