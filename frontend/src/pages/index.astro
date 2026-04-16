@@ -20,28 +20,34 @@ const description = 'Carte interactive des courses ou les membres du club Run Ev
 
     <div id="stats-bar">
       <div class="stat">
-        <span class="stat-value" id="stat-races">--</span>
-        <span class="stat-label">courses</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <span class="stat-value" id="stat-members">--</span>
-        <span class="stat-label">inscriptions</span>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
         <span class="stat-value" id="stat-upcoming">--</span>
         <span class="stat-label">a venir</span>
       </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-value" id="stat-this-month">--</span>
+        <span class="stat-label">ce mois</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-value" id="stat-runners">--</span>
+        <span class="stat-label">coureurs</span>
+      </div>
     </div>
+
+    <button id="filter-toggle" class="filter-toggle-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      Filtres
+      <span id="filter-badge" class="filter-badge" style="display:none">0</span>
+    </button>
 
     <div id="filters">
       <div class="filter-toggles">
-        <button class="filter-btn active" data-filter="all">Toutes</button>
-        <button class="filter-btn" data-filter="upcoming">A venir</button>
-        <button class="filter-btn" data-filter="past">Passees</button>
+        <button class="filter-btn active" data-filter="upcoming">A venir</button>
+        <button class="filter-btn" data-filter="recent">Recentes</button>
+        <button class="filter-btn" data-filter="all">Toutes</button>
       </div>
-      <div class="filter-row">
+      <div class="filter-row filter-row-main">
         <div class="filter-group">
           <select id="filter-type">
             <option value="">Type</option>
@@ -59,31 +65,25 @@ const description = 'Carte interactive des courses ou les membres du club Run Ev
             <option value="42+">42 km +</option>
           </select>
         </div>
-      </div>
-      <div class="filter-row">
         <div class="filter-group">
           <select id="filter-member">
             <option value="">Membre</option>
           </select>
         </div>
       </div>
-      <div class="filter-dates">
-        <div class="filter-group">
-          <label for="date-from">Du</label>
-          <input type="date" id="date-from">
-        </div>
-        <div class="filter-group">
-          <label for="date-to">au</label>
-          <input type="date" id="date-to">
+      <div class="filter-dates-wrapper">
+        <button id="date-toggle" class="date-toggle-btn" type="button">+ Dates</button>
+        <div class="filter-dates" id="filter-dates-panel">
+          <div class="filter-group">
+            <label for="date-from">Du</label>
+            <input type="date" id="date-from">
+          </div>
+          <div class="filter-group">
+            <label for="date-to">au</label>
+            <input type="date" id="date-to">
+          </div>
         </div>
       </div>
-    </div>
-
-    <div id="legend">
-      <span class="legend-item"><span class="legend-dot dot-this-week"></span>Cette semaine</span>
-      <span class="legend-item"><span class="legend-dot dot-this-month"></span>Ce mois</span>
-      <span class="legend-item"><span class="legend-dot dot-future"></span>A venir</span>
-      <span class="legend-item"><span class="legend-dot dot-past"></span>Passees</span>
     </div>
 
     <div id="race-list"></div>
@@ -100,6 +100,13 @@ const description = 'Carte interactive des courses ou les membres du club Run Ev
   </button>
 
   <div id="map"></div>
+
+  <div id="legend">
+    <span class="legend-item"><span class="legend-dot dot-this-week"></span>Cette semaine</span>
+    <span class="legend-item"><span class="legend-dot dot-this-month"></span>Ce mois</span>
+    <span class="legend-item"><span class="legend-dot dot-future"></span>A venir</span>
+    <span class="legend-item"><span class="legend-dot dot-past"></span>Passees</span>
+  </div>
 
   <!-- Legal modal -->
   <div id="legal-modal" class="modal hidden">
