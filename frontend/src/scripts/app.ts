@@ -1,28 +1,41 @@
 // RunEvent86 — "Ou court le club ?" — MapLibre GL
+declare const maplibregl: any;
+
 (function () {
   "use strict";
 
-  // Injected at build time via CI — see .github/workflows/scrape.yml
-  const MAPTILER_KEY = window.__MAPTILER_KEY__ || "";
-  const MAPTILER_STYLE = window.__MAPTILER_STYLE__ || "";
+  const BASE_URL = (window as any).__BASE_URL__ || "/";
 
-  let map;
-  let allRaces = [];
-  let raceGroups = []; // grouped by event (multi-edition)
-  let currentPopup = null;
+  const MAPTILER_KEY = import.meta.env.PUBLIC_MAPTILER_KEY || "";
+
+  const WHATSAPP_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>';
+
+  const SITE_URL = window.location.origin + BASE_URL;
+
+  let map: any;
+  let allRaces: any[] = [];
+  let raceGroups: any[] = []; // grouped by event (multi-edition)
+  let currentPopup: any = null;
   let detailMode = false;
+  const counterIntervals: Record<string, ReturnType<typeof setInterval>> = {};
 
-  function truncateNames(names, max) {
+  // --- HTML escaping ---
+  function escapeHtml(str: string): string {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function truncateNames(names: string[], max: number): string {
     if (!names || !names.length) return "";
     if (names.length <= max) return names.join(", ");
     return names.slice(0, max).join(", ") + ` +${names.length - max}`;
   }
 
-  const WHATSAPP_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>';
-
-  const SITE_URL = "https://juulieen.github.io/ou-court-le-club/";
-
-  function buildWhatsAppUrl(name, dateStr, memberCount, raceId) {
+  function buildWhatsAppUrl(name: string, dateStr: string, memberCount: number, raceId: string): string {
     const dateFormatted = dateStr
       ? new Date(dateStr + "T00:00:00").toLocaleDateString("fr-FR", {
           day: "numeric", month: "short", year: "numeric",
@@ -33,12 +46,12 @@
     return `https://wa.me/?text=${encodeURIComponent(text)}`;
   }
 
-  function getCountdownLabel(dateStr) {
+  function getCountdownLabel(dateStr: string): string | null {
     if (!dateStr) return null;
     const raceDate = new Date(dateStr + "T00:00:00");
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const diffDays = Math.round((raceDate - today) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round((raceDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays < 0 || diffDays > 7) return null;
     if (diffDays === 0) return "Aujourd'hui";
     if (diffDays === 1) return "Demain";
@@ -49,7 +62,7 @@
   function init() {
     map = new maplibregl.Map({
       container: "map",
-      style: `https://api.maptiler.com/maps/${MAPTILER_STYLE}/style.json?key=${MAPTILER_KEY}`,
+      style: `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${MAPTILER_KEY}`,
       center: [0.34, 46.58],
       zoom: 6,
       maxZoom: 17,
@@ -68,10 +81,10 @@
 
   // --- Data loading ---
   function loadData() {
-    fetch("data/races.json", { cache: "no-cache" })
-      .then((r) => r.json())
-      .then((data) => {
-        allRaces = (data.races || []).filter((r) => r.member_count > 0);
+    fetch(`${BASE_URL}data/races.json`, { cache: "no-cache" })
+      .then((r: Response) => r.json())
+      .then((data: any) => {
+        allRaces = (data.races || []).filter((r: any) => r.member_count > 0);
         raceGroups = groupEditions(allRaces);
         updateLastUpdated(data.last_updated);
         updateStats(allRaces);
@@ -80,21 +93,21 @@
         renderAll();
         handleRoute();
       })
-      .catch((err) => {
+      .catch((err: Error) => {
         console.error("Erreur chargement donnees:", err);
-        document.getElementById("race-list").innerHTML =
+        document.getElementById("race-list")!.innerHTML =
           '<div class="empty-state"><div class="empty-icon">&#128683;</div>Impossible de charger les donnees</div>';
       });
   }
 
   // --- Member filter ---
-  function populateMemberFilter(races) {
-    const select = document.getElementById("filter-member");
-    const nameSet = new Set();
+  function populateMemberFilter(races: any[]) {
+    const select = document.getElementById("filter-member") as HTMLSelectElement;
+    const nameSet = new Set<string>();
     let hasAnonymous = false;
     for (const race of races) {
       const names = race.first_names || [];
-      names.forEach((n) => nameSet.add(n));
+      names.forEach((n: string) => nameSet.add(n));
       if (race.member_count > names.length) hasAnonymous = true;
     }
     const sorted = [...nameSet].sort((a, b) => a.localeCompare(b, "fr"));
@@ -115,8 +128,8 @@
   }
 
   // --- Group editions of the same event ---
-  function groupEditions(races) {
-    const groups = {};
+  function groupEditions(races: any[]) {
+    const groups: Record<string, any[]> = {};
     for (const r of races) {
       // Strip trailing year to get base name
       const base = r.name.replace(/\s*\d{4}\s*$/, "").trim().toLowerCase();
@@ -130,9 +143,9 @@
     }
 
     // Sort editions by date (newest first) within each group
-    const result = [];
+    const result: any[] = [];
     for (const editions of Object.values(groups)) {
-      editions.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      editions.sort((a: any, b: any) => (b.date || "").localeCompare(a.date || ""));
       result.push({
         latest: editions[0],
         editions: editions,
@@ -143,22 +156,22 @@
   }
 
   // --- Stats ---
-  function updateStats(races) {
+  function updateStats(races: any[]) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     const upcoming = races.filter(
-      (r) => r.date && new Date(r.date + "T00:00:00") >= today
+      (r: any) => r.date && new Date(r.date + "T00:00:00") >= today
     ).length;
     const thisMonth = races.filter(
-      (r) => r.date && new Date(r.date + "T00:00:00") >= today && new Date(r.date + "T00:00:00") <= thisMonthEnd
+      (r: any) => r.date && new Date(r.date + "T00:00:00") >= today && new Date(r.date + "T00:00:00") <= thisMonthEnd
     ).length;
     // Unique runners: count distinct first_names + anonymous members
-    const nameSet = new Set();
+    const nameSet = new Set<string>();
     let anonymousCount = 0;
     for (const r of races) {
       if (!r.date || new Date(r.date + "T00:00:00") < today) continue;
-      (r.first_names || []).forEach((n) => nameSet.add(n));
+      (r.first_names || []).forEach((n: string) => nameSet.add(n));
       const anon = r.member_count - (r.first_names || []).length;
       if (anon > 0) anonymousCount = Math.max(anonymousCount, anon);
     }
@@ -168,33 +181,38 @@
     animateCounter("stat-runners", uniqueRunners);
   }
 
-  function animateCounter(id, target) {
+  function animateCounter(id: string, target: number) {
     const el = document.getElementById(id);
     if (!el) return;
+    if (counterIntervals[id]) { clearInterval(counterIntervals[id]); delete counterIntervals[id]; }
     if (target === 0) { el.textContent = "0"; return; }
     let current = 0;
     const step = Math.max(1, Math.floor(target / 20));
-    const interval = setInterval(() => {
+    counterIntervals[id] = setInterval(() => {
       current += step;
-      if (current >= target) { current = target; clearInterval(interval); }
-      el.textContent = current;
+      if (current >= target) {
+        current = target;
+        clearInterval(counterIntervals[id]);
+        delete counterIntervals[id];
+      }
+      el.textContent = String(current);
     }, 30);
   }
 
   // --- Temporal classification ---
-  function getTemporality(dateStr) {
+  function getTemporality(dateStr: string) {
     if (!dateStr) return "future";
     const raceDate = new Date(dateStr + "T00:00:00");
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const diffDays = (raceDate - today) / (1000 * 60 * 60 * 24);
+    const diffDays = (raceDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
     if (diffDays < 0) return "past";
     if (diffDays <= 7) return "this-week";
     if (diffDays <= 30) return "this-month";
     return "future";
   }
 
-  function getColor(temp) {
+  function getColor(temp: string) {
     switch (temp) {
       case "past": return "#aaaaaa";
       case "this-week": return "#E53935";
@@ -247,7 +265,7 @@
       },
     });
 
-    // Individual race circles — larger for multi-edition
+    // Individual race circles -- larger for multi-edition
     map.addLayer({
       id: "race-points",
       type: "circle",
@@ -288,7 +306,7 @@
       source: "races",
       filter: ["all", ["!", ["has", "point_count"]], ["get", "is_multi"]],
       layout: {
-        "text-field": ["concat", "×", ["to-string", ["get", "edition_count"]]],
+        "text-field": ["concat", "\u00D7", ["to-string", ["get", "edition_count"]]],
         "text-font": ["Noto Sans Bold"],
         "text-size": 9,
         "text-offset": [1.2, -1.2],
@@ -304,7 +322,7 @@
     // --- Interactions ---
 
     // Click cluster -> zoom in
-    map.on("click", "clusters", async (e) => {
+    map.on("click", "clusters", async (e: any) => {
       const features = map.queryRenderedFeatures(e.point, { layers: ["clusters"] });
       if (!features.length) return;
       const clusterId = features[0].properties.cluster_id;
@@ -313,7 +331,7 @@
     });
 
     // Click individual point -> popup with all editions
-    map.on("click", "race-points", (e) => {
+    map.on("click", "race-points", (e: any) => {
       if (!e.features || !e.features.length) return;
       const coords = e.features[0].geometry.coordinates.slice();
       const p = e.features[0].properties;
@@ -323,22 +341,21 @@
       }
 
       // Parse editions JSON
-      let editions = [];
+      let editions: any[] = [];
       try {
         editions = JSON.parse(p.editions_json);
       } catch (_) {
         editions = [{
           name: p.name, date: p.date, member_count: p.member_count,
-          platform: p.platform, url: p.url, color: p.color,
+          first_names: [], platform: p.platform, url: p.url, color: p.color,
         }];
       }
 
-      let popupHtml;
+      let popupHtml: string;
       if (editions.length > 1) {
         // Multi-edition: show timeline
-        const title = p.name.replace(/\s*\d{4}\s*$/, "").trim();
-        const timelineHtml = editions.map((ed) => {
-          const year = ed.date ? ed.date.substring(0, 4) : "?";
+        const title = escapeHtml(p.name.replace(/\s*\d{4}\s*$/, "").trim());
+        const timelineHtml = editions.map((ed: any) => {
           const dateFormatted = ed.date
             ? new Date(ed.date + "T00:00:00").toLocaleDateString("fr-FR", {
                 day: "numeric", month: "short", year: "numeric",
@@ -347,16 +364,16 @@
           const temp = getTemporality(ed.date);
           const color = getColor(temp);
           const linkHtml = ed.url
-            ? `<a class="popup-link" href="${ed.url}" target="_blank" rel="noopener">${ed.platform} &rarr;</a>`
+            ? `<a class="popup-link" href="${escapeHtml(ed.url)}" target="_blank" rel="noopener">${escapeHtml(ed.platform)} &rarr;</a>`
             : "";
           const namesHtml = ed.first_names && ed.first_names.length
-            ? `<div class="timeline-names">${truncateNames(ed.first_names, 3)}</div>`
+            ? `<div class="timeline-names">${escapeHtml(truncateNames(ed.first_names, 3))}</div>`
             : "";
           return `
             <div class="timeline-item">
-              <div class="timeline-dot" style="background: ${color}"></div>
+              <div class="timeline-dot" style="background: ${escapeHtml(color)}"></div>
               <div class="timeline-content">
-                <div class="timeline-year">${dateFormatted}</div>
+                <div class="timeline-year">${escapeHtml(dateFormatted)}</div>
                 <div class="timeline-members">${ed.member_count} membre${ed.member_count > 1 ? "s" : ""} ${linkHtml}</div>
                 ${namesHtml}
               </div>
@@ -365,11 +382,11 @@
 
         popupHtml = `
           <div class="race-popup">
-            <div class="popup-title" style="border-left: 3px solid ${p.color}; padding-left: 10px">${title}</div>
-            <div class="popup-meta">${p.location || ""}</div>
+            <div class="popup-title" style="border-left: 3px solid ${escapeHtml(p.color)}; padding-left: 10px">${title}</div>
+            <div class="popup-meta">${escapeHtml(p.location || "")}</div>
             <div class="popup-edition-badge">${editions.length} editions</div>
             <div class="timeline">${timelineHtml}</div>
-            <a class="share-btn whatsapp-btn popup-whatsapp" href="${buildWhatsAppUrl(title, editions[0].date, editions[0].member_count, editions[0].id)}" target="_blank" rel="noopener">${WHATSAPP_SVG} Partager</a>
+            <a class="share-btn whatsapp-btn popup-whatsapp" href="${escapeHtml(buildWhatsAppUrl(p.name.replace(/\s*\d{4}\s*$/, "").trim(), editions[0].date, editions[0].member_count, editions[0].id || p.id))}" target="_blank" rel="noopener">${WHATSAPP_SVG} Partager</a>
           </div>`;
       } else {
         // Single edition
@@ -383,20 +400,20 @@
           ? `<div class="popup-members-count">${ed.member_count} membre${ed.member_count > 1 ? "s" : ""} inscrit${ed.member_count > 1 ? "s" : ""}</div>`
           : "";
         const namesHtml = ed.first_names && ed.first_names.length
-          ? `<div class="popup-names">${truncateNames(ed.first_names, 3)}</div>`
+          ? `<div class="popup-names">${escapeHtml(truncateNames(ed.first_names, 3))}</div>`
           : "";
         const linkHtml = ed.url
-          ? `<a class="popup-link" href="${ed.url}" target="_blank" rel="noopener">Voir sur ${ed.platform} &rarr;</a>`
+          ? `<a class="popup-link" href="${escapeHtml(ed.url)}" target="_blank" rel="noopener">Voir sur ${escapeHtml(ed.platform)} &rarr;</a>`
           : "";
 
         popupHtml = `
           <div class="race-popup">
-            <div class="popup-title" style="border-left: 3px solid ${ed.color || p.color}; padding-left: 10px">${ed.name}</div>
-            <div class="popup-meta">${dateFormatted}${p.location ? " — " + p.location : ""}</div>
+            <div class="popup-title" style="border-left: 3px solid ${escapeHtml(ed.color || p.color)}; padding-left: 10px">${escapeHtml(ed.name)}</div>
+            <div class="popup-meta">${escapeHtml(dateFormatted)}${p.location ? " \u2014 " + escapeHtml(p.location) : ""}</div>
             ${membersHtml}
             ${namesHtml}
             ${linkHtml}
-            <a class="share-btn whatsapp-btn popup-whatsapp" href="${buildWhatsAppUrl(ed.name, ed.date, ed.member_count, ed.id)}" target="_blank" rel="noopener">${WHATSAPP_SVG} Partager</a>
+            <a class="share-btn whatsapp-btn popup-whatsapp" href="${escapeHtml(buildWhatsAppUrl(ed.name, ed.date, ed.member_count, ed.id || p.id))}" target="_blank" rel="noopener">${WHATSAPP_SVG} Partager</a>
           </div>`;
       }
 
@@ -408,7 +425,7 @@
     });
 
     // Cursor
-    ["clusters", "race-points"].forEach((layer) => {
+    ["clusters", "race-points"].forEach((layer: string) => {
       map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
     });
@@ -417,20 +434,20 @@
     fitBounds(allRaces);
   }
 
-  function buildGeoJSON(groups) {
+  function buildGeoJSON(groups: any[]) {
     return {
       type: "FeatureCollection",
       features: groups
-        .filter((g) => g.latest.lat != null && g.latest.lng != null)
-        .map((g) => {
+        .filter((g: any) => g.latest.lat != null && g.latest.lng != null)
+        .map((g: any) => {
           const r = g.latest;
-          const totalMembers = g.editions.reduce((s, e) => s + e.member_count, 0);
+          const totalMembers = g.editions.reduce((s: number, e: any) => s + e.member_count, 0);
           // For color: use latest future edition, or latest overall
-          const futureEd = g.editions.find((e) => getTemporality(e.date) !== "past");
+          const futureEd = g.editions.find((e: any) => getTemporality(e.date) !== "past");
           const colorRef = futureEd || r;
 
           // Build compact editions data for popup
-          const editionsData = g.editions.map((e) => ({
+          const editionsData = g.editions.map((e: any) => ({
             id: e.id || "",
             name: e.name,
             date: e.date || "",
@@ -463,15 +480,15 @@
     };
   }
 
-  function fitBounds(races) {
-    const valid = races.filter((r) => r.lat != null && r.lng != null);
+  function fitBounds(races: any[]) {
+    const valid = races.filter((r: any) => r.lat != null && r.lng != null);
     if (valid.length === 0) return;
     if (valid.length === 1) {
       map.flyTo({ center: [valid[0].lng, valid[0].lat], zoom: 10 });
       return;
     }
     const bounds = new maplibregl.LngLatBounds();
-    valid.forEach((r) => bounds.extend([r.lng, r.lat]));
+    valid.forEach((r: any) => bounds.extend([r.lng, r.lat]));
     // Adapt padding for mobile (sidebar at bottom) vs desktop (sidebar on left)
     const isMobile = window.innerWidth <= 768;
     const padding = isMobile
@@ -483,34 +500,34 @@
   // --- Rendering ---
   let activeFilter = "upcoming"; // "upcoming", "recent", "all"
 
-  function matchesDistance(distances, range) {
+  function matchesDistance(distances: number[], range: string) {
     if (!range || !distances || !distances.length) return !range;
     const [minStr, maxStr] = range.split("-");
     if (range === "42+") {
-      return distances.some((d) => d >= 42);
+      return distances.some((d: number) => d >= 42);
     }
     const min = parseFloat(minStr);
     const max = parseFloat(maxStr);
-    return distances.some((d) => d >= min && d <= max);
+    return distances.some((d: number) => d >= min && d <= max);
   }
 
   function renderAll() {
     if (detailMode) return;
-    const dateFrom = document.getElementById("date-from").value;
-    const dateTo = document.getElementById("date-to").value;
-    const filterType = document.getElementById("filter-type").value;
-    const filterDist = document.getElementById("filter-distance").value;
-    const filterMember = document.getElementById("filter-member").value;
+    const dateFrom = (document.getElementById("date-from") as HTMLInputElement).value;
+    const dateTo = (document.getElementById("date-to") as HTMLInputElement).value;
+    const filterType = (document.getElementById("filter-type") as HTMLSelectElement).value;
+    const filterDist = (document.getElementById("filter-distance") as HTMLSelectElement).value;
+    const filterMember = (document.getElementById("filter-member") as HTMLSelectElement).value;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toISOString().slice(0, 10);
 
-    // "Récentes" = 3 months ago to today
+    // "Recentes" = 3 months ago to today
     const threeMonthsAgo = new Date(today);
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
     const threeMonthsAgoStr = threeMonthsAgo.toISOString().slice(0, 10);
 
-    let filtered = allRaces.filter((r) => {
+    let filtered = allRaces.filter((r: any) => {
       // Quick filter buttons
       if (activeFilter === "upcoming" && r.date && r.date < todayStr) return false;
       if (activeFilter === "recent" && r.date && (r.date >= todayStr || r.date < threeMonthsAgoStr)) return false;
@@ -553,30 +570,30 @@
     if (!badge) return;
     let count = 0;
     if (activeFilter !== "all") count++;
-    if (document.getElementById("filter-type").value) count++;
-    if (document.getElementById("filter-distance").value) count++;
-    if (document.getElementById("filter-member").value) count++;
-    if (document.getElementById("date-from").value) count++;
-    if (document.getElementById("date-to").value) count++;
-    badge.textContent = count;
+    if ((document.getElementById("filter-type") as HTMLSelectElement).value) count++;
+    if ((document.getElementById("filter-distance") as HTMLSelectElement).value) count++;
+    if ((document.getElementById("filter-member") as HTMLSelectElement).value) count++;
+    if ((document.getElementById("date-from") as HTMLInputElement).value) count++;
+    if ((document.getElementById("date-to") as HTMLInputElement).value) count++;
+    badge.textContent = String(count);
     badge.style.display = count > 0 ? "inline-block" : "none";
   }
 
-  function renderList(groups) {
-    const list = document.getElementById("race-list");
+  function renderList(groups: any[]) {
+    const list = document.getElementById("race-list")!;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     // Sort: groups with upcoming editions first, then by nearest date
-    const sorted = [...groups].sort((a, b) => {
-      const aFutureEd = a.editions.find((e) => e.date && new Date(e.date + "T00:00:00") >= today);
-      const bFutureEd = b.editions.find((e) => e.date && new Date(e.date + "T00:00:00") >= today);
+    const sorted = [...groups].sort((a: any, b: any) => {
+      const aFutureEd = a.editions.find((e: any) => e.date && new Date(e.date + "T00:00:00") >= today);
+      const bFutureEd = b.editions.find((e: any) => e.date && new Date(e.date + "T00:00:00") >= today);
       if (aFutureEd && !bFutureEd) return -1;
       if (!aFutureEd && bFutureEd) return 1;
       const aDate = aFutureEd ? new Date(aFutureEd.date + "T00:00:00") : new Date(a.latest.date + "T00:00:00");
       const bDate = bFutureEd ? new Date(bFutureEd.date + "T00:00:00") : new Date(b.latest.date + "T00:00:00");
-      if (aFutureEd && bFutureEd) return aDate - bDate;
-      return bDate - aDate;
+      if (aFutureEd && bFutureEd) return aDate.getTime() - bDate.getTime();
+      return bDate.getTime() - aDate.getTime();
     });
 
     if (sorted.length === 0) {
@@ -585,10 +602,10 @@
     }
 
     list.innerHTML = sorted
-      .map((group) => {
+      .map((group: any) => {
         const r = group.latest;
         // Use future edition for temporality if available
-        const futureEd = group.editions.find((e) => getTemporality(e.date) !== "past");
+        const futureEd = group.editions.find((e: any) => getTemporality(e.date) !== "past");
         const displayEd = futureEd || r;
         const temp = getTemporality(displayEd.date);
 
@@ -598,7 +615,7 @@
             })
           : "?";
 
-        const totalMembers = group.editions.reduce((s, e) => s + e.member_count, 0);
+        const totalMembers = group.editions.reduce((s: number, e: any) => s + e.member_count, 0);
         const displayName = group.isMulti
           ? r.name.replace(/\s*\d{4}\s*$/, "").trim()
           : r.name;
@@ -613,36 +630,38 @@
 
         const firstNames = (group.isMulti ? displayEd.first_names : r.first_names) || [];
         const namesLine = firstNames.length
-          ? `<div class="race-names">${truncateNames(firstNames, 3)}</div>`
+          ? `<div class="race-names">${escapeHtml(truncateNames(firstNames, 3))}</div>`
           : "";
 
         const countdownLabel = getCountdownLabel(displayEd.date);
         const countdownBadge = countdownLabel
-          ? `<span class="countdown-badge">${countdownLabel}</span>`
+          ? `<span class="countdown-badge">${escapeHtml(countdownLabel)}</span>`
           : "";
 
-        const typeBadge = r.race_type && r.race_type !== "autre"
-          ? `<span class="type-badge type-${r.race_type}">${r.race_type}</span>`
+        const VALID_RACE_TYPES = ["trail", "route", "autre"] as const;
+        const safeRaceType = VALID_RACE_TYPES.includes(r.race_type) ? r.race_type : "";
+        const typeBadge = safeRaceType && safeRaceType !== "autre"
+          ? `<span class="type-badge type-${safeRaceType}">${escapeHtml(safeRaceType)}</span>`
           : "";
         const distLabel = r.distances && r.distances.length
-          ? r.distances.map((d) => `${d}km`).join(", ")
+          ? r.distances.map((d: number) => `${d}km`).join(", ")
           : "";
 
         const shareUrl = buildWhatsAppUrl(displayName, displayEd.date, group.isMulti ? displayEd.member_count : r.member_count, displayEd.id || r.id);
 
         return `
-        <div class="race-card" data-id="${r.id}" data-temp="${temp}" data-lng="${r.lng}" data-lat="${r.lat}">
-          <div class="race-name">${displayName} ${editionBadge} ${typeBadge}</div>
+        <div class="race-card" data-id="${escapeHtml(r.id)}" data-temp="${escapeHtml(temp)}" data-lng="${escapeHtml(String(r.lng))}" data-lat="${escapeHtml(String(r.lat))}">
+          <div class="race-name">${escapeHtml(displayName)} ${editionBadge} ${typeBadge}</div>
           <div class="race-meta">
-            <span class="date">${dateFormatted}</span>
+            <span class="date">${escapeHtml(dateFormatted)}</span>
             ${countdownBadge}
-            <span class="location">${displayEd.location || r.location || ""}</span>
-            ${distLabel ? `<span class="dist">${distLabel}</span>` : ""}
+            <span class="location">${escapeHtml(displayEd.location || r.location || "")}</span>
+            ${distLabel ? `<span class="dist">${escapeHtml(distLabel)}</span>` : ""}
             <span class="member-badge">${memberLabel}</span>
           </div>
           ${namesLine}
           <div class="race-actions">
-            <a class="share-btn whatsapp-btn" href="${shareUrl}" target="_blank" rel="noopener" title="Partager sur WhatsApp" onclick="event.stopPropagation()">${WHATSAPP_SVG}</a>
+            <a class="share-btn whatsapp-btn" href="${escapeHtml(shareUrl)}" target="_blank" rel="noopener" title="Partager sur WhatsApp" onclick="event.stopPropagation()">${WHATSAPP_SVG}</a>
           </div>
         </div>`;
       })
@@ -651,11 +670,11 @@
 
   // --- Sidebar ---
   function setupSidebar() {
-    const sidebar = document.getElementById("sidebar");
-    const toggle = document.getElementById("sidebar-toggle");
-    const header = document.getElementById("sidebar-header");
-    const iconClose = document.getElementById("toggle-close");
-    const iconOpen = document.getElementById("toggle-open");
+    const sidebar = document.getElementById("sidebar")!;
+    const toggle = document.getElementById("sidebar-toggle")!;
+    const header = document.getElementById("sidebar-header")!;
+    const iconClose = document.getElementById("toggle-close") as HTMLElement;
+    const iconOpen = document.getElementById("toggle-open") as HTMLElement;
 
     toggle.addEventListener("click", () => {
       sidebar.classList.toggle("collapsed");
@@ -686,7 +705,7 @@
         };
       }
       // Also expose for fitBounds padding
-      window.__sidebarSnap = getSnapPositions;
+      (window as any).__sidebarSnap = getSnapPositions;
 
       let startY = 0;
       let startTranslate = 0;
@@ -694,19 +713,19 @@
       let isDragging = false;
       let dragStartTime = 0;
 
-      function getTranslateY() {
+      function getTranslateY(): number {
         const matrix = new DOMMatrixReadOnly(getComputedStyle(sidebar).transform);
         return matrix.m42;
       }
 
-      function snapTo(position) {
+      function snapTo(position: number) {
         sidebar.classList.remove("dragging", "collapsed");
         sidebar.style.transform = `translateY(${position}px)`;
         currentTranslate = position;
         setTimeout(() => map.resize(), 350);
       }
 
-      header.addEventListener("touchstart", (e) => {
+      header.addEventListener("touchstart", (e: TouchEvent) => {
         isDragging = true;
         dragStartTime = Date.now();
         startY = e.touches[0].clientY;
@@ -715,7 +734,7 @@
         sidebar.classList.remove("collapsed");
       }, { passive: true });
 
-      header.addEventListener("touchmove", (e) => {
+      header.addEventListener("touchmove", (e: TouchEvent) => {
         if (!isDragging) return;
         const snaps = getSnapPositions();
         const deltaY = e.touches[0].clientY - startY;
@@ -758,27 +777,27 @@
       btn.addEventListener("click", () => {
         document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
-        activeFilter = btn.dataset.filter;
+        activeFilter = (btn as HTMLElement).dataset.filter || "upcoming";
         renderAll();
       });
     });
 
     // Date filters (debounced)
-    let filterTimeout;
+    let filterTimeout: ReturnType<typeof setTimeout>;
     function debouncedRender() {
       clearTimeout(filterTimeout);
       filterTimeout = setTimeout(renderAll, 150);
     }
-    document.getElementById("date-from").addEventListener("change", debouncedRender);
-    document.getElementById("date-to").addEventListener("change", debouncedRender);
-    document.getElementById("filter-type").addEventListener("change", debouncedRender);
-    document.getElementById("filter-distance").addEventListener("change", debouncedRender);
-    document.getElementById("filter-member").addEventListener("change", debouncedRender);
+    document.getElementById("date-from")!.addEventListener("change", debouncedRender);
+    document.getElementById("date-to")!.addEventListener("change", debouncedRender);
+    document.getElementById("filter-type")!.addEventListener("change", debouncedRender);
+    document.getElementById("filter-distance")!.addEventListener("change", debouncedRender);
+    document.getElementById("filter-member")!.addEventListener("change", debouncedRender);
 
     // Mobile: filter panel toggle
     const filterToggle = document.getElementById("filter-toggle");
     const filtersPanel = document.getElementById("filters");
-    if (filterToggle) {
+    if (filterToggle && filtersPanel) {
       filterToggle.addEventListener("click", () => {
         filtersPanel.classList.toggle("filters-open");
         filterToggle.classList.toggle("active");
@@ -797,8 +816,8 @@
     }
 
     // Event delegation for race cards -> open detail view
-    document.getElementById("race-list").addEventListener("click", (e) => {
-      const card = e.target.closest(".race-card");
+    document.getElementById("race-list")!.addEventListener("click", (e: Event) => {
+      const card = (e.target as HTMLElement).closest(".race-card") as HTMLElement | null;
       if (!card) return;
       const raceId = card.dataset.id;
       if (raceId) {
@@ -819,8 +838,8 @@
     }
   }
 
-  function showRaceDetail(raceId) {
-    const race = allRaces.find((r) => r.id === raceId);
+  function showRaceDetail(raceId: string) {
+    const race = allRaces.find((r: any) => r.id === raceId);
     if (!race) {
       history.replaceState(null, "", window.location.pathname);
       if (detailMode) showDefaultView();
@@ -838,39 +857,39 @@
     const temp = getTemporality(race.date);
     const countdownLabel = getCountdownLabel(race.date);
     const countdownBadge = countdownLabel
-      ? `<span class="countdown-badge">${countdownLabel}</span>`
+      ? `<span class="countdown-badge">${escapeHtml(countdownLabel)}</span>`
       : "";
 
     const typeBadge = race.race_type && race.race_type !== "autre"
-      ? `<span class="type-badge type-${race.race_type}">${race.race_type}</span>`
+      ? `<span class="type-badge type-${escapeHtml(race.race_type)}">${escapeHtml(race.race_type)}</span>`
       : "";
 
     const distLabel = race.distances && race.distances.length
-      ? race.distances.map((d) => `${d} km`).join(", ")
+      ? race.distances.map((d: number) => `${d} km`).join(", ")
       : "";
 
     const namesHtml = race.first_names && race.first_names.length
-      ? `<div class="detail-names">${race.first_names.join(", ")}</div>`
+      ? `<div class="detail-names">${escapeHtml(race.first_names.join(", "))}</div>`
       : "";
 
     const linkHtml = race.url
-      ? `<a class="detail-link" href="${race.url}" target="_blank" rel="noopener">S'inscrire sur ${race.platform} &rarr;</a>`
+      ? `<a class="detail-link" href="${escapeHtml(race.url)}" target="_blank" rel="noopener">S'inscrire sur ${escapeHtml(race.platform)} &rarr;</a>`
       : "";
 
     const shareUrl = buildWhatsAppUrl(race.name, race.date, race.member_count, raceId);
 
     const html = `
-      <div class="race-detail" data-temp="${temp}">
+      <div class="race-detail" data-temp="${escapeHtml(temp)}">
         <button class="detail-back" id="detail-back">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
           Retour
         </button>
-        <h2 class="detail-title">${race.name}</h2>
+        <h2 class="detail-title">${escapeHtml(race.name)}</h2>
         <div class="detail-badges">${typeBadge} ${countdownBadge}</div>
         <div class="detail-meta">
-          <div class="detail-date">${dateFormatted}</div>
-          <div class="detail-location">${race.location || ""}</div>
-          ${distLabel ? `<div class="detail-distances">${distLabel}</div>` : ""}
+          <div class="detail-date">${escapeHtml(dateFormatted)}</div>
+          <div class="detail-location">${escapeHtml(race.location || "")}</div>
+          ${distLabel ? `<div class="detail-distances">${escapeHtml(distLabel)}</div>` : ""}
         </div>
         <div class="detail-members">
           <span class="member-badge">${race.member_count} membre${race.member_count > 1 ? "s" : ""} inscrit${race.member_count > 1 ? "s" : ""}</span>
@@ -878,13 +897,13 @@
         ${namesHtml}
         ${linkHtml}
         <div class="detail-actions">
-          <a class="share-btn whatsapp-btn" href="${shareUrl}" target="_blank" rel="noopener">${WHATSAPP_SVG} Partager sur WhatsApp</a>
+          <a class="share-btn whatsapp-btn" href="${escapeHtml(shareUrl)}" target="_blank" rel="noopener">${WHATSAPP_SVG} Partager sur WhatsApp</a>
         </div>
       </div>`;
 
-    document.getElementById("race-list").innerHTML = html;
+    document.getElementById("race-list")!.innerHTML = html;
 
-    document.getElementById("detail-back").addEventListener("click", () => {
+    document.getElementById("detail-back")!.addEventListener("click", () => {
       history.pushState(null, "", window.location.pathname);
       showDefaultView();
     });
@@ -892,8 +911,10 @@
     // Hide filters in detail mode
     const filters = document.getElementById("filters");
     const filterToggle = document.getElementById("filter-toggle");
-    filters.classList.remove("filters-open");
-    filters.style.display = "none";
+    if (filters) {
+      filters.classList.remove("filters-open");
+      filters.style.display = "none";
+    }
     if (filterToggle) filterToggle.style.display = "none";
 
     // Zoom map to race
@@ -903,10 +924,10 @@
 
     // Mobile: snap to half
     if (window.innerWidth <= 768) {
-      const sidebar = document.getElementById("sidebar");
+      const sidebar = document.getElementById("sidebar")!;
       sidebar.classList.remove("collapsed");
-      if (window.__sidebarSnap) {
-        const snaps = window.__sidebarSnap();
+      if ((window as any).__sidebarSnap) {
+        const snaps = (window as any).__sidebarSnap();
         sidebar.style.transform = `translateY(${snaps.half}px)`;
       }
     }
@@ -919,14 +940,14 @@
     // Restore filters
     const filters = document.getElementById("filters");
     const filterToggle = document.getElementById("filter-toggle");
-    filters.style.display = "";
+    if (filters) filters.style.display = "";
     if (filterToggle) filterToggle.style.display = "";
 
     renderAll();
     fitBounds(allRaces);
   }
 
-  function updateLastUpdated(ts) {
+  function updateLastUpdated(ts: string) {
     if (!ts) return;
     const el = document.getElementById("last-updated");
     if (el) {
@@ -941,19 +962,19 @@
 
   // --- Legal modal ---
   function setupLegalModal() {
-    const link = document.getElementById("legal-link");
-    const modal = document.getElementById("legal-modal");
-    const close = modal.querySelector(".modal-close");
+    const link = document.getElementById("legal-link")!;
+    const modal = document.getElementById("legal-modal")!;
+    const close = modal.querySelector(".modal-close")!;
 
-    link.addEventListener("click", (e) => {
+    link.addEventListener("click", (e: Event) => {
       e.preventDefault();
       modal.classList.remove("hidden");
     });
     close.addEventListener("click", () => modal.classList.add("hidden"));
-    modal.addEventListener("click", (e) => {
+    modal.addEventListener("click", (e: Event) => {
       if (e.target === modal) modal.classList.add("hidden");
     });
-    document.addEventListener("keydown", (e) => {
+    document.addEventListener("keydown", (e: KeyboardEvent) => {
       if (e.key === "Escape") modal.classList.add("hidden");
     });
   }

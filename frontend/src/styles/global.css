@@ -70,6 +70,10 @@ body {
   transform: translateX(calc(-1 * var(--sidebar-w)));
 }
 
+#sidebar.dragging {
+  transition: none;
+}
+
 /* ---- Header ---- */
 #sidebar-header {
   padding: 18px 20px 14px;
@@ -142,6 +146,26 @@ body {
   width: 1px;
   height: 24px;
   background: var(--border);
+}
+
+/* ---- Filter toggle (mobile only) ---- */
+#filter-toggle {
+  display: none;
+}
+
+.filter-badge {
+  background: var(--orange);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+}
+
+/* ---- Date toggle (mobile only) ---- */
+#date-toggle {
+  display: none;
 }
 
 /* ---- Filters ---- */
@@ -250,26 +274,6 @@ body {
   border-color: var(--orange);
 }
 
-/* ---- Filter toggle (mobile only) ---- */
-#filter-toggle {
-  display: none;
-}
-
-.filter-badge {
-  background: var(--orange);
-  color: #fff;
-  font-size: 0.6rem;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 10px;
-  margin-left: 4px;
-}
-
-/* ---- Date toggle (mobile only) ---- */
-#date-toggle {
-  display: none;
-}
-
 /* ---- Legend (map overlay) ---- */
 #legend {
   position: absolute;
@@ -366,7 +370,7 @@ body {
 }
 
 .race-card .race-meta .location::before {
-  content: "·";
+  content: "\00B7";
   margin-right: 6px;
 }
 
@@ -412,7 +416,7 @@ body {
 }
 
 .race-card .race-meta .dist::before {
-  content: "·";
+  content: "\00B7";
   margin-right: 6px;
 }
 
@@ -687,7 +691,7 @@ body {
   50% { opacity: 0.7; }
 }
 
-/* ---- Share button ---- */
+/* ---- Share button / Race actions ---- */
 .race-actions {
   display: flex;
   justify-content: flex-end;
@@ -837,6 +841,12 @@ body {
   margin-top: 4px;
   padding-left: 0;
   line-height: 1.4;
+}
+
+/* Highlighted race card (deep link) */
+.race-card.highlighted {
+  background: var(--orange-soft) !important;
+  transition: background 0.3s;
 }
 
 /* ---- Modal ---- */
