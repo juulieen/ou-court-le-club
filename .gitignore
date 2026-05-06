@@ -50,3 +50,6 @@ frontend/public/data/races.json
 .env
 .env.local
 .env.*.local
+
+# Local tool config
+.mcp.json
