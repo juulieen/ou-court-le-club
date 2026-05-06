@@ -3,8 +3,8 @@
   "use strict";
 
   const MAPTILER_KEY = window.location.hostname === "localhost"
-    ? "MAPTILER_KEY_REDACTED"   // dev (localhost only)
-    : "MAPTILER_KEY_REDACTED";  // prod (juulieen.github.io)
+    ? "a1BC84y8LOVbz39F83Di"   // dev (localhost only)
+    : "i5wEDxjjkYVzkgsRe3xx";  // prod (juulieen.github.io)
 
   let map;
   let allRaces = [];
