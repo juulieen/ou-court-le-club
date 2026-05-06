@@ -22,19 +22,23 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
+        if: ${{ !inputs.skip_scrape }}
         with:
           python-version: '3.12'
           cache: 'pip'
 
       - name: Install dependencies
+        if: ${{ !inputs.skip_scrape }}
         run: pip install -r requirements.txt
 
       - name: Restore config
+        if: ${{ !inputs.skip_scrape }}
         env:
           CONFIG_YML: ${{ secrets.CONFIG_YML }}
         run: echo "$CONFIG_YML" > config.yml
 
       - name: Restore data caches
+        if: ${{ !inputs.skip_scrape }}
         uses: actions/cache@v4
         with:
           path: |
@@ -42,7 +46,6 @@ jobs:
             data/scrape_cache.json
             data/njuko_slugs.json
             data/races.json
-            docs/data/races.json
           key: scraper-data-${{ github.run_id }}
           restore-keys: |
             scraper-data-
@@ -51,42 +54,12 @@ jobs:
         if: ${{ !inputs.skip_scrape }}
         run: python -m scrapers.main
 
-      - name: Download latest races data (skip_scrape mode)
-        if: ${{ inputs.skip_scrape }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          LATEST_RUN=$(gh run list \
-            --repo ${{ github.repository }} \
-            --workflow=scrape.yml \
-            --status=success \
-            --branch=main \
-            --limit=1 \
-            --json databaseId \
-            -q '.[0].databaseId')
-          echo "Downloading artifact from run $LATEST_RUN"
-          gh run download "$LATEST_RUN" \
-            --repo ${{ github.repository }} \
-            --name scraper-data \
-            --dir /tmp/scraper-data
-          mkdir -p data
-          cp /tmp/scraper-data/data/races.json data/races.json
-
-      - name: Regenerate public races.json (skip_scrape mode)
+      - name: Fetch races.json from live site (skip_scrape mode)
         if: ${{ inputs.skip_scrape }}
         run: |
           mkdir -p docs/data
-          python - <<'EOF'
-          import json, yaml
-          from scrapers.main import save_data
-          with open("config.yml") as f:
-              cfg = yaml.safe_load(f)
-          club = cfg.get("club", {})
-          known_members = [str(m) for m in club.get("known_members", [])]
-          display_optin = [str(m) for m in club.get("display_optin", [])]
-          data = json.loads(open("data/races.json").read())
-          save_data(data, known_members=known_members, display_optin=display_optin)
-          EOF
+          curl -fsSL https://juulieen.github.io/ou-court-le-club/data/races.json \
+            -o docs/data/races.json
 
       - name: Save data caches
         if: ${{ !inputs.skip_scrape }}
@@ -97,7 +70,6 @@ jobs:
             data/scrape_cache.json
             data/njuko_slugs.json
             data/races.json
-            docs/data/races.json
           key: scraper-data-${{ github.run_id }}
 
       # Note: save_data() in main.py generates two versions:
