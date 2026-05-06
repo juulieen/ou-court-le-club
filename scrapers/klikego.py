@@ -279,110 +279,105 @@ class KlikegoScraper(BaseScraper):
 
 # --- Event discovery ---
 
-SEARCH_BASE = "https://www.klikego.com/recherche"
+# v8 AJAX API returns all upcoming events in a single HTML response
+SEARCH_API = "https://www.klikego.com/v8/evenements/search.jsp"
+
+MONTHS_FR = {
+    "janv": "01", "févr": "02", "mars": "03", "avr": "04",
+    "mai": "05", "juin": "06", "juil": "07", "août": "08",
+    "sept": "09", "oct": "10", "nov": "11", "déc": "12",
+}
 
 
 def discover_races() -> list[dict]:
-    """Discover all upcoming running events from Klikego's search page.
+    """Discover all upcoming running events from Klikego's AJAX search API.
 
-    Paginates through /recherche?sport=0&page={N} (25 events/page, 0-indexed).
-    Returns race configs compatible with the main orchestrator.
+    Single GET to /v8/evenements/search.jsp?sport=0 returns all events as HTML.
     """
+    try:
+        resp = requests.get(
+            SEARCH_API,
+            params={"sport": "0"},
+            headers={
+                "X-Requested-With": "XMLHttpRequest",
+                "Referer": "https://www.klikego.com/recherche",
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        print(f"  [klikego] Erreur API search: {e}")
+        return []
+
+    soup = BeautifulSoup(resp.text, "html.parser")
     races = []
     seen_ids = set()
-    page = 0
 
-    while True:
-        url = f"{SEARCH_BASE}?sport=0&page={page}"
-        try:
-            resp = requests.get(url, timeout=15)
-            resp.raise_for_status()
-        except requests.RequestException as e:
-            print(f"  [klikego] Erreur liste page {page}: {e}")
-            break
-
-        soup = BeautifulSoup(resp.text, "html.parser")
-        cards = soup.select(".card-evenement")
-        if not cards:
-            break
-
-        for card in cards:
-            race = _parse_event_card(card)
-            if race:
-                eid = race.get("_ref_id", "")
-                if eid not in seen_ids:
-                    races.append(race)
-                    seen_ids.add(eid)
-
-        page += 1
+    for link in soup.select("a[href*='/inscription/'][aria-label]"):
+        race = _parse_event_card_v8(link)
+        if race:
+            ref_id = race.get("_ref_id", "")
+            if ref_id and ref_id not in seen_ids:
+                races.append(race)
+                seen_ids.add(ref_id)
 
     print(f"  [klikego] {len(races)} course(s) decouverte(s)")
     return races
 
 
-def _parse_event_card(card) -> dict | None:
-    """Parse a single Klikego event card.
+def _parse_event_card_v8(link_el) -> dict | None:
+    """Parse a single Klikego v8 event card.
 
-    Structure:
-      div.card-evenement[id=REFERENCE_ID]
-        span.badge-dark          -> DATE "21/03"
-        a.texte-vert-fonce       -> NAME (text) + inscription URL (href)
-        div                      -> LOCATION "City (dept)"
+    The card wraps a link element with aria-label (event name) and href
+    (/inscription/slug/type/ref-id). The parent container holds metadata.
     """
-    ref_id = card.get("id", "")
-    if not ref_id:
+    href = link_el.get("href", "")
+    name = link_el.get("aria-label", "").strip()
+    if not href or not name:
         return None
 
-    # Event name + URL
-    name_link = card.select_one("a.texte-vert-fonce")
-    if not name_link:
-        return None
-
-    name = name_link.get_text(strip=True)
-    href = name_link.get("href", "")
-
-    if not name or not href:
-        return None
-
-    # Build inscrits URL: extract slug and ref-id from the inscription href
-    # href formats:
-    #   /inscription/slug/sport-type/ref-id
-    #   https://www.klikego.com/inscription/slug/sport-type/ref-id
+    # Extract slug and ref-id from inscription URL
     match = re.search(r"/inscription/([^/]+)/[^/]+/([^/]+)$", href)
-    if match:
-        slug, ref_id_from_url = match.group(1), match.group(2)
-        full_url = f"https://www.klikego.com/inscrits/{slug}/{ref_id_from_url}"
-    else:
-        # Fallback: use ref_id from the card
-        full_url = f"https://www.klikego.com/inscrits/{name.lower().replace(' ', '-')}/{ref_id}"
+    if not match:
+        return None
 
-    # Date
+    slug, ref_id = match.group(1), match.group(2)
+    inscrits_url = f"https://www.klikego.com/inscrits/{slug}/{ref_id}"
+
+    # Navigate up to the card container (parent of the link)
+    card = link_el.parent
+    if not card:
+        return None
+
+    # Date: text in span with note styling, e.g. "10–11 avr. 2026" or "11 avr. 2026"
     date_str = ""
-    date_badge = card.select_one(".badge-dark")
-    if date_badge:
-        date_text = date_badge.get_text(strip=True)  # "21/03"
-        dm = re.match(r"(\d{2})/(\d{2})", date_text)
+    for span in card.select("span"):
+        text = span.get_text(strip=True)
+        # Match "DD month YYYY" or "DD–DD month YYYY"
+        dm = re.search(r"(\d{1,2})\s+(\w+)\.?\s+(\d{4})", text)
         if dm:
-            # Assume current or next year
-            year = datetime.now().year
-            date_str = f"{year}-{dm.group(2)}-{dm.group(1)}"
+            day = dm.group(1).zfill(2)
+            month_abbr = dm.group(2).rstrip(".")
+            year = dm.group(3)
+            month = MONTHS_FR.get(month_abbr, "")
+            if month:
+                date_str = f"{year}-{month}-{day}"
+                break
 
-    # Location
+    # Location: "City, Department (XX)" in a div
     location = ""
-    body = card.select_one(".card-body.text-center")
-    if body:
-        divs = body.select(":scope > div")
-        if divs:
-            loc_text = divs[0].get_text(strip=True)
-            loc_match = re.match(r"(.+?)\s*\((\d{2,3})\)", loc_text)
-            if loc_match:
-                location = f"{loc_match.group(1).strip()}, {loc_match.group(2)}"
-            elif loc_text:
-                location = loc_text
+    for div in card.select("div"):
+        text = div.get_text(strip=True)
+        loc_match = re.match(r"^([A-ZÀ-Ü].+?),\s*(.+?)\s*\((\d{2,3})\)$", text)
+        if loc_match:
+            city = loc_match.group(1).strip()
+            dept = loc_match.group(3)
+            location = f"{city}, {dept}"
+            break
 
     return {
         "platform": "klikego",
-        "url": full_url,
+        "url": inscrits_url,
         "name": name,
         "date": date_str,
         "location": location,

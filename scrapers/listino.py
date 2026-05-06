@@ -80,62 +80,99 @@ class ListinoScraper(BaseScraper):
 
 
 def discover_races() -> list[dict]:
+    """Discover events from Listino's inscription pages.
+
+    New site structure (v2): /evenements/inscriptions lists all events as cards
+    with links to /{event-slug}. Paginated via /evenements/inscriptions/OFFSET.
+    Also checks /evenements/resultats for past events with registration lists.
+    """
     races = []
     seen = set()
-    offset = 0
 
-    while True:
-        url = f"{BASE_URL}/recherche/evenement/{offset}" if offset else f"{BASE_URL}/recherche/evenement"
-        try:
-            resp = requests.get(url, timeout=10)
-            resp.raise_for_status()
-        except requests.RequestException:
-            break
+    for page_url_tpl in [
+        f"{BASE_URL}/evenements/inscriptions",
+        f"{BASE_URL}/evenements/resultats",
+    ]:
+        offset = 0
+        while True:
+            url = f"{page_url_tpl}/{offset}" if offset else page_url_tpl
+            try:
+                resp = requests.get(url, timeout=10)
+                resp.raise_for_status()
+            except requests.RequestException:
+                break
 
-        soup = BeautifulSoup(resp.text, "html.parser")
-        found = 0
+            soup = BeautifulSoup(resp.text, "html.parser")
+            found = 0
 
-        for link in soup.select("a[href*='/inscrits/']"):
-            href = link.get("href", "")
-            if href in seen:
-                continue
-            seen.add(href)
-            found += 1
+            # Event cards link to /{slug} or /inscrits/{race_id}/0
+            for link in soup.select("a[href]"):
+                href = link.get("href", "").strip()
+                name = link.get_text(strip=True)
 
-            full_url = href if href.startswith("http") else f"{BASE_URL}{href}"
-            name = link.get_text(strip=True) or "Course Listino"
+                # Skip non-event links
+                if not name or len(name) < 4 or name in ("En savoir +", "Créer mon événement"):
+                    continue
 
-            races.append({
-                "platform": "listino",
-                "url": full_url,
-                "name": name,
-                "date": "",
-                "location": "",
-                "source": "listino-discovery",
-            })
+                # Match event page links: /slug (no sub-path, not a system page)
+                full_url = href if href.startswith("http") else f"{BASE_URL}{href}"
+                if not full_url.startswith(BASE_URL + "/"):
+                    continue
 
-        # Also check event page links for events without direct inscrits links
-        for link in soup.select("a[href^='/']"):
-            href = link.get("href", "")
-            if re.match(r"^/[a-z0-9-]+-\d{4}$", href) and href not in seen:
-                seen.add(href)
-                # Try to find inscrits link on the event page
-                event_url = f"{BASE_URL}{href}"
-                name = link.get_text(strip=True) or href.strip("/")
-                races.append({
-                    "platform": "listino",
-                    "url": event_url,
-                    "name": name,
-                    "date": "",
-                    "location": "",
-                    "source": "listino-discovery",
-                    "_needs_inscrits_resolution": True,
-                })
+                path = full_url.replace(BASE_URL, "").strip("/")
+                # Skip system pages
+                if "/" in path or path in (
+                    "", "evenements", "recherche", "blog", "panier",
+                    "carte", "contact", "quisommesnous", "inscription",
+                    "chrono", "graphisme", "chartegraphique", "cgu", "ppd",
+                ) or path.startswith("evenements/") or path.startswith("authentication/"):
+                    continue
+
+                if full_url in seen:
+                    continue
+                seen.add(full_url)
                 found += 1
 
-        if found == 0:
-            break
-        offset += 11
+                # Extract date from sibling text (e.g. "Paimpol - Samedi 14 février 2026")
+                date_str = ""
+                location = ""
+                parent = link.parent
+                if parent:
+                    text = parent.get_text(" ", strip=True)
+                    dm = re.search(
+                        r"(\d{1,2})\s+(janvier|février|mars|avril|mai|juin|"
+                        r"juillet|août|septembre|octobre|novembre|décembre)"
+                        r"\s+(\d{4})",
+                        text, re.IGNORECASE,
+                    )
+                    if dm:
+                        day = dm.group(1).zfill(2)
+                        month_map = {
+                            "janvier": "01", "février": "02", "mars": "03",
+                            "avril": "04", "mai": "05", "juin": "06",
+                            "juillet": "07", "août": "08", "septembre": "09",
+                            "octobre": "10", "novembre": "11", "décembre": "12",
+                        }
+                        month = month_map.get(dm.group(2).lower(), "01")
+                        date_str = f"{dm.group(3)}-{month}-{day}"
+
+                    # Location: "City - Jour DD month YYYY"
+                    loc_match = re.search(r"^([A-ZÀ-Ÿ][a-zà-ÿ'-]+(?:\s+[a-zà-ÿ'-]+)*)\s*-", text)
+                    if loc_match:
+                        location = loc_match.group(1).strip()
+
+                races.append({
+                    "platform": "listino",
+                    "url": full_url,
+                    "name": name,
+                    "date": date_str,
+                    "location": location,
+                    "source": "listino-discovery",
+                })
+
+            if found == 0:
+                break
+            offset += 11
 
     print(f"  [listino] {len(races)} course(s) decouverte(s)")
     return races

@@ -1,0 +1,112 @@
+---
+import Base from '../../layouts/Base.astro';
+import fs from 'node:fs';
+import path from 'node:path';
+
+export async function getStaticPaths() {
+  // Try multiple data source paths in priority order
+  const candidates = [
+    path.resolve(process.cwd(), 'src/data/races.json'),
+    path.resolve(process.cwd(), '../docs/data/races.json'),
+    path.resolve(process.cwd(), '../data/races.json'),
+  ];
+
+  let data: { races: any[] } | null = null;
+  const loadErrors: string[] = [];
+
+  for (const candidate of candidates) {
+    try {
+      const raw = fs.readFileSync(candidate, 'utf-8');
+      data = JSON.parse(raw);
+      break;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      loadErrors.push(`${candidate}: ${message}`);
+    }
+  }
+
+  if (!data) {
+    throw new Error(
+      `Unable to load races data from any candidate path. Tried: ${candidates.join(', ')}. Errors: ${loadErrors.join(' | ')}`
+    );
+  }
+
+  return (data.races || [])
+    .filter((r: any) => r.member_count > 0)
+    .map((race: any) => ({
+      params: { id: race.id },
+      props: { race },
+    }));
+}
+
+interface Race {
+  id: string;
+  name: string;
+  date: string;
+  location: string;
+  platform: string;
+  url: string;
+  lat: number;
+  lng: number;
+  member_count: number;
+  first_names?: string[];
+  race_type?: string;
+  distances?: number[];
+}
+
+const { race } = Astro.props as { race: Race };
+
+// Build og:meta content
+const dateFormatted = race.date
+  ? new Date(race.date + 'T00:00:00').toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+  : '';
+
+const memberText = `${race.member_count} membre${race.member_count > 1 ? 's' : ''} inscrit${race.member_count > 1 ? 's' : ''}`;
+const ogDescription = [memberText, dateFormatted, race.location].filter(Boolean).join(' — ');
+
+const siteBase = import.meta.env.BASE_URL;
+const siteUrl = import.meta.env.SITE || 'https://juulieen.github.io';
+const raceUrl = `${siteUrl}${siteBase}race/${race.id}/`.replace(/([^:])\/\//g, '$1/');
+const homeUrl = `${siteUrl}${siteBase}`.replace(/([^:])\/\//g, '$1/');
+const ogImage = `${siteUrl}${siteBase}og/${race.id}.png`.replace(/([^:])\/\//g, '$1/');
+
+// Redirect target: SPA with hash fragment
+const redirectTarget = `${siteBase}#race/${race.id}`;
+---
+
+<Base
+  title={`${race.name} — Ou court le club ?`}
+  description={ogDescription}
+  ogTitle={race.name}
+  ogDescription={ogDescription}
+  ogImage={ogImage}
+  ogUrl={raceUrl}
+  canonical={raceUrl}
+>
+  <Fragment slot="head">
+    <meta http-equiv="refresh" content={`0;url=${redirectTarget}`}>
+  </Fragment>
+
+  <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'DM Sans',system-ui,sans-serif;text-align:center;padding:20px;overflow:auto;">
+    <div>
+      <h1 style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;margin-bottom:8px;">{race.name}</h1>
+      <p style="color:#777;margin-bottom:16px;">{ogDescription}</p>
+      <p style="font-size:0.85rem;color:#aaa;">Redirection en cours...</p>
+      <p style="margin-top:12px;">
+        <a href={redirectTarget} style="color:#F57C20;text-decoration:none;font-weight:600;">
+          Voir sur la carte &rarr;
+        </a>
+      </p>
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ redirectTarget }}>
+    // Immediate JS redirect (faster than meta refresh)
+    window.location.replace(redirectTarget);
+  </script>
+</Base>
