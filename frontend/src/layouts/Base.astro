@@ -63,6 +63,10 @@ const defaultOgImage = `${Astro.site}${siteBase}img/screenshot.png`.replace(/([^
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.css" />
   <script is:inline src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js"></script>
 
+  <!-- Plausible Analytics -->
+  <script defer data-domain="juulieen.github.io" src="https://plausible.juulieen.fr/js/script.file-downloads.hash.outbound-links.js" is:inline></script>
+  <script is:inline>window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
+
   <slot name="head" />
 </head>
 <body>
