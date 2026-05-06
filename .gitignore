@@ -5,7 +5,12 @@ config.yml
 data/races.json
 data/scrape_cache.json
 
-# Public data (contains first names, deployed via GitHub Actions artifact — not committed)
+# docs/ is now served via Astro build artifact — only the data subdir is used by CI
+docs/css/
+docs/js/
+docs/img/
+docs/favicon.ico
+docs/index.html
 docs/data/races.json
 
 # Geocoding & slug caches (no personal data, but regenerable)
