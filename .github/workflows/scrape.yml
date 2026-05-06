@@ -51,7 +51,28 @@ jobs:
         if: ${{ !inputs.skip_scrape }}
         run: python -m scrapers.main
 
-      - name: Regenerate public races.json from cache (skip_scrape mode)
+      - name: Download latest races data (skip_scrape mode)
+        if: ${{ inputs.skip_scrape }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST_RUN=$(gh run list \
+            --repo ${{ github.repository }} \
+            --workflow=scrape.yml \
+            --status=success \
+            --branch=main \
+            --limit=1 \
+            --json databaseId \
+            -q '.[0].databaseId')
+          echo "Downloading artifact from run $LATEST_RUN"
+          gh run download "$LATEST_RUN" \
+            --repo ${{ github.repository }} \
+            --name scraper-data \
+            --dir /tmp/scraper-data
+          mkdir -p data
+          cp /tmp/scraper-data/data/races.json data/races.json
+
+      - name: Regenerate public races.json (skip_scrape mode)
         if: ${{ inputs.skip_scrape }}
         run: |
           mkdir -p docs/data
