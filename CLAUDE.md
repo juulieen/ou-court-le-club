@@ -1,11 +1,11 @@
 # RunEvent86
 
-Interactive map showing races where "Run Event 86" club members are registered across France. The frontend is a static MapLibre GL map hosted via GitHub Pages (`docs/`). Data is produced by a Python scraper pipeline that discovers races on 19 registration platforms (including 4 Njuko white-labels), checks each for club members via dual matching (club name + known member names), geocodes results, and outputs a single JSON file.
+Interactive map showing races where "Run Event 86" club members are registered across France. The frontend is a static MapLibre GL map built with Astro 5 and TypeScript, hosted via GitHub Pages. Data is produced by a Python scraper pipeline that discovers races on 19 registration platforms (including 4 Njuko white-labels), checks each for club members via dual matching (club name + known member names), geocodes results, and outputs a GDPR-compliant JSON file containing first names only for opted-in members.
 
 ## Architecture
 
 ```
-config.yml              -- club patterns (4 regex), known members (23), map settings, display_optin
+config.yml              -- club patterns (4 regex), known members (33), map settings, display_optin
 scrapers/
   __init__.py
   main.py               -- orchestrator: discover -> scrape -> geocode -> JSON
@@ -29,15 +29,19 @@ scrapers/
   ipitos.py              -- IPITOS platform scraper (live.ipitos.com, .clax XML)
   helloasso.py           -- HelloAsso discovery-only (participants are private)
 data/
-  races.json             -- final output JSON
+  races.json             -- final private output JSON (full member names)
   scrape_cache.json      -- per-URL scrape cache with TTL
   geocache.json          -- persistent geocoding cache
   njuko_slugs.json       -- persistent Njuko slug cache
-docs/                    -- static frontend (GitHub Pages)
-  index.html             -- MapLibre GL map with draggable sidebar, filters, marker clusters
-  js/app.js              -- map logic, member filter, draggable bottom sheet, fetches docs/data/races.json
-  css/style.css          -- responsive styles, mobile bottom sheet with 3 snap positions
-  data/races.json        -- public version with first names only (no last names, gitignored, deployed via Actions artifact)
+docs/
+  data/races.json        -- intermediate public version with first names only (gitignored)
+frontend/                -- Astro static frontend project
+  package.json           -- Astro build & runtime config
+  src/
+    layouts/Base.astro   -- main site shell layout
+    pages/index.astro    -- landing page structure & legal modals
+    scripts/app.ts       # core TypeScript client logic (MapLibre GL, filters, bottom sheet)
+    styles/global.css    # vanilla CSS stylesheet for all screen modes
 ```
 
 ## Scraper Platforms
@@ -63,6 +67,7 @@ The `SCRAPERS` dict in `main.py` maps platform names to scraper classes (14 acti
 | **RunChrono** | `runchrono.py` | Local (dept 86) calendar at `runchrono.fr/inscription.php`; extracts OnSinscrit links from event divs | Discovery only -- produces `onsinscrit` platform entries that are scraped by `OnSinscritScraper` | No scraper class; only `discover_races()` function |
 | **IPITOS** | `ipitos.py` | Index page at `live.ipitos.com/` lists events with dates in `div.nom`/`div.dt` | Wiclax `.clax` XML files extracted from iframe `?f=` param; `<E>` elements with `n`(name), `c`(club), `p`(parcours), `d`(dossard) | Uses `live.ipitos.com` (no WAF); requires browser User-Agent header; `www.ipitos.com` is blocked by Sucuri |
 | **HelloAsso** | `helloasso.py` | Directory search via website (no auth needed) | N/A -- participants are private by design | `discover_races()` exists but returns `platform: manual`; members must be added manually in `config.yml` |
+| **SportsnConnect** | `sportsnconnect.py` | `/fr/client/events` page — all ~460 events in SSR `__NEXT_DATA__.props.pageProps.initialEditions` (single request, no pagination) | `/fr/client/events/{uuid}-{slug}` — all participants in SSR `__NEXT_DATA__.props.pageProps.initialEdition.participants`; `contact.club`, `contact.firstname`, `contact.lastname` | No API auth needed; HTML can be large (4000+ participants); timeout=60s. Filters discovery to `event.sports[].name == "Course à pied"` |
 
 ## Dual Matching
 
@@ -133,15 +138,29 @@ settings:
 
 ## How to Run Locally
 
+### Scrapers (Backend)
 ```bash
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 
 # Run the scraper pipeline
 python -m scrapers.main
+# Output: data/races.json (private, full names) + docs/data/races.json (public, first names)
+```
 
-# Output: data/races.json + docs/data/races.json
-# Open docs/index.html in a browser to view the map
+### Map (Frontend)
+```bash
+# Move to frontend directory
+cd frontend
+
+# Install packages
+npm install
+
+# Start local Astro development server
+npm run dev
+
+# Build static production version (dest: frontend/dist)
+npm run build
 ```
 
 The full pipeline takes several minutes due to the number of platforms and rate limiting.
@@ -290,10 +309,12 @@ Map overlay (not in sidebar) — positioned bottom-left on desktop, top-left on 
 ## Deployment
 
 GitHub Pages is deployed via **GitHub Actions** (not from a branch). The workflow:
-1. Runs the scraper pipeline, generating `docs/data/races.json` (with first names)
-2. Uploads the entire `docs/` folder as a Pages artifact
-3. Deploys to GitHub Pages via `actions/deploy-pages`
-4. The JSON with first names is **never committed** to the repository
+1. Runs the scraper pipeline, generating `docs/data/races.json` (with first names only).
+2. Copies `docs/data/races.json` into the `frontend/public/data/` and `frontend/src/data/` directories.
+3. Installs frontend dependencies and builds the Astro application.
+4. Uploads the built static frontend (`frontend/dist`) as a Pages artifact.
+5. Deploys to GitHub Pages via `actions/deploy-pages`.
+6. The JSON with first names is **never committed** to the repository.
 
 **IMPORTANT:** In GitHub repo Settings > Pages, the source must be set to "GitHub Actions".
 
