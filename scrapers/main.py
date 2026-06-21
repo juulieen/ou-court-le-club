@@ -55,6 +55,9 @@ CONFIG_PATH = ROOT / "config.yml"
 DATA_PATH = ROOT / "data" / "races.json"
 DOCS_DATA_PATH = ROOT / "docs" / "data" / "races.json"
 SCRAPE_CACHE_PATH = ROOT / "data" / "scrape_cache.json"
+# Persistent archive: accumulates every race ever found with members, so past
+# races stay on the map after their participant list goes offline.
+ARCHIVE_PATH = ROOT / "data" / "races_archive.json"
 
 SCRAPERS = {
     "klikego": KlikegoScraper,
@@ -273,6 +276,53 @@ def _enrich_race(race: dict) -> dict:
     existing.update(_extract_distances(bibs))
     race["distances"] = sorted(existing)
     return race
+
+
+def load_archive() -> dict:
+    """Load the persistent race archive, keyed by race id."""
+    if ARCHIVE_PATH.exists():
+        try:
+            data = json.loads(ARCHIVE_PATH.read_text(encoding="utf-8"))
+            return {r["id"]: r for r in data.get("races", []) if r.get("id")}
+        except Exception:
+            pass
+    return {}
+
+
+def merge_archive(results: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Merge this run's races into the persistent archive.
+
+    Past races no longer surfaced by discovery (participant list offline) are
+    retained with their last-known members and coordinates. Races found again
+    this run overwrite their archived version with fresh data.
+
+    Returns (all_races, new_races) where new_races are ids never seen before
+    (used to feed the WhatsApp notification queue).
+    """
+    archive = load_archive()
+    known_ids = set(archive.keys())
+    new_races = []
+    for race in results:
+        rid = race.get("id")
+        if not rid:
+            continue
+        if rid not in known_ids:
+            new_races.append(race)
+        archive[rid] = race  # fresh data wins
+
+    ARCHIVE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    ARCHIVE_PATH.write_text(
+        json.dumps(
+            {
+                "last_updated": datetime.now(timezone.utc).isoformat(),
+                "races": list(archive.values()),
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    return list(archive.values()), new_races
 
 
 def save_data(
@@ -594,11 +644,25 @@ def run():
     print(f"\n{'─'*60}")
     print(f"  PHASE 4/4 — Sauvegarde & enrichissement")
     print(f"{'─'*60}")
+    # Enrich fresh races before archiving so the archive stores complete data
+    for race in results:
+        _enrich_race(race)
+
+    # Merge into the persistent archive: past races stay on the map, and we get
+    # the list of races detected for the first time (for WhatsApp notifications).
+    fresh_count = len(results)
+    all_races, new_races = merge_archive(results)
+    archived_count = len(all_races) - fresh_count
+    print(
+        f"  Archive: {fresh_count} course(s) ce run, "
+        f"{archived_count} archivée(s) conservée(s), {len(new_races)} nouvelle(s)"
+    )
+
+    display_optin = club.get("display_optin", [])
     output = {
         "last_updated": datetime.now(timezone.utc).isoformat(),
-        "races": results,
+        "races": all_races,
     }
-    display_optin = club.get("display_optin", [])
     save_data(output, known_members=known_members, display_optin=display_optin)
 
     # --- Summary ---

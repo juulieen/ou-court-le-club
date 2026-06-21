@@ -45,6 +45,7 @@ jobs:
             data/geocache.json
             data/scrape_cache.json
             data/njuko_slugs.json
+            data/races_archive.json
             data/races.json
           key: scraper-data-${{ github.run_id }}
           restore-keys: |
@@ -69,6 +70,7 @@ jobs:
             data/geocache.json
             data/scrape_cache.json
             data/njuko_slugs.json
+            data/races_archive.json
             data/races.json
           key: scraper-data-${{ github.run_id }}
 
@@ -86,6 +88,7 @@ jobs:
             data/geocache.json
             data/scrape_cache.json
             data/njuko_slugs.json
+            data/races_archive.json
             data/races.json
           retention-days: 7
 
