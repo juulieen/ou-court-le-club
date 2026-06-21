@@ -18,6 +18,11 @@ permissions:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    # Hard backstop: GitHub's default job timeout is 6h. Cap it so a wedged
+    # scraper can never burn hours of CI — the in-code SCRAPE_BUDGET_S handles
+    # the graceful case; this is the last resort. Sized for a cold-cache run
+    # (discovery ~20min + scraping budget 20min + geocode + build).
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
 

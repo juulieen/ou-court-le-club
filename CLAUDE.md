@@ -53,7 +53,7 @@ The `SCRAPERS` dict in `main.py` maps platform names to scraper classes (14 acti
 | Platform | File | Discovery method | Scraping method | Notes |
 |---|---|---|---|---|
 | **Klikego** | `klikego.py` | Paginated search `/recherche?sport=0&page={N}` | AJAX POST to `findInInscrits.jsp`; searches by club name via "ville" field, falls back to known member name search | Name-based POST search returns 500 errors (broken server-side); club search via "ville" field works |
-| **Njuko** | `njuko.py` | Persistent slug cache (`njuko_slugs.json`) seeded from CDX + `_SEED_SLUGS`; validates each slug via API | REST API: `/edition/url/{slug}` then `/registrations/{id}/_search/{}`, club in `metaData` keys `STRNOM_CLU`, `STRNOMABR_CLU`, `utmb_information_club` | Also handles 4 white-labels: UTMB (`register-utmb.world`), Sporkrono (`sporkrono-inscriptions.fr`), Sports107 (`sports107.com`), timeto (`timeto.com`). For large events (50k+), falls back to per-name search when bulk fetch times out |
+| **Njuko** | `njuko.py` | Persistent slug cache (`njuko_slugs.json`) seeded from CDX + `_SEED_SLUGS`; validates each slug via API | REST API: `/edition/url/{slug}` then **`POST /registrations/{id}`** (paginated, `criteria:null` for bulk). **Club field removed from public API → name-matching only** (`known_members`). Large events (> `BIG_EVENT_THRESHOLD`) use per-name search instead of bulk | Also handles 4 white-labels: UTMB (`register-utmb.world`), Sporkrono (`sporkrono-inscriptions.fr`), Sports107 (`sports107.com`), timeto (`timeto.com`). Old GET `/_search/{}` endpoint is now **410 Gone** |
 | **OnSinscrit** | `onsinscrit.py` | National directory at `search.onsinscrit.com/evenements.php?p={page}`; extracts subdomain slug from flyer image filename (includes year) | HTML table at `{slug}.onsinscrit.com/listeinscrits.php?tous=1&dossards=1` | Also receives entries from RunChrono discovery. Event name from `h5.event-title`, URL slug from `/images/affiches/{slug}.jpg` |
 | **Protiming** | `protiming.py` | Paginated list `/Runnings/liste/page:{N}` | HTML table `#lstParticipants` with server-side club filter via `searchclub` URL parameter; falls back to known member name search | Club filter in URL avoids downloading full participant list |
 | **Chronometrage** | `chronometrage.py` | Paginated `/events` page, data in `__NEXT_DATA__` JSON | `__NEXT_DATA__` on `/eventSubscription/{slug}`, club in `observations.infoPersonne.club` | Next.js app; all data embedded in page JSON |
@@ -245,7 +245,9 @@ Several platforms are Njuko white-labels sharing the same API structure. Support
 
 To add a new white-label: add domain to `_API_BASES`, `_extract_slug()`, and optionally `_SEED_SLUGS`.
 
-**Large events (50k+):** Bulk `_search/{}` times out. NjukoScraper falls back to per-name search of known members. This means club-only matches are missed on very large events.
+**Registrations API (changed Jun 2026):** the old GET `/registrations/{id}/_search/{}` is now **410 Gone**. The new endpoint is **`POST /registrations/{id}`** with a search body (headers: `x-context: default`, `Origin/Referer: in.njuko.com`); `criteria:null` returns everyone, paginated (`limit`/`page`). **The public response no longer includes the club field**, so njuko matching is **name-only** (`known_members`) — members who only filled the club field are now missed on njuko.
+
+**Large events:** events with `totalCount > BIG_EVENT_THRESHOLD` (1500) are not bulk-downloaded (politeness); `_search_by_names()` does one keyword search per known member instead. Bulk pagination is also capped at `MAX_BULK_PAGES` (3000 registrants).
 
 ## Geocoding Gotchas
 
@@ -344,3 +346,4 @@ Known redesign history:
 - **Listino** (Apr 2026): `/recherche/evenement` removed, now `/evenements/inscriptions`
 - **Chronometrage** (Apr 2026): `__NEXT_DATA__` structure changed, `initialData` now list of race objects with embedded subscriptions
 - **OnSinscrit** (Apr 2026): subdomain URLs need year suffix from flyer image filename
+- **Njuko** (Jun 2026): GET `/registrations/{id}/_search/{}` → **410 Gone**; new `POST /registrations/{id}` (paginated), **club field dropped from public response** → name-only matching. Old code reacted to the 410 by per-name-searching every member against the dead endpoint → full runs hung for hours (fixed: gate fallback on timeout, new API, global scrape budget + `timeout-minutes`)

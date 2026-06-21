@@ -11,6 +11,7 @@ import json
 import re
 import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 from dataclasses import asdict
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -223,6 +224,11 @@ def _build_display_names(optin: list[str], known_members: list[str]) -> dict[str
 
 
 MAX_WORKERS = 6
+
+# Hard budget for the whole scraping phase. A single misbehaving site must never
+# hang the run: once this is exceeded, stragglers are abandoned and the pipeline
+# continues to geocoding/save with whatever was found.
+SCRAPE_BUDGET_S = 20 * 60  # 20 minutes
 
 # Cache TTL: avoid re-scraping the same URL too often
 CACHE_TTL_EMPTY = 48       # 2 days for courses with 0 members
@@ -666,13 +672,17 @@ def run():
     results: list[dict] = list(cached_results)
     found_count = len(cached_results)
 
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        future_to_rc = {
-            executor.submit(scrape_race, rc, patterns, known_members): rc
-            for rc in to_scrape
-        }
-        done = 0
-        for future in as_completed(future_to_rc):
+    # Bounded by SCRAPE_BUDGET_S: a misbehaving site must never hang the run.
+    # We don't use the context manager (its __exit__ would block on stragglers);
+    # on budget overrun we abandon unfinished tasks and continue to save.
+    executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+    future_to_rc = {
+        executor.submit(scrape_race, rc, patterns, known_members): rc
+        for rc in to_scrape
+    }
+    done = 0
+    try:
+        for future in as_completed(future_to_rc, timeout=SCRAPE_BUDGET_S):
             done += 1
             rc = future_to_rc[future]
             platform = rc.get("platform", "")
@@ -705,9 +715,17 @@ def run():
             if done % 200 == 0:
                 pct = done * 100 // len(to_scrape) if to_scrape else 100
                 print(f"  ... {done}/{len(to_scrape)} ({pct}%) — {found_count} avec membres ({_elapsed(scrape_start)})")
+    except FuturesTimeoutError:
+        unfinished = sum(1 for f in future_to_rc if not f.done())
+        print(
+            f"  ⚠️ Budget scraping ({SCRAPE_BUDGET_S // 60} min) dépassé — "
+            f"{unfinished} course(s) abandonnée(s), on continue avec {found_count} trouvée(s)"
+        )
+    finally:
+        # Don't wait on stragglers; pending (not-yet-started) tasks are cancelled.
+        executor.shutdown(wait=False, cancel_futures=True)
 
-    pct = 100
-    print(f"  ... {done}/{len(to_scrape)} (100%) — {found_count} avec membres ({_elapsed(scrape_start)})")
+    print(f"  ... {done}/{len(to_scrape)} traitées — {found_count} avec membres ({_elapsed(scrape_start)})")
     save_scrape_cache(scrape_cache)
 
     # --- Geocode ---
