@@ -111,6 +111,31 @@ body {
   letter-spacing: 0.1em;
 }
 
+.calendar-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: none;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+
+.calendar-btn:hover {
+  filter: brightness(1.05);
+}
+
+.calendar-btn:active {
+  transform: scale(0.96);
+}
+
 /* ---- Stats bar ---- */
 #stats-bar {
   display: flex;
@@ -900,6 +925,34 @@ body {
 
 .modal-content strong {
   color: var(--text);
+}
+
+.calendar-cta {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  padding: 13px 18px;
+  margin: 4px 0 10px;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, var(--orange), var(--purple));
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: filter 0.1s ease, transform 0.1s ease;
+}
+
+.calendar-cta:hover {
+  filter: brightness(1.06);
+}
+
+.calendar-cta:active {
+  transform: scale(0.98);
+}
+
+.calendar-hint {
+  font-size: 0.72rem !important;
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 .modal-close {

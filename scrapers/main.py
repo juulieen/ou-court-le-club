@@ -54,6 +54,8 @@ ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "config.yml"
 DATA_PATH = ROOT / "data" / "races.json"
 DOCS_DATA_PATH = ROOT / "docs" / "data" / "races.json"
+# Public iCalendar feed (subscribe via webcal://) of upcoming races with members.
+ICS_PATH = ROOT / "docs" / "data" / "races.ics"
 SCRAPE_CACHE_PATH = ROOT / "data" / "scrape_cache.json"
 # Persistent archive: accumulates every race ever found with members, so past
 # races stay on the map after their participant list goes offline.
@@ -371,6 +373,112 @@ def save_data(
     DOCS_DATA_PATH.write_text(
         json.dumps(public_data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+
+    # Public calendar feed (subscribe via webcal://) — upcoming races only
+    generate_ics(public_races)
+
+
+# --- iCalendar feed ---
+
+def _ics_escape(text: str) -> str:
+    """Escape a text value per RFC 5545 (backslash, comma, semicolon, newline)."""
+    return (
+        (text or "")
+        .replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\n", "\\n")
+    )
+
+
+def _ics_fold(line: str) -> str:
+    """Fold a content line to <=75 octets with CRLF + space continuation."""
+    raw = line.encode("utf-8")
+    if len(raw) <= 75:
+        return line
+    out, chunk = [], b""
+    for ch in line:
+        b = ch.encode("utf-8")
+        # First line caps at 75 octets, continuations at 74 (leading space)
+        cap = 75 if not out else 74
+        if len(chunk) + len(b) > cap:
+            out.append(chunk.decode("utf-8"))
+            chunk = b
+        else:
+            chunk += b
+    out.append(chunk.decode("utf-8"))
+    return "\r\n ".join(out)
+
+
+def generate_ics(public_races: list[dict]) -> None:
+    """Write docs/data/races.ics: one all-day VEVENT per upcoming race.
+
+    Uses the same public, opted-in data as the public JSON (first names only).
+    Designed to be subscribed to via webcal:// so phones refresh it automatically.
+    """
+    today = datetime.now().strftime("%Y-%m-%d")
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//RunEvent86//Ou court le club//FR",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-WR-CALNAME:Courses Run Event 86",
+        "NAME:Courses Run Event 86",
+        "X-WR-TIMEZONE:Europe/Paris",
+        "REFRESH-INTERVAL;VALUE=DURATION:PT12H",
+        "X-PUBLISHED-TTL:PT12H",
+    ]
+
+    count = 0
+    for race in public_races:
+        date = (race.get("date") or "")[:10]
+        if not date or date < today:
+            continue
+        try:
+            d = datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            continue
+
+        dtstart = d.strftime("%Y%m%d")
+        dtend = (d + timedelta(days=1)).strftime("%Y%m%d")
+        name = race.get("name", "Course")
+        mc = race.get("member_count", 0)
+        names = race.get("first_names") or []
+        location = race.get("location") or ""
+        url = race.get("url") or ""
+        uid = race.get("id") or f"{dtstart}-{name}"
+
+        summary = f"🏃 {name} ({mc} RunEvent)"
+        first_line = f"{mc} membre(s) du club inscrit(s)"
+        if names:
+            first_line += " : " + ", ".join(names)
+        desc = first_line + (f"\n{url}" if url else "")
+
+        ev = [
+            "BEGIN:VEVENT",
+            f"UID:{_ics_escape(uid)}@runevent86",
+            f"DTSTAMP:{stamp}",
+            f"DTSTART;VALUE=DATE:{dtstart}",
+            f"DTEND;VALUE=DATE:{dtend}",
+            f"SUMMARY:{_ics_escape(summary)}",
+            f"DESCRIPTION:{_ics_escape(desc)}",
+        ]
+        if location:
+            ev.append(f"LOCATION:{_ics_escape(location)}")
+        if url:
+            ev.append(f"URL:{url}")
+        ev.append("END:VEVENT")
+        lines.extend(ev)
+        count += 1
+
+    lines.append("END:VCALENDAR")
+
+    ICS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    ICS_PATH.write_text("\r\n".join(_ics_fold(ln) for ln in lines) + "\r\n", encoding="utf-8")
+    print(f"  Calendrier .ics: {count} course(s) à venir → {ICS_PATH.name}")
 
 
 # --- Scrape cache ---

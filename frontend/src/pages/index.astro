@@ -15,6 +15,10 @@ const description = 'Carte interactive des courses ou les membres du club Run Ev
           <h1>Ou court le club ?</h1>
           <div class="subtitle">Run Event 86</div>
         </div>
+        <button id="calendar-btn" class="calendar-btn" type="button" aria-label="Ajouter les courses a mon agenda">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Agenda</span>
+        </button>
       </div>
     </div>
 
@@ -106,6 +110,18 @@ const description = 'Carte interactive des courses ou les membres du club Run Ev
     <span class="legend-item"><span class="legend-dot dot-this-month"></span>Ce mois</span>
     <span class="legend-item"><span class="legend-dot dot-future"></span>A venir</span>
     <span class="legend-item"><span class="legend-dot dot-past"></span>Passees</span>
+  </div>
+
+  <!-- Calendar modal -->
+  <div id="calendar-modal" class="modal hidden">
+    <div class="modal-content">
+      <button class="modal-close" aria-label="Fermer">&times;</button>
+      <h2>📅 Les courses du club dans ton agenda</h2>
+      <div class="modal-divider"></div>
+      <p>Abonne-toi une fois : <strong>toutes les courses du club</strong> apparaissent dans le calendrier de ton telephone, et la liste se <strong>met a jour toute seule</strong> quand une nouvelle course est detectee.</p>
+      <a href="#" id="calendar-subscribe" class="calendar-cta">S'abonner (mise a jour auto)</a>
+      <p class="calendar-hint">Ouvre Apple Calendrier / Google Agenda. Si rien ne se passe, <a href="#" id="calendar-download">telecharge le fichier .ics</a>.</p>
+    </div>
   </div>
 
   <!-- Legal modal -->

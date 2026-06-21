@@ -76,6 +76,7 @@ declare const maplibregl: any;
 
     setupSidebar();
     setupLegalModal();
+    setupCalendarModal();
     window.addEventListener("hashchange", handleRoute);
   }
 
@@ -970,6 +971,33 @@ declare const maplibregl: any;
       e.preventDefault();
       modal.classList.remove("hidden");
     });
+    close.addEventListener("click", () => modal.classList.add("hidden"));
+    modal.addEventListener("click", (e: Event) => {
+      if (e.target === modal) modal.classList.add("hidden");
+    });
+    document.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key === "Escape") modal.classList.add("hidden");
+    });
+  }
+
+  // --- Calendar (.ics) subscription modal ---
+  function setupCalendarModal() {
+    const btn = document.getElementById("calendar-btn");
+    const modal = document.getElementById("calendar-modal");
+    if (!btn || !modal) return;
+    const close = modal.querySelector(".modal-close")!;
+
+    // Build the feed URL from the deployed location (robust to the base path)
+    const base = (window as any).__BASE_URL__ || "/";
+    const httpsUrl = window.location.origin + base.replace(/\/?$/, "/") + "races.ics";
+    const webcalUrl = httpsUrl.replace(/^https?:/, "webcal:");
+
+    const subscribe = document.getElementById("calendar-subscribe") as HTMLAnchorElement | null;
+    const download = document.getElementById("calendar-download") as HTMLAnchorElement | null;
+    if (subscribe) subscribe.href = webcalUrl;
+    if (download) { download.href = httpsUrl; download.setAttribute("download", "courses-run-event-86.ics"); }
+
+    btn.addEventListener("click", () => modal.classList.remove("hidden"));
     close.addEventListener("click", () => modal.classList.add("hidden"));
     modal.addEventListener("click", (e: Event) => {
       if (e.target === modal) modal.classList.add("hidden");

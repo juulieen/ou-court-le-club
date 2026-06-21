@@ -107,6 +107,8 @@ jobs:
           mkdir -p frontend/public/data frontend/src/data
           cp docs/data/races.json frontend/public/data/races.json
           cp docs/data/races.json frontend/src/data/races.json
+          # Calendar feed served at /races.ics (subscribe via webcal://)
+          cp docs/data/races.ics frontend/public/races.ics
 
       - name: Build Astro site
         run: cd frontend && npm run build
