@@ -50,6 +50,8 @@ from .ipitos import discover_races as ipitos_discover
 from .runchrono import discover_races as runchrono_discover
 from .sportsnconnect import SportsnConnectScraper
 from .sportsnconnect import discover_races as sportsnconnect_discover
+from .adeorun import AdeorunScraper
+from .adeorun import discover_races as adeorun_discover
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "config.yml"
@@ -77,6 +79,7 @@ SCRAPERS = {
     "listino": ListinoScraper,
     "ipitos": IpitosScraper,
     "sportsnconnect": SportsnConnectScraper,
+    "adeorun": AdeorunScraper,
 }
 
 # Patterns for extracting location from race names
@@ -620,6 +623,7 @@ def run():
         ("IPITOS", ipitos_discover),
         ("RunChrono (local 86)", runchrono_discover),
         ("SportsnConnect", sportsnconnect_discover),
+        ("Adeorun", adeorun_discover),
     ]
 
     discovered = []

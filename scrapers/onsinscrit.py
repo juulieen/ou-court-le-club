@@ -14,12 +14,37 @@ National event discovery via: https://search.onsinscrit.com/evenements.php?p={pa
 """
 
 import re
+import time
 from datetime import datetime, timezone
 
 import requests
 from bs4 import BeautifulSoup
 
 from .base import BaseScraper, Member, RaceResult
+
+
+def _get_with_retry(url: str, *, tries: int = 3, timeout: int = 10) -> requests.Response:
+    """GET a URL, retrying transient network failures with exponential backoff.
+
+    A single DNS glitch or connection reset would otherwise abort the whole
+    OnSinscrit discovery (the loop ``break``s on the first exception), silently
+    dropping the entire platform for the run. We retry only genuinely transient
+    errors (DNS/connection/timeout); an HTTP error status still raises after the
+    last attempt so the caller can decide.
+    """
+    last_exc: Exception | None = None
+    for attempt in range(tries):
+        try:
+            resp = requests.get(url, timeout=timeout)
+            resp.raise_for_status()
+            return resp
+        except (requests.ConnectionError, requests.Timeout) as e:
+            last_exc = e
+            if attempt < tries - 1:
+                time.sleep(2 ** attempt)  # 1s, 2s, ...
+        except requests.RequestException:
+            raise  # HTTP 4xx/5xx: don't retry, surface immediately
+    raise last_exc  # exhausted transient retries
 
 
 class OnSinscritScraper(BaseScraper):
@@ -187,10 +212,9 @@ def discover_races() -> list[dict]:
 
     while True:
         try:
-            resp = requests.get(f"{EVENTS_URL}?p={page}", timeout=10)
-            resp.raise_for_status()
+            resp = _get_with_retry(f"{EVENTS_URL}?p={page}")
         except requests.RequestException as e:
-            print(f"  [onsinscrit] Erreur liste page {page}: {e}")
+            print(f"  [onsinscrit] Erreur liste page {page} (apres retries): {e}")
             break
 
         soup = BeautifulSoup(resp.text, "html.parser")
