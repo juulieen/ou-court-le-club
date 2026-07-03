@@ -10,7 +10,14 @@ from datetime import datetime, timezone
 import requests
 from bs4 import BeautifulSoup
 
-from .base import BaseScraper, Member, RaceResult, normalize_text
+from .base import (
+    BaseScraper, Member, RaceResult, normalize_text,
+    matches_club, matches_known_member,
+)
+
+# v8 has no working server-side name search, so we download the full registrant
+# list and match locally. Cap pagination for very large events (50 rows/page).
+_V8_MAX_PAGES = 40
 
 
 def _names_match(name1: str, name2: str) -> bool:
@@ -276,13 +283,14 @@ class KlikegoScraper(BaseScraper):
 
         return members
 
-    def _parse_table_v8(self, html: str) -> list[Member]:
+    def _parse_table_v8(self, html: str) -> list[tuple[str, str, str]]:
         """Parse Klikego v8 HTML table (Tailwind redesign, Apr 2026+).
 
         7 columns: [action, Nom&Prénom, Dossard, Sexe, Catégorie, Ville/Club, action]
         Desktop rows have class 'max-md:hidden'; mobile rows are skipped (duplicates).
+        Returns (name, bib, club) tuples so callers can dual-match locally.
         """
-        members = []
+        rows: list[tuple[str, str, str]] = []
         soup = BeautifulSoup(html, "html.parser")
 
         for row in soup.find_all("tr"):
@@ -300,58 +308,57 @@ class KlikegoScraper(BaseScraper):
                 continue
 
             bib = cells[2].get_text(strip=True)
-            members.append(Member(name=name, bib=bib))
+            # Ville/Club column mixes club name and city; matches_club ignores cities.
+            club = cells[5].get_text(" ", strip=True) if len(cells) > 5 else ""
+            rows.append((name, bib, club))
 
-        return members
+        return rows
 
     def _fetch_registrants_v8(self, page_url: str,
                                session: requests.Session) -> list[Member]:
-        """Fetch registrants from Klikego v8 pages using GET ?city= filter.
+        """Fetch v8 registrants and apply dual matching (club field + known names).
 
-        Replaces the broken findInInscrits.jsp POST for v8 events.
-        Server filters by Ville/Club column; paginates via ?page=N (1-indexed, 50/page).
+        Klikego's server-side name search is broken (500), so we download the full
+        registrant list (paginated, unfiltered) and match locally on BOTH the
+        Ville/Club column and known member names — otherwise members who left the
+        club field empty are missed. Capped at _V8_MAX_PAGES for huge events.
         Returns [] for v6 events (no max-md:hidden rows in response).
         """
         members: list[Member] = []
+        matched: set[str] = set()
         seen: set[str] = set()
 
-        search_terms = list(dict.fromkeys(
-            re.sub(
-                r"[\\^$.*+?()[\]{}|'\s]+", " ",
-                p.replace("\\s*", " ").replace("\\s+", " ").replace("\\s", " "),
-            ).strip()
-            for p in self.patterns
-            if re.sub(
-                r"[\\^$.*+?()[\]{}|'\s]+", " ",
-                p.replace("\\s*", " ").replace("\\s+", " ").replace("\\s", " "),
-            ).strip()
-        ))
+        page = 1
+        while page <= _V8_MAX_PAGES:
+            try:
+                resp = session.get(page_url, params={"page": page}, timeout=15)
+                resp.raise_for_status()
+            except requests.RequestException:
+                break
 
-        for term in search_terms:
-            page = 1
-            while True:
-                try:
-                    resp = session.get(
-                        page_url,
-                        params={"city": term, "page": page},
-                        timeout=15,
-                    )
-                    resp.raise_for_status()
-                except requests.RequestException:
-                    break
+            rows = self._parse_table_v8(resp.text)
+            if not rows:
+                break
 
-                found = self._parse_table_v8(resp.text)
-                if not found:
-                    break
+            new = 0
+            for name, bib, club in rows:
+                if name in seen:
+                    continue
+                seen.add(name)
+                new += 1
+                if (club and matches_club(club, self.patterns)) or \
+                   matches_known_member(name, self.known_members):
+                    if name not in matched:
+                        members.append(Member(name=name, bib=bib))
+                        matched.add(name)
 
-                for m in found:
-                    if m.name not in seen:
-                        members.append(m)
-                        seen.add(m.name)
+            # End of list, or the server is repeating the last page (all seen).
+            if new == 0 or len(rows) < 50:
+                break
+            page += 1
 
-                if len(found) < 50:
-                    break
-                page += 1
+        if page > _V8_MAX_PAGES:
+            print(f"  [klikego] {page_url} tronque a {_V8_MAX_PAGES} pages")
 
         return members
 
