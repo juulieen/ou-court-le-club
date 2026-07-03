@@ -368,40 +368,65 @@ MONTHS_FR = {
 }
 
 
+# Metropolitan departments 01–95 (Corse = 20) + overseas (97 DOM, 98 Polynésie).
+_DEPTS = [f"{d:02d}" for d in range(1, 96)] + ["97", "98"]
+# The search endpoint hard-caps any query at the ~120 nearest-by-date events; a
+# department returning this many is likely truncated (far-future events dropped).
+_CAP_WARN = 120
+
+_SEARCH_HEADERS = {
+    "X-Requested-With": "XMLHttpRequest",
+    "Referer": "https://www.klikego.com/recherche",
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    ),
+}
+
+
 def discover_races() -> list[dict]:
-    """Discover all upcoming running events from Klikego's AJAX search API.
+    """Discover all upcoming running events from Klikego, iterating by department.
 
-    Single GET to /v8/evenements/search.jsp?sport=0 returns all events as HTML.
+    ``/v8/evenements/search.jsp`` with no geo filter hard-caps the result at the
+    ~120 events nearest in date and ignores ``page`` (there is no server-side
+    pagination — "En découvrir plus" is purely client-side). Filtering by
+    ``geo={dept}`` returns the COMPLETE uncapped upcoming list for that department,
+    including far-future events (e.g. Chauvigny 30/08). We iterate all departments
+    for full national coverage. Each event belongs to a single department, so
+    per-department queries don't overlap; we still dedup by reference as a guard.
     """
-    try:
-        resp = requests.get(
-            SEARCH_API,
-            params={"sport": "0"},
-            headers={
-                "X-Requested-With": "XMLHttpRequest",
-                "Referer": "https://www.klikego.com/recherche",
-            },
-            timeout=30,
-        )
-        resp.raise_for_status()
-    except requests.RequestException as e:
-        print(f"  [klikego] Erreur API search: {e}")
-        return []
+    races: dict[str, dict] = {}
 
-    soup = BeautifulSoup(resp.text, "html.parser")
-    races = []
-    seen_ids = set()
+    for dept in _DEPTS:
+        try:
+            resp = requests.get(
+                SEARCH_API,
+                params={"geo": dept, "sport": "running"},
+                headers=_SEARCH_HEADERS,
+                timeout=30,
+            )
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            print(f"  [klikego] Erreur geo={dept}: {e}")
+            continue
 
-    for link in soup.select("a[href*='/inscription/'][aria-label]"):
-        race = _parse_event_card_v8(link)
-        if race:
-            ref_id = race.get("_ref_id", "")
-            if ref_id and ref_id not in seen_ids:
-                races.append(race)
-                seen_ids.add(ref_id)
+        soup = BeautifulSoup(resp.text, "html.parser")
+        links = soup.select("a[href*='/inscription/'][aria-label]")
+        if len(links) >= _CAP_WARN:
+            # A single department at the cap may be truncated — surface it rather
+            # than silently dropping far-future events.
+            print(f"  [klikego] geo={dept} au plafond ({len(links)}) — "
+                  f"events lointains possiblement tronques")
+
+        for link in links:
+            race = _parse_event_card_v8(link)
+            if race:
+                ref_id = race.get("_ref_id", "")
+                if ref_id:
+                    races[ref_id] = race
 
     print(f"  [klikego] {len(races)} course(s) decouverte(s)")
-    return races
+    return list(races.values())
 
 
 def _parse_event_card_v8(link_el) -> dict | None:
