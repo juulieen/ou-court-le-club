@@ -50,23 +50,23 @@ class KlikegoScraper(BaseScraper):
 
         session = requests.Session()
 
-        # Get available courses (with labels) to enrich bib info
-        courses = self._get_courses(url, session)
-        course_labels = {val: label for val, label in courses}
+        # Try v8 GET-based search first (Klikego Tailwind redesign, Apr 2026+)
+        # The old POST to findInInscrits.jsp returns empty for v8 events.
+        all_members = self._fetch_registrants_v8(url, session)
 
-        if courses:
-            # Search per course to get proper bib labels
-            all_members = []
-            seen = set()
-            for course_val, course_label in courses:
-                found = self._fetch_registrants(reference, course_val, url, session)
-                for m in found:
-                    if m.name not in seen:
-                        all_members.append(Member(name=m.name, bib=course_label))
-                        seen.add(m.name)
-        else:
-            # No course dropdown — search globally
-            all_members = self._fetch_registrants(reference, "", url, session)
+        if not all_members:
+            # Fall back to v6 POST-based search (pre-redesign events)
+            courses = self._get_courses(url, session)
+            if courses:
+                seen: set[str] = set()
+                for course_val, course_label in courses:
+                    found = self._fetch_registrants(reference, course_val, url, session)
+                    for m in found:
+                        if m.name not in seen:
+                            all_members.append(Member(name=m.name, bib=course_label))
+                            seen.add(m.name)
+            else:
+                all_members = self._fetch_registrants(reference, "", url, session)
 
         return RaceResult(
             id=f"klikego-{reference}",
@@ -273,6 +273,85 @@ class KlikegoScraper(BaseScraper):
             # Use course_label as bib info if available, otherwise use bib number
             bib_info = course_label if course_label else bib
             members.append(Member(name=name, bib=bib_info))
+
+        return members
+
+    def _parse_table_v8(self, html: str) -> list[Member]:
+        """Parse Klikego v8 HTML table (Tailwind redesign, Apr 2026+).
+
+        7 columns: [action, Nom&Prénom, Dossard, Sexe, Catégorie, Ville/Club, action]
+        Desktop rows have class 'max-md:hidden'; mobile rows are skipped (duplicates).
+        """
+        members = []
+        soup = BeautifulSoup(html, "html.parser")
+
+        for row in soup.find_all("tr"):
+            if "max-md:hidden" not in row.get("class", []):
+                continue
+            cells = row.find_all("td")
+            if len(cells) < 6:
+                continue
+
+            name_cell = cells[1]
+            for tag in name_cell.select("div.badge, span.badge, span.label, img"):
+                tag.decompose()
+            name = re.sub(r"\s+", " ", name_cell.get_text(strip=True)).strip()
+            if not name:
+                continue
+
+            bib = cells[2].get_text(strip=True)
+            members.append(Member(name=name, bib=bib))
+
+        return members
+
+    def _fetch_registrants_v8(self, page_url: str,
+                               session: requests.Session) -> list[Member]:
+        """Fetch registrants from Klikego v8 pages using GET ?city= filter.
+
+        Replaces the broken findInInscrits.jsp POST for v8 events.
+        Server filters by Ville/Club column; paginates via ?page=N (1-indexed, 50/page).
+        Returns [] for v6 events (no max-md:hidden rows in response).
+        """
+        members: list[Member] = []
+        seen: set[str] = set()
+
+        search_terms = list(dict.fromkeys(
+            re.sub(
+                r"[\\^$.*+?()[\]{}|'\s]+", " ",
+                p.replace("\\s*", " ").replace("\\s+", " ").replace("\\s", " "),
+            ).strip()
+            for p in self.patterns
+            if re.sub(
+                r"[\\^$.*+?()[\]{}|'\s]+", " ",
+                p.replace("\\s*", " ").replace("\\s+", " ").replace("\\s", " "),
+            ).strip()
+        ))
+
+        for term in search_terms:
+            page = 1
+            while True:
+                try:
+                    resp = session.get(
+                        page_url,
+                        params={"city": term, "page": page},
+                        timeout=15,
+                    )
+                    resp.raise_for_status()
+                except requests.RequestException:
+                    break
+
+                found = self._parse_table_v8(resp.text)
+                if not found:
+                    break
+
+                for m in found:
+                    if m.name not in seen:
+                        members.append(m)
+                        seen.add(m.name)
+
+                if len(found) < 50:
+                    break
+                page += 1
 
         return members
 
