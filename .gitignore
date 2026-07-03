@@ -61,3 +61,9 @@ frontend/public/races.ics
 
 # Local tool config
 .mcp.json
+
+# Local run artifacts / editor config
+last-run-logs.txt
+last-run-summary.txt
+.cursorrules
+.claude/
