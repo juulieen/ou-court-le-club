@@ -333,18 +333,40 @@ class KlikegoScraper(BaseScraper):
                 heats.append((val, opt.get_text(strip=True)))
         return heats
 
+    def _club_search_terms(self) -> list[str]:
+        """Plain-text club search terms derived from the regex patterns.
+
+        Drops regex syntax and keeps only the broadest terms (a term that
+        contains a shorter one is redundant for a substring server filter).
+        """
+        terms = []
+        for p in self.patterns:
+            t = re.sub(
+                r"[\\^$.*+?()[\]{}|'\s]+", " ",
+                p.replace("\\s*", " ").replace("\\s+", " ").replace("\\s", " "),
+            ).strip()
+            if t:
+                terms.append(t)
+        kept: list[str] = []
+        for t in sorted(set(terms), key=len):  # shortest (broadest) first
+            if not any(k in t for k in kept):
+                kept.append(t)
+        return kept
+
     def _fetch_registrants_v8(self, page_url: str,
                                session: requests.Session) -> list[Member]:
-        """Fetch v8 registrants across ALL heats and dual-match (club + known names).
+        """Fetch v8 registrants via the server-side club filter, across ALL heats.
 
-        A v8 event page only renders its first heat (distance) unless a `heat`
-        param is passed, so we enumerate every heat and page through each one.
-        Klikego's server-side name search is broken (500), so we download the full
-        list and match locally on BOTH the Ville/Club column and known member
-        names — otherwise members who left the club field empty are missed.
-        Pagination is 0-indexed; a page past the last one repeats the last page
-        (detected via `new == 0`). Capped at _V8_MAX_PAGES per heat.
-        Returns [] for v6 events (no max-md:hidden rows in response).
+        A v8 event page only renders its FIRST heat (distance) unless a `heat`
+        param is passed, so members on other distances were previously missed
+        (e.g. Trail de Chauvigny: Julien Ollivier & co are on the 27km/9km heats).
+        We enumerate heats and, for each, use `?city={club}` — the server filters
+        by the Ville/Club column, so this stays cheap (a handful of matches) even
+        for huge events. Pagination is 0-indexed. This catches members who filled
+        the club field; name-only members (empty club) are a documented gap
+        (Klikego's server-side name search is broken/500 and downloading every
+        registrant of all ~436 events blows the scrape budget).
+        Returns [] for v6 events (no v8 table / heat select).
         """
         try:
             resp = session.get(page_url, timeout=15)
@@ -352,45 +374,47 @@ class KlikegoScraper(BaseScraper):
         except requests.RequestException:
             return []
 
-        heats = self._get_heats_v8(resp.text) or [("", "")]  # ("", "") = single heat
+        base_html = resp.text
+        heats = self._get_heats_v8(base_html)
+        if not heats and not self._parse_table_v8(base_html):
+            return []  # not a v8 page — let the caller try the v6 path
+        heats = heats or [("", "")]  # ("", "") = single-heat event
 
         members: list[Member] = []
         matched: set[str] = set()
 
         for heat_id, heat_label in heats:
-            seen: set[str] = set()
-            page = 0
-            while page <= _V8_MAX_PAGES:
-                params = {"page": page}
-                if heat_id:
-                    params["heat"] = heat_id
-                try:
-                    resp = session.get(page_url, params=params, timeout=15)
-                    resp.raise_for_status()
-                except requests.RequestException:
-                    break
+            for term in self._club_search_terms():
+                seen_raw: set[str] = set()
+                page = 0
+                while page <= _V8_MAX_PAGES:
+                    params = {"city": term, "page": page}
+                    if heat_id:
+                        params["heat"] = heat_id
+                    try:
+                        resp = session.get(page_url, params=params, timeout=15)
+                        resp.raise_for_status()
+                    except requests.RequestException:
+                        break
 
-                rows = self._parse_table_v8(resp.text)
-                if not rows:
-                    break
+                    rows = self._parse_table_v8(resp.text)
+                    fresh = [r for r in rows if r[0] not in seen_raw]
+                    if not fresh:
+                        break  # empty, or server clamping to the last page
 
-                new = 0
-                for name, bib, club in rows:
-                    if name in seen:
-                        continue
-                    seen.add(name)
-                    new += 1
-                    if (club and matches_club(club, self.patterns)) or \
-                       matches_known_member(name, self.known_members):
-                        if name not in matched:
+                    for name, bib, club in fresh:
+                        seen_raw.add(name)
+                        if name in matched:
+                            continue
+                        if (club and matches_club(club, self.patterns)) or \
+                           matches_known_member(name, self.known_members):
                             # Dossards are often unassigned pre-race → use distance.
                             members.append(Member(name=name, bib=bib or heat_label))
                             matched.add(name)
 
-                # End of list, or the server is repeating the last page (all seen).
-                if new == 0 or len(rows) < 50:
-                    break
-                page += 1
+                    if len(rows) < 50:
+                        break
+                    page += 1
 
         return members
 
