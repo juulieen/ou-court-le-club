@@ -8,6 +8,7 @@ Philosophy:
 """
 
 import json
+import os
 import re
 import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -230,8 +231,10 @@ MAX_WORKERS = 6
 
 # Hard budget for the whole scraping phase. A single misbehaving site must never
 # hang the run: once this is exceeded, stragglers are abandoned and the pipeline
-# continues to geocoding/save with whatever was found.
-SCRAPE_BUDGET_S = 20 * 60  # 20 minutes
+# continues to geocoding/save with whatever was found. Overridable via env for
+# cold/recovery runs (empty cache scrapes all ~3000 events). Kept under the job's
+# timeout-minutes: 50. Normal cached runs finish well under this.
+SCRAPE_BUDGET_S = int(os.environ.get("SCRAPE_BUDGET_S", 40 * 60))  # default 40 min
 
 # Cache TTL: avoid re-scraping the same URL too often
 CACHE_TTL_EMPTY = 48       # 2 days for courses with 0 members
