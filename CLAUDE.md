@@ -48,11 +48,11 @@ frontend/                -- Astro static frontend project
 
 Each platform module exports a `discover_races()` function and a `*Scraper(BaseScraper)` class. Discovery finds all upcoming events nationally; the scraper then checks each event's registration list for club members using dual matching.
 
-The `SCRAPERS` dict in `main.py` maps platform names to scraper classes (14 active scrapers). RunChrono is discovery-only (produces `onsinscrit` platform entries). Njuko also handles 4 white-label platforms (UTMB, Sporkrono, Sports107, timeto.com) via the same API.
+The `SCRAPERS` dict in `main.py` maps platform names to scraper classes (15 active scrapers). RunChrono is discovery-only (produces `onsinscrit` platform entries). Njuko also handles 4 white-label platforms (UTMB, Sporkrono, Sports107, timeto.com) via the same API.
 
 | Platform | File | Discovery method | Scraping method | Notes |
 |---|---|---|---|---|
-| **Klikego** | `klikego.py` | Paginated search `/recherche?sport=0&page={N}` | AJAX POST to `findInInscrits.jsp`; searches by club name via "ville" field, falls back to known member name search | Name-based POST search returns 500 errors (broken server-side); club search via "ville" field works |
+| **Klikego** | `klikego.py` | Per-department iteration: `GET /v8/evenements/search.jsp?geo={dept}&sport=running` over all depts (01–95, 97, 98) | AJAX POST to `findInInscrits.jsp`; searches by club name via "ville" field, falls back to known member name search | Name-based POST search returns 500 errors (broken server-side); club search via "ville" field works. Unfiltered search caps at ~120 nearest events & ignores `page` → must iterate `geo` per dept for full coverage (~436 events) |
 | **Njuko** | `njuko.py` | Persistent slug cache (`njuko_slugs.json`) seeded from CDX + `_SEED_SLUGS`; validates each slug via API | REST API: `/edition/url/{slug}` then **`POST /registrations/{id}`** (paginated, `criteria:null` for bulk). **Club field removed from public API → name-matching only** (`known_members`). Large events (> `BIG_EVENT_THRESHOLD`) use per-name search instead of bulk | Also handles 4 white-labels: UTMB (`register-utmb.world`), Sporkrono (`sporkrono-inscriptions.fr`), Sports107 (`sports107.com`), timeto (`timeto.com`). Old GET `/_search/{}` endpoint is now **410 Gone** |
 | **OnSinscrit** | `onsinscrit.py` | National directory at `search.onsinscrit.com/evenements.php?p={page}`; extracts subdomain slug from flyer image filename (includes year) | HTML table at `{slug}.onsinscrit.com/listeinscrits.php?tous=1&dossards=1` | Also receives entries from RunChrono discovery. Event name from `h5.event-title`, URL slug from `/images/affiches/{slug}.jpg` |
 | **Protiming** | `protiming.py` | Paginated list `/Runnings/liste/page:{N}` | HTML table `#lstParticipants` with server-side club filter via `searchclub` URL parameter; falls back to known member name search | Club filter in URL avoids downloading full participant list |
@@ -68,6 +68,7 @@ The `SCRAPERS` dict in `main.py` maps platform names to scraper classes (14 acti
 | **IPITOS** | `ipitos.py` | Index page at `live.ipitos.com/` lists events with dates in `div.nom`/`div.dt` | Wiclax `.clax` XML files extracted from iframe `?f=` param; `<E>` elements with `n`(name), `c`(club), `p`(parcours), `d`(dossard) | Uses `live.ipitos.com` (no WAF); requires browser User-Agent header; `www.ipitos.com` is blocked by Sucuri |
 | **HelloAsso** | `helloasso.py` | Directory search via website (no auth needed) | N/A -- participants are private by design | `discover_races()` exists but returns `platform: manual`; members must be added manually in `config.yml` |
 | **SportsnConnect** | `sportsnconnect.py` | `/fr/client/events` page — all ~460 events in SSR `__NEXT_DATA__.props.pageProps.initialEditions` (single request, no pagination) | `/fr/client/events/{uuid}-{slug}` — all participants in SSR `__NEXT_DATA__.props.pageProps.initialEdition.participants`; `contact.club`, `contact.firstname`, `contact.lastname` | No API auth needed; HTML can be large (4000+ participants); timeout=60s. Filters discovery to `event.sports[].name == "Course à pied"` |
+| **Adeorun** | `adeorun.py` | `calendrier.adeorun.com/api/public/calendar2?page={N}` (20/page, upcoming only); filter `tags[].title` ∈ running set; `zip_city` = "VILLE (DEPT)" | Get `eventId` from `{sub}.adeorun.com/participants` `__NEXT_DATA__`, then `{sub}.adeorun.com/api/public/participants2?eventId={id}&page={N}&limit=20`; `name` + `team` (public club field) | No auth, no WAF. **Full dual matching** (club field `team` + name). `pCount` unreliable (use `total_hits`); `limit` hard-capped at 20; big events (> 800) use per-name search. Strong dept 86 coverage (Vienne/Deux-Sèvres/Charente) |
 
 ## Dual Matching
 
@@ -343,6 +344,7 @@ Platform websites get redesigned periodically, breaking discovery and/or scrapin
 
 Known redesign history:
 - **Klikego** (Apr 2026): v8 Tailwind redesign, `.card-evenement` → AJAX API `/v8/evenements/search.jsp`
+- **Klikego** (Jul 2026): unfiltered `search.jsp` caps at ~120 nearest events & ignores `page` (no server-side pagination; "En découvrir plus" is client-only) → discovery now iterates `geo={dept}` over all departments for full coverage (~436 events vs 115)
 - **Listino** (Apr 2026): `/recherche/evenement` removed, now `/evenements/inscriptions`
 - **Chronometrage** (Apr 2026): `__NEXT_DATA__` structure changed, `initialData` now list of race objects with embedded subscriptions
 - **OnSinscrit** (Apr 2026): subdomain URLs need year suffix from flyer image filename
