@@ -314,51 +314,83 @@ class KlikegoScraper(BaseScraper):
 
         return rows
 
+    def _get_heats_v8(self, html: str) -> list[tuple[str, str]]:
+        """Extract the event's heats (distances) from a v8 /inscrits/ page.
+
+        Multi-distance events expose an `<el-select name="heat">` dropdown with one
+        `<el-option value="{heatId}">` per distance. Without a `heat` param the page
+        only shows the FIRST heat, so every distance must be fetched explicitly.
+        Returns [(heatId, label), ...], or [] for single-heat events.
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        select = soup.find("el-select", attrs={"name": "heat"})
+        if not select:
+            return []
+        heats = []
+        for opt in select.find_all("el-option"):
+            val = (opt.get("value") or "").strip()
+            if val:
+                heats.append((val, opt.get_text(strip=True)))
+        return heats
+
     def _fetch_registrants_v8(self, page_url: str,
                                session: requests.Session) -> list[Member]:
-        """Fetch v8 registrants and apply dual matching (club field + known names).
+        """Fetch v8 registrants across ALL heats and dual-match (club + known names).
 
+        A v8 event page only renders its first heat (distance) unless a `heat`
+        param is passed, so we enumerate every heat and page through each one.
         Klikego's server-side name search is broken (500), so we download the full
-        registrant list (paginated, unfiltered) and match locally on BOTH the
-        Ville/Club column and known member names — otherwise members who left the
-        club field empty are missed. Capped at _V8_MAX_PAGES for huge events.
+        list and match locally on BOTH the Ville/Club column and known member
+        names — otherwise members who left the club field empty are missed.
+        Pagination is 0-indexed; a page past the last one repeats the last page
+        (detected via `new == 0`). Capped at _V8_MAX_PAGES per heat.
         Returns [] for v6 events (no max-md:hidden rows in response).
         """
+        try:
+            resp = session.get(page_url, timeout=15)
+            resp.raise_for_status()
+        except requests.RequestException:
+            return []
+
+        heats = self._get_heats_v8(resp.text) or [("", "")]  # ("", "") = single heat
+
         members: list[Member] = []
         matched: set[str] = set()
-        seen: set[str] = set()
 
-        page = 1
-        while page <= _V8_MAX_PAGES:
-            try:
-                resp = session.get(page_url, params={"page": page}, timeout=15)
-                resp.raise_for_status()
-            except requests.RequestException:
-                break
+        for heat_id, heat_label in heats:
+            seen: set[str] = set()
+            page = 0
+            while page <= _V8_MAX_PAGES:
+                params = {"page": page}
+                if heat_id:
+                    params["heat"] = heat_id
+                try:
+                    resp = session.get(page_url, params=params, timeout=15)
+                    resp.raise_for_status()
+                except requests.RequestException:
+                    break
 
-            rows = self._parse_table_v8(resp.text)
-            if not rows:
-                break
+                rows = self._parse_table_v8(resp.text)
+                if not rows:
+                    break
 
-            new = 0
-            for name, bib, club in rows:
-                if name in seen:
-                    continue
-                seen.add(name)
-                new += 1
-                if (club and matches_club(club, self.patterns)) or \
-                   matches_known_member(name, self.known_members):
-                    if name not in matched:
-                        members.append(Member(name=name, bib=bib))
-                        matched.add(name)
+                new = 0
+                for name, bib, club in rows:
+                    if name in seen:
+                        continue
+                    seen.add(name)
+                    new += 1
+                    if (club and matches_club(club, self.patterns)) or \
+                       matches_known_member(name, self.known_members):
+                        if name not in matched:
+                            # Dossards are often unassigned pre-race → use distance.
+                            members.append(Member(name=name, bib=bib or heat_label))
+                            matched.add(name)
 
-            # End of list, or the server is repeating the last page (all seen).
-            if new == 0 or len(rows) < 50:
-                break
-            page += 1
-
-        if page > _V8_MAX_PAGES:
-            print(f"  [klikego] {page_url} tronque a {_V8_MAX_PAGES} pages")
+                # End of list, or the server is repeating the last page (all seen).
+                if new == 0 or len(rows) < 50:
+                    break
+                page += 1
 
         return members
 
