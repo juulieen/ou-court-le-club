@@ -232,6 +232,10 @@ Key commands:
 
 **Important:** Local and CI caches are independent. Code-level fixes (OVERRIDES in geocoder.py, _SEED_SLUGS in njuko.py) propagate automatically. Cache-level fixes (scrape_cache entries) do NOT sync — use `ci run --fresh` to rebuild CI cache.
 
+### Vérification avant `git push`
+
+A Claude Code `PreToolUse` hook (`scripts/verify-before-push.sh`, wired in `.claude/settings.json`) gates every `git push`: it blocks and asks the running agent to launch the dedicated **`pre-push-verifier`** agent (`.claude/agents/pre-push-verifier.md`), which runs the project checklist (`docs-internal/verify-checklist.md`: RGPD/secrets, code review, `/simplify`, build, doc, deploy consistency, guardrails) and returns `VERDICT: PASS/FAIL`. On PASS, mark the verified SHA (`git rev-parse HEAD > .claude/.verify-ok`) then push. Bypass a trivial push with `SKIP_VERIFY=1 git push …`. The hook loads live; custom agents register on session start.
+
 ## Njuko White-Labels
 
 Several platforms are Njuko white-labels sharing the same API structure. Supported via `_API_BASES` dict and `_extract_slug()` in `njuko.py`:

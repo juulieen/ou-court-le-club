@@ -66,7 +66,11 @@ frontend/public/races.ics
 last-run-logs.txt
 last-run-summary.txt
 .cursorrules
-.claude/
+# Config Claude Code : on versionne le hook de vérification (settings.json) et
+# les agents dédiés ; le reste (settings.local.json, .verify-ok, worktrees) reste local.
+.claude/*
+!.claude/settings.json
+!.claude/agents/
 
 # Copie de build (source: scrapers/notify.py) — resync: cp scrapers/notify.py deploy/notify/
 deploy/notify/notify.py
