@@ -67,3 +67,6 @@ last-run-logs.txt
 last-run-summary.txt
 .cursorrules
 .claude/
+
+# Copie de build (source: scrapers/notify.py) — resync: cp scrapers/notify.py deploy/notify/
+deploy/notify/notify.py

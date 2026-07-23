@@ -80,12 +80,26 @@ declare const maplibregl: any;
     window.addEventListener("hashchange", handleRoute);
   }
 
+  // Liste des courses masquées par réaction 🚫 (homonymes), maintenue par le
+  // notifieur et servie par le caddy de l'ASUS. Best-effort : si indisponible,
+  // on affiche tout (aucune course masquée par erreur).
+  const EXCLUSIONS_URL = "https://run.juulieen.fr/exclusions.json";
+
   // --- Data loading ---
   function loadData() {
-    fetch(`${BASE_URL}data/races.json`, { cache: "no-cache" })
-      .then((r: Response) => r.json())
-      .then((data: any) => {
-        allRaces = (data.races || []).filter((r: any) => r.member_count > 0);
+    Promise.all([
+      fetch(`${BASE_URL}data/races.json`, { cache: "no-cache" }).then((r: Response) =>
+        r.json(),
+      ),
+      fetch(EXCLUSIONS_URL, { cache: "no-cache" })
+        .then((r: Response) => r.json())
+        .catch(() => ({ excluded: [] })),
+    ])
+      .then(([data, excl]: [any, any]) => {
+        const excluded = new Set<string>(excl?.excluded || []);
+        allRaces = (data.races || []).filter(
+          (r: any) => r.member_count > 0 && !excluded.has(r.id),
+        );
         raceGroups = groupEditions(allRaces);
         updateLastUpdated(data.last_updated);
         updateStats(allRaces);

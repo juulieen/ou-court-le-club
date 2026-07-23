@@ -1,0 +1,6 @@
+# Fuseau du conteneur via TZ (Europe/Paris). supercronic logue sur stdout.
+# 11h30 : run principal (notifie les nouvelles courses, args via NOTIFY_ARGS).
+30 11 * * * /app/run.sh
+# Toutes les 2h : relit les réactions 🚫 et met à jour exclusions.json (masque
+# les homonymes sur la carte). Lecture seule côté Beeper, sans effet de bord.
+20 */2 * * * python /app/notify.py reactions

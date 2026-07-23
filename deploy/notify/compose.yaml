@@ -1,0 +1,35 @@
+# Service notifieur RunEvent86 — à intégrer au stack Docker de l'ASUS.
+# Copie ce bloc dans ~/server/asus-1/docker-compose.yml (section services:)
+# ou déploie ce fichier seul :  docker compose -f compose.yaml up -d --build
+services:
+  runevent86-notify:
+    build: .
+    container_name: runevent86-notify
+    restart: unless-stopped
+    environment:
+      # Fuseau du cron : 11h30 locale = Europe/Paris (gère l'heure été/hiver).
+      TZ: Europe/Paris
+      # Source des données (races.json public déployé par la CI)
+      RACES_URL: "https://juulieen.github.io/ou-court-le-club/data/races.json"
+      # API Beeper Desktop du T14, joignable via Tailscale
+      BEEPER_API: "http://***REMOVED***:23373"
+      # Cible : "Note to self" par défaut (SÛR). Groupe club une fois validé :
+      #   ***REMOVED***  ("Blabla Run Event 86", WhatsApp)
+      BEEPER_CHAT_ID: "***REMOVED***"
+      # "" = dry-run (défaut, sûr) ; "--live" = envoi réel
+      NOTIFY_ARGS: ""
+      # Token Beeper (persisté dans le volume ; obtenu via `notify.py token`,
+      # tu acceptes la popup sur le T14 ; valide ~30j, rappel auto avant expiry)
+      TOKEN_PATH: "/data/beeper_token.json"
+      TOKEN_REMINDER_DAYS: "3"
+      # Correction homonymes : réagir avec cet emoji sur une notif masque la
+      # course de la carte. exclusions.json est écrit dans ./public (servi par
+      # caddy sous https://juulieen.fr/runevent86/exclusions.json).
+      HIDE_EMOJI: "🚫"
+      EXCLUSIONS_PATH: "/public/exclusions.json"
+    volumes:
+      - runevent86-notify-data:/data
+      - ./public:/public
+
+volumes:
+  runevent86-notify-data:
