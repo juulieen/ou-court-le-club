@@ -66,6 +66,10 @@ jobs:
           mkdir -p docs/data
           curl -fsSL https://juulieen.github.io/ou-court-le-club/data/races.json \
             -o docs/data/races.json
+          # The build step also copies races.ics; fetch it too (best-effort so a
+          # first-ever deploy without a published .ics still succeeds).
+          curl -fsSL https://juulieen.github.io/ou-court-le-club/races.ics \
+            -o docs/data/races.ics || printf 'BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n' > docs/data/races.ics
 
       - name: Save data caches
         if: ${{ !inputs.skip_scrape }}
