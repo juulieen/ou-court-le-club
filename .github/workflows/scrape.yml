@@ -66,10 +66,10 @@ jobs:
           mkdir -p docs/data
           curl -fsSL https://juulieen.github.io/ou-court-le-club/data/races.json \
             -o docs/data/races.json
-          # The build step also copies races.ics; fetch it too (best-effort so a
-          # first-ever deploy without a published .ics still succeeds).
+          # Preserve the calendar across deploy-only runs; best-effort, the copy
+          # step below tolerates its absence.
           curl -fsSL https://juulieen.github.io/ou-court-le-club/races.ics \
-            -o docs/data/races.ics || printf 'BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n' > docs/data/races.ics
+            -o docs/data/races.ics || true
 
       - name: Save data caches
         if: ${{ !inputs.skip_scrape }}
@@ -116,8 +116,10 @@ jobs:
           mkdir -p frontend/public/data frontend/src/data
           cp docs/data/races.json frontend/public/data/races.json
           cp docs/data/races.json frontend/src/data/races.json
-          # Calendar feed served at /races.ics (subscribe via webcal://)
-          cp docs/data/races.ics frontend/public/races.ics
+          # Calendar feed served at /races.ics (subscribe via webcal://).
+          # Tolerate a missing .ics so the build never depends on scrape mode.
+          cp docs/data/races.ics frontend/public/races.ics 2>/dev/null \
+            || printf 'BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n' > frontend/public/races.ics
 
       - name: Build Astro site
         run: cd frontend && npm run build

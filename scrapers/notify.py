@@ -1,17 +1,16 @@
 """WhatsApp/Beeper notification for newly-detected club races.
 
-Two ways to drive it:
+**Autonomous ``send``** (the active path, used by the Docker cron) —
+self-contained, stdlib only. It fetches the public ``races.json``, diffs it
+against a persistent ``notified.json``, and posts each *new upcoming* race
+straight to the Beeper Desktop HTTP API (the T14 Desktop, reachable over
+Tailscale). Dry-run by default; pass ``--live`` to actually send. This is what
+runs daily after the scrape, in a container on the ASUS.
 
-* **Legacy MCP loop** (`list`/`build`/`mark`/`clear`) — reads
-  ``data/notifications_queue.json`` filled by the scrape pipeline; a human/Claude
-  posts each message via the Beeper MCP, then marks them sent.
-
-* **Autonomous ``send``** (added for the Docker cron) — self-contained, stdlib
-  only. It fetches the public ``races.json``, diffs it against a persistent
-  ``notified.json``, and posts each *new upcoming* race straight to the Beeper
-  Desktop HTTP API (the T14 Desktop, reachable over Tailscale). Dry-run by
-  default; pass ``--live`` to actually send. This is what runs daily after the
-  scrape, in a container on the ASUS.
+The older ``list``/``build``/``mark``/``clear`` commands drive a manual
+MCP-based loop over ``data/notifications_queue.json``. **That queue is not
+currently written by the pipeline**, so this path is dormant — kept only for a
+possible future human/MCP-driven flow; ``send`` fully covers today's need.
 
 CLI:
     python -m scrapers.notify list            # formatted messages + ids (JSON)
@@ -40,6 +39,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import secrets
 import sys
 import time
@@ -97,7 +97,9 @@ EXCLUSIONS_PATH = Path(_EXCL_ENV) if _EXCL_ENV else (ROOT / "data" / "exclusions
 REACTIONS_SCAN = int(os.environ.get("REACTIONS_SCAN", "300"))
 
 _MAX_NAMES = 5
-_RACE_LINK_RE = None  # compilé à la 1re utilisation (voir _extract_race_id)
+# Id de course dans un lien #race/<id> — jusqu'au prochain espace/parenthèse,
+# pour tolérer les ids exotiques.
+_RACE_LINK_RE = re.compile(r"#race/([^\s)]+)")
 
 
 def _load_queue() -> list[dict]:
@@ -231,17 +233,31 @@ def _http(method: str, url: str, *, headers=None, data=None, timeout=20):
             return resp.status, resp.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode("utf-8", "replace")
+    except Exception as e:
+        # Réseau (T14 éteint, timeout, DNS…) → status 0, traité comme un échec
+        # par tous les appelants (pas de crash).
+        return 0, str(e)
+
+
+def _read_json(path: Path, default):
+    """Read a JSON file, returning `default` on any error (missing/corrupt)."""
+    if path.exists():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return default
+
+
+def _write_json(path: Path, obj) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _load_stored_token() -> dict | None:
     """Return the stored token dict if still valid, else None."""
-    if not TOKEN_PATH.exists():
-        return None
-    try:
-        d = json.loads(TOKEN_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        return None
-    if d.get("access_token") and d.get("expires_at", 0) > time.time() + 60:
+    d = _read_json(TOKEN_PATH, None)
+    if d and d.get("access_token") and d.get("expires_at", 0) > time.time() + 60:
         return d
     return None
 
@@ -252,9 +268,20 @@ def _store_token(access_token: str, expires_in: int) -> dict:
         "expires_at": int(time.time()) + int(expires_in),
         "obtained_at": int(time.time()),
     }
-    TOKEN_PATH.parent.mkdir(parents=True, exist_ok=True)
-    TOKEN_PATH.write_text(json.dumps(d, indent=2), encoding="utf-8")
+    _write_json(TOKEN_PATH, d)
     return d
+
+
+def _require_token() -> str | None:
+    """Return a valid stored access token, or print the fix hint and return None."""
+    stored = _load_stored_token()
+    if not stored:
+        print(
+            "❌ Pas de token valide. Lance `notify.py token` et accepte la popup.",
+            file=sys.stderr,
+        )
+        return None
+    return stored["access_token"]
 
 
 def _fetch_token() -> dict:
@@ -356,34 +383,21 @@ def _fetch_races() -> list[dict]:
     return data.get("races", [])
 
 
-def _load_notified_ids() -> set[str]:
-    if SEND_NOTIFIED_PATH.exists():
-        try:
-            return set(
-                json.loads(SEND_NOTIFIED_PATH.read_text(encoding="utf-8")).get(
-                    "notified", []
-                )
-            )
-        except Exception:
-            pass
-    return set()
-
-
 def _save_notified_ids(ids: set[str]) -> None:
-    SEND_NOTIFIED_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SEND_NOTIFIED_PATH.write_text(
-        json.dumps({"notified": sorted(ids)}, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    _write_json(SEND_NOTIFIED_PATH, {"notified": sorted(ids)})
 
 
 def _eligible_upcoming(races: list[dict]) -> list[dict]:
-    """Races with members, happening today or later, sorted by date."""
+    """Races with an id and members, happening today or later, sorted by date.
+    (An id is required for dedup and for the #race/<id> link — skip any race
+    without one so downstream `r["id"]` accesses are always safe.)"""
     today = date.today().isoformat()
     out = [
         r
         for r in races
-        if r.get("member_count", 0) > 0 and (r.get("date") or "")[:10] >= today
+        if r.get("id")
+        and r.get("member_count", 0) > 0
+        and (r.get("date") or "")[:10] >= today
     ]
     return sorted(out, key=lambda r: (r.get("date") or ""))
 
@@ -417,19 +431,24 @@ def cmd_token(argv: list[str]) -> int:
 
 def _extract_race_id(text: str) -> str | None:
     """Pull the race id out of a message's '#race/<id>' link."""
-    global _RACE_LINK_RE
-    if _RACE_LINK_RE is None:
-        import re
-
-        _RACE_LINK_RE = re.compile(r"#race/([A-Za-z0-9_-]+)")
     m = _RACE_LINK_RE.search(text or "")
     return m.group(1) if m else None
 
 
-def _list_my_messages(token: str, chat_id: str, limit: int) -> list[dict]:
-    """Fetch up to `limit` recent messages of a chat (paginated)."""
+def _norm_emoji(s: str) -> str:
+    """Retire le variation selector (U+FE0F) et les espaces pour comparer les
+    réactions de façon robuste entre réseaux (WhatsApp encode parfois 🚫️)."""
+    return (s or "").replace("️", "").strip()
+
+
+def _list_my_messages(token: str, chat_id: str, limit: int) -> list[dict] | None:
+    """Fetch up to `limit` recent messages of a chat (paginated). Returns None
+    if NOTHING could be read (T14 injoignable, token invalide…) so the caller
+    can avoid clobbering state on a transient failure — distinct from a valid
+    empty chat ([])."""
     out: list[dict] = []
     cursor = None
+    got_page = False
     base = f"{BEEPER_API}/v1/chats/{urllib.parse.quote(chat_id, safe='')}/messages"
     while len(out) < limit:
         url = base + (f"?cursor={urllib.parse.quote(cursor)}" if cursor else "")
@@ -438,7 +457,11 @@ def _list_my_messages(token: str, chat_id: str, limit: int) -> list[dict]:
         )
         if st != 200:
             break
-        data = json.loads(body)
+        got_page = True
+        try:
+            data = json.loads(body)
+        except Exception:
+            break
         items = data.get("items", [])
         if not items:
             break
@@ -446,58 +469,59 @@ def _list_my_messages(token: str, chat_id: str, limit: int) -> list[dict]:
         cursor = data.get("oldestCursor") or data.get("newestCursor")
         if not cursor or not data.get("hasMore", False):
             break
-    return out[:limit]
+    return out[:limit] if got_page else None
 
 
 def _load_exclusions() -> set[str]:
-    if EXCLUSIONS_PATH.exists():
-        try:
-            return set(
-                json.loads(EXCLUSIONS_PATH.read_text(encoding="utf-8")).get(
-                    "excluded", []
-                )
-            )
-        except Exception:
-            pass
-    return set()
+    return set(_read_json(EXCLUSIONS_PATH, {}).get("excluded", []))
 
 
 def _save_exclusions(ids: set[str]) -> None:
-    EXCLUSIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    EXCLUSIONS_PATH.write_text(
-        json.dumps(
-            {"excluded": sorted(ids), "updated_at": int(time.time())},
-            ensure_ascii=False,
-            indent=2,
-        ),
-        encoding="utf-8",
+    _write_json(
+        EXCLUSIONS_PATH, {"excluded": sorted(ids), "updated_at": int(time.time())}
     )
 
 
 def cmd_reactions(argv: list[str]) -> int:
-    """Scan the notification chat for HIDE_EMOJI reactions and rebuild
-    exclusions.json. Fully recomputed each run → removing a reaction un-hides
-    the race next time. No identity is stored: the race id comes from the
-    message's own #race/<id> link."""
-    stored = _load_stored_token()
-    if not stored:
+    """Scan the notification chat for HIDE_EMOJI reactions and reconcile
+    exclusions.json. No identity is stored: the race id comes from the
+    message's own #race/<id> link.
+
+    Réconciliation (et non recalcul total) pour être robuste :
+      - lecture impossible (T14 injoignable) → on ne touche à rien ;
+      - une course déjà masquée dont le message est hors de la fenêtre de scan
+        (ou non lu ce run) reste masquée ;
+      - on ne ré-affiche une course QUE si on a vu son message SANS le 🚫
+        (réaction réellement retirée)."""
+    token = _require_token()
+    if not token:
+        return 1
+    msgs = _list_my_messages(token, BEEPER_CHAT_ID, REACTIONS_SCAN)
+    if msgs is None:
         print(
-            "❌ Pas de token valide. Lance `notify.py token` et accepte la popup.",
+            "⚠️ Lecture des messages impossible (T14 injoignable ?) — "
+            "exclusions inchangées.",
             file=sys.stderr,
         )
         return 1
-    msgs = _list_my_messages(stored["access_token"], BEEPER_CHAT_ID, REACTIONS_SCAN)
 
-    excluded: set[str] = set()
+    target = _norm_emoji(HIDE_EMOJI)
+    seen_race: set[str] = set()  # course vue dans un message ce run
+    seen_with: set[str] = set()  # course dont un message porte le 🚫
     for m in msgs:
-        reactions = m.get("reactions") or []
-        if not any(r.get("reactionKey") == HIDE_EMOJI for r in reactions):
-            continue
         rid = _extract_race_id(m.get("text", ""))
-        if rid:
-            excluded.add(rid)
+        if not rid:
+            continue
+        seen_race.add(rid)
+        reactions = m.get("reactions") or []
+        if any(_norm_emoji(r.get("reactionKey", "")) == target for r in reactions):
+            seen_with.add(rid)
 
     before = _load_exclusions()
+    # Ajoute les 🚫 vus, garde l'existant pour les courses non vues ce run, et
+    # retire celles vues SANS 🚫 (réaction enlevée). `seen_with ⊆ seen_race`.
+    excluded = seen_with | (before - seen_race)
+
     _save_exclusions(excluded)
     added = excluded - before
     removed = before - excluded
@@ -518,12 +542,8 @@ def cmd_reactions(argv: list[str]) -> int:
 def cmd_test(argv: list[str]) -> int:
     """Envoie UN message d'exemple (la prochaine course à venir) vers la cible,
     sans toucher au log de dédup. Sert à vérifier la chaîne de bout en bout."""
-    stored = _load_stored_token()
-    if not stored:
-        print(
-            "❌ Pas de token valide. Lance `notify.py token` et accepte la popup.",
-            file=sys.stderr,
-        )
+    token = _require_token()
+    if not token:
         return 1
     try:
         eligible = _eligible_upcoming(_fetch_races())
@@ -535,7 +555,7 @@ def cmd_test(argv: list[str]) -> int:
         return 1
     msg = "🧪 TEST — " + build_message(eligible[0])
     print(f"Envoi test vers {BEEPER_CHAT_ID} …\n{msg}\n")
-    ok, body = _post_message(stored["access_token"], BEEPER_CHAT_ID, msg)
+    ok, body = _post_message(token, BEEPER_CHAT_ID, msg)
     print("✅ envoyé (rien marqué)" if ok else f"❌ échec: {body[:150]}")
     return 0 if ok else 1
 
@@ -551,9 +571,10 @@ def cmd_send(argv: list[str]) -> int:
         return 1
 
     eligible = _eligible_upcoming(races)
-    known = _load_notified_ids()
-    first_run = not SEND_NOTIFIED_PATH.exists()
-    new = [r for r in eligible if r.get("id") not in known]
+    notified = _read_json(SEND_NOTIFIED_PATH, None)  # None ⇒ premier run
+    first_run = notified is None
+    known = set(notified.get("notified", [])) if notified else set()
+    new = [r for r in eligible if r["id"] not in known]
 
     # Token : réutilisé tant qu'il est valide (~30j). En LIVE on ne fait PAS de
     # fetch automatique (ça demanderait ton acceptation) : si le token manque ou
@@ -603,28 +624,29 @@ def cmd_send(argv: list[str]) -> int:
         print("\n✅ Rien de nouveau à notifier.")
         return 0
 
-    sent_ids = set()
-    for r in new:
-        msg = build_message(r)
-        print(f"\n--- {r.get('id')} ---\n{msg}")
-        if live:
-            ok, body = _post_message(token, BEEPER_CHAT_ID, msg)
-            if ok:
-                print("   ✅ envoyé")
-                sent_ids.add(r["id"])
-            else:
-                print(f"   ❌ échec envoi: {body[:150]}", file=sys.stderr)
-        else:
-            sent_ids.add(r["id"])
-
-    if live and sent_ids:
-        _save_notified_ids(known | sent_ids)
-        print(f"\n✅ {len(sent_ids)} envoyée(s), {len(new) - len(sent_ids)} échec(s).")
-    elif not live:
+    if not live:
+        for r in new:
+            print(f"\n--- {r['id']} ---\n{build_message(r)}")
         print(
             f"\n(DRY-RUN) {len(new)} course(s) seraient envoyées. "
             "Rien n'a été posté ni marqué. Ajoute --live pour envoyer."
         )
+        return 0
+
+    sent_ids = set()
+    for r in new:
+        msg = build_message(r)
+        print(f"\n--- {r['id']} ---\n{msg}")
+        ok, body = _post_message(token, BEEPER_CHAT_ID, msg)
+        if ok:
+            print("   ✅ envoyé")
+            sent_ids.add(r["id"])
+        else:
+            print(f"   ❌ échec envoi: {body[:150]}", file=sys.stderr)
+
+    if sent_ids:
+        _save_notified_ids(known | sent_ids)
+    print(f"\n✅ {len(sent_ids)} envoyée(s), {len(new) - len(sent_ids)} échec(s).")
     return 0
 
 

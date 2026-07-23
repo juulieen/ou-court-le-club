@@ -6,7 +6,8 @@ pour le club, une fois par jour, après le scan CI.
 ## Comment ça marche
 
 1. La CI GitHub (cloud) scanne à 06:00 UTC et déploie `races.json` sur GitHub Pages.
-2. Ce conteneur (sur l'ASUS) réveille un cron à **07:00 UTC** (`crontab`).
+2. Ce conteneur (sur l'ASUS) réveille un cron à **11h30 Europe/Paris** (`crontab`,
+   `TZ` du conteneur) ; les réactions 🚫 sont relues **toutes les 2h**.
 3. `notify.py send` récupère le `races.json` public, le compare à `notified.json`
    (persistant dans le volume `/data`), et poste les nouveautés.
 4. L'envoi passe par l'**API Beeper Desktop du T14** (`***REMOVED***:23373`),

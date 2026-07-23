@@ -83,7 +83,9 @@ declare const maplibregl: any;
   // Liste des courses masquées par réaction 🚫 (homonymes), maintenue par le
   // notifieur et servie par le caddy de l'ASUS. Best-effort : si indisponible,
   // on affiche tout (aucune course masquée par erreur).
-  const EXCLUSIONS_URL = "https://run.juulieen.fr/exclusions.json";
+  const EXCLUSIONS_URL =
+    import.meta.env.PUBLIC_EXCLUSIONS_URL ||
+    "https://run.juulieen.fr/exclusions.json";
 
   // --- Data loading ---
   function loadData() {

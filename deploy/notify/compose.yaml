@@ -24,7 +24,7 @@ services:
       TOKEN_REMINDER_DAYS: "3"
       # Correction homonymes : réagir avec cet emoji sur une notif masque la
       # course de la carte. exclusions.json est écrit dans ./public (servi par
-      # caddy sous https://juulieen.fr/runevent86/exclusions.json).
+      # caddy sous https://run.juulieen.fr/exclusions.json).
       HIDE_EMOJI: "🚫"
       EXCLUSIONS_PATH: "/public/exclusions.json"
     volumes:
