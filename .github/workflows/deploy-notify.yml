@@ -1,0 +1,45 @@
+name: Deploy notify
+
+# Déploie le notifieur sur le serveur perso via le runner self-hosted
+# (asus-1-runevent, scopé à ce repo). Le .env est généré depuis les secrets —
+# aucune valeur d'infra n'est commitée. rsync vers le chemin stable bind-mounté
+# par caddy (sert exclusions.json), puis rebuild du conteneur.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/notify/**'
+      - 'scrapers/notify.py'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    env:
+      DEPLOY_DIR: ${{ vars.RUNEVENT86_NOTIFY_DEPLOY_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync build copy of notify.py
+        run: cp scrapers/notify.py deploy/notify/notify.py
+
+      - name: Write .env from secrets
+        run: |
+          umask 077
+          cat > deploy/notify/.env <<'EOF'
+          BEEPER_API=${{ secrets.RUNEVENT86_NOTIFY_BEEPER_API }}
+          BEEPER_CHAT_ID=${{ secrets.RUNEVENT86_NOTIFY_CHAT_ID }}
+          BEEPER_REMINDER_CHAT_ID=${{ secrets.RUNEVENT86_NOTIFY_REMINDER_CHAT_ID }}
+          NOTIFY_ARGS=
+          EOF
+
+      - name: Rsync to deploy dir
+        run: rsync -a --delete --exclude 'public/exclusions.json' deploy/notify/ "$DEPLOY_DIR/"
+
+      - name: Build & up
+        run: cd "$DEPLOY_DIR" && docker compose -f compose.yaml up -d --build
+
+      - name: Verify
+        run: |
+          docker ps --filter name=runevent86-notify --format '{{.Names}} {{.Status}}'
+          curl -fsS https://run.juulieen.fr/exclusions.json > /dev/null
