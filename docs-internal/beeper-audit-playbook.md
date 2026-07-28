@@ -103,7 +103,7 @@ Server installé, hôte 24/7 idéal) :
 
 - Beeper expose une API HTTP locale :
   `POST http://localhost:23373/v1/chats/{chatID}/messages` (auth Bearer, token via
-  Réglages → Integrations). Chat cible = `***REMOVED***`.
+  Réglages → Integrations). Chat cible : voir le secret GitHub `RUNEVENT86_NOTIFY_CHAT_ID_PROD`.
 - Un cron/systemd sur l'hôte Beeper lance un sender (`notify.py --send`, à
   committer) : fetch la `races.json` publique → diff vs `data/notified.json` →
   POST chaque nouvelle course → marque l'id notifié. **Aucun Claude dans la boucle.**

@@ -28,7 +28,7 @@ it is obtained, so it is fetched once via ``token`` and reused for ~30 days;
 
 ``send``/``token`` configuration (all via env, sensible defaults):
     RACES_URL          source of races.json (default: public GitHub Pages)
-    BEEPER_API         Beeper Desktop API   (default: http://***REMOVED***:23373)
+    BEEPER_API         Beeper Desktop API   (default: http://127.0.0.1:23373)
     BEEPER_CHAT_ID     target Matrix chatID (default: "Note to self" — SAFE)
     NOTIFIED_PATH      dedup log path       (default: data/notified.json)
     TOKEN_PATH         stored token path    (default: data/beeper_token.json)
@@ -61,10 +61,10 @@ CLUB_CHAT_ID = "22548"
 RACES_URL = os.environ.get(
     "RACES_URL", "https://juulieen.github.io/ou-court-le-club/data/races.json"
 )
-BEEPER_API = os.environ.get("BEEPER_API", "http://***REMOVED***:23373").rstrip("/")
+BEEPER_API = os.environ.get("BEEPER_API", "http://127.0.0.1:23373").rstrip("/")
 # Default target is "Note to self" so nothing lands in the club group by
 # accident. Point BEEPER_CHAT_ID at the group's Matrix id once validated.
-BEEPER_CHAT_ID = os.environ.get("BEEPER_CHAT_ID", "***REMOVED***")
+BEEPER_CHAT_ID = os.environ.get("BEEPER_CHAT_ID", "")
 _NOTIFIED_ENV = os.environ.get("NOTIFIED_PATH")
 SEND_NOTIFIED_PATH = Path(_NOTIFIED_ENV) if _NOTIFIED_ENV else NOTIFIED_LOG_PATH
 # "Où court le club" — the public map. Messages link here (deep-link to the
@@ -81,7 +81,7 @@ TOKEN_PATH = Path(_TOKEN_ENV) if _TOKEN_ENV else (ROOT / "data" / "beeper_token.
 REMINDER_DAYS = int(os.environ.get("TOKEN_REMINDER_DAYS", "3"))
 # Le rappel d'expiration va toujours à "Note to self" (perso), jamais au groupe.
 REMINDER_CHAT_ID = os.environ.get(
-    "BEEPER_REMINDER_CHAT_ID", "***REMOVED***"
+    "BEEPER_REMINDER_CHAT_ID", ""
 )
 # Timeout de l'étape d'acceptation OAuth : si tu n'acceptes pas la popup, on
 # abandonne proprement au lieu de bloquer.

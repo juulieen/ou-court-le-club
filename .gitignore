@@ -74,3 +74,4 @@ last-run-summary.txt
 
 # Copie de build (source: scrapers/notify.py) — resync: cp scrapers/notify.py deploy/notify/
 deploy/notify/notify.py
+deploy/notify/.env

@@ -1,6 +1,7 @@
-# Service notifieur RunEvent86 — à intégrer au stack Docker de l'ASUS.
-# Copie ce bloc dans ~/server/asus-1/docker-compose.yml (section services:)
-# ou déploie ce fichier seul :  docker compose -f compose.yaml up -d --build
+# Service notifieur RunEvent86 — déployé automatiquement par la CI
+# (.github/workflows/deploy-notify.yml) sur le serveur perso.
+# Déploiement manuel : copier .env.example en .env, le remplir, puis
+#   docker compose -f compose.yaml up -d --build
 services:
   runevent86-notify:
     build: .
@@ -11,15 +12,17 @@ services:
       TZ: Europe/Paris
       # Source des données (races.json public déployé par la CI)
       RACES_URL: "https://juulieen.github.io/ou-court-le-club/data/races.json"
-      # API Beeper Desktop du T14, joignable via Tailscale
-      BEEPER_API: "http://***REMOVED***:23373"
+      # API Beeper Desktop (joignable via Tailscale) — voir .env
+      BEEPER_API: "${BEEPER_API:?renseigner BEEPER_API dans .env}"
       # Cible : "Note to self" par défaut (SÛR). Groupe club une fois validé :
-      #   ***REMOVED***  ("Blabla Run Event 86", WhatsApp)
-      BEEPER_CHAT_ID: "***REMOVED***"
+      # voir le secret RUNEVENT86_NOTIFY_CHAT_ID_PROD sur GitHub.
+      BEEPER_CHAT_ID: "${BEEPER_CHAT_ID:?renseigner BEEPER_CHAT_ID dans .env}"
+      # Rappels d'expiration du token : toujours en "Note to self" (perso)
+      BEEPER_REMINDER_CHAT_ID: "${BEEPER_REMINDER_CHAT_ID:-}"
       # "" = dry-run (défaut, sûr) ; "--live" = envoi réel
-      NOTIFY_ARGS: ""
+      NOTIFY_ARGS: "${NOTIFY_ARGS:-}"
       # Token Beeper (persisté dans le volume ; obtenu via `notify.py token`,
-      # tu acceptes la popup sur le T14 ; valide ~30j, rappel auto avant expiry)
+      # tu acceptes la popup sur le laptop ; valide ~30j, rappel auto avant expiry)
       TOKEN_PATH: "/data/beeper_token.json"
       TOKEN_REMINDER_DAYS: "3"
       # Correction homonymes : réagir avec cet emoji sur une notif masque la

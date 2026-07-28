@@ -6,52 +6,62 @@ pour le club, une fois par jour, après le scan CI.
 ## Comment ça marche
 
 1. La CI GitHub (cloud) scanne à 06:00 UTC et déploie `races.json` sur GitHub Pages.
-2. Ce conteneur (sur l'ASUS) réveille un cron à **11h30 Europe/Paris** (`crontab`,
-   `TZ` du conteneur) ; les réactions 🚫 sont relues **toutes les 2h**.
+2. Ce conteneur (sur le serveur perso) réveille un cron à **11h30 Europe/Paris**
+   (`crontab`, `TZ` du conteneur) ; les réactions 🚫 sont relues **toutes les 2h**.
 3. `notify.py send` récupère le `races.json` public, le compare à `notified.json`
    (persistant dans le volume `/data`), et poste les nouveautés.
-4. L'envoi passe par l'**API Beeper Desktop du T14** (`***REMOVED***:23373`),
-   joignable via Tailscale, avec un **token OAuth valable ~30 jours**.
+4. L'envoi passe par l'**API Beeper Desktop** d'une machine du réseau Tailscale
+   (voir `BEEPER_API` dans `.env`), avec un **token OAuth valable ~30 jours**.
 
-Le cloud CI ne peut pas joindre le T14 (pas de Tailscale) : c'est pourquoi
+Le cloud CI ne peut pas joindre cette machine (pas de Tailscale) : c'est pourquoi
 l'envoi vit dans ce conteneur côté LAN, et non dans le workflow.
 
 ## Sécurité / garde-fous
 
 - **Dry-run par défaut** (`NOTIFY_ARGS=""`) : le conteneur logue ce qu'il
   enverrait sans rien poster. Passer à `--live` pour activer l'envoi réel.
-- **Cible par défaut = "Note to self"** (`***REMOVED***`).
-  Groupe club seulement après validation :
-  `***REMOVED***` (« Blabla Run Event 86 », WhatsApp).
+- **Cible par défaut = "Note to self"**. Groupe club seulement après validation
+  (ID conservé dans le secret GitHub `RUNEVENT86_NOTIFY_CHAT_ID_PROD`).
 - **Premier run = baseline** : mémorise les courses déjà visibles sans rien
   envoyer, pour ne pas spammer tout l'historique. Les runs suivants ne
   notifient que le nouveau.
-- Le T14 doit être allumé au moment du run (sinon échec silencieux, réessai le
-  lendemain — notifs non urgentes).
+- La machine Beeper doit être allumée au moment du run (sinon échec silencieux,
+  réessai le lendemain — notifs non urgentes).
 
-## Déploiement (sur l'ASUS)
+## Déploiement
+
+**Automatique (CI)** : le workflow `.github/workflows/deploy-notify.yml`
+déploie sur le serveur perso via un runner self-hosted à chaque push sur
+`main` touchant `deploy/notify/**` ou `scrapers/notify.py`. Il génère le
+`.env` depuis les secrets GitHub (`RUNEVENT86_NOTIFY_*`), rsync vers le
+chemin de déploiement, puis rebuild le conteneur.
+
+**Manuel** :
 
 ```bash
-# copier deploy/notify/ sur l'ASUS puis :
+cp .env.example .env   # remplir les valeurs
+# copier deploy/notify/ sur le serveur puis :
 cd deploy/notify
 docker compose -f compose.yaml up -d --build
 docker logs runevent86-notify          # voir les runs du cron
 
 # tester tout de suite un run à la main (dry-run) :
 docker exec runevent86-notify /app/run.sh
-# passer en envoi réel : mettre NOTIFY_ARGS="--live" dans compose.yaml puis
+# passer en envoi réel : NOTIFY_ARGS=--live dans .env puis
 docker compose -f compose.yaml up -d
 ```
 
-## Variables (compose.yaml)
+## Variables (.env)
 
-| Var | Défaut | Rôle |
-|---|---|---|
-| `RACES_URL` | Pages public | source du races.json |
-| `BEEPER_API` | `http://***REMOVED***:23373` | API Desktop T14 (Tailscale) |
-| `BEEPER_CHAT_ID` | Note to self | conversation cible |
-| `NOTIFY_ARGS` | `""` (dry-run) | `--live` pour envoyer |
-| `NOTIFIED_PATH` | `/data/notified.json` | log de dédup (volume) |
+| Var | Rôle |
+|---|---|
+| `BEEPER_API` | URL de l'API Beeper Desktop (Tailscale) |
+| `BEEPER_CHAT_ID` | conversation cible des notifs |
+| `BEEPER_REMINDER_CHAT_ID` | conversation pour les rappels d'expiration |
+| `NOTIFY_ARGS` | `""` (dry-run) ou `--live` |
+
+Fixes dans `compose.yaml` : `RACES_URL` (Pages public), `NOTIFIED_PATH` et
+`TOKEN_PATH` (dans le volume `/data`), `TOKEN_REMINDER_DAYS` (3j).
 
 ## Correction des homonymes (réaction 🚫)
 
@@ -64,22 +74,22 @@ le lien `#race/<id>` du message.
   `exclusions.json` (recalcul complet → **enlever la réaction ré-affiche** la
   course). Écrit dans `./public/` (volume partagé avec caddy).
 - caddy sert `./public/exclusions.json` sur `https://run.juulieen.fr/exclusions.json`
-  (bloc dédié dans le Caddyfile de l'ASUS, en-tête CORS `*`).
+  (bloc dédié dans le Caddyfile du serveur, en-tête CORS `*`).
 - Le frontend (`app.ts` → `EXCLUSIONS_URL`) le charge et filtre les courses ;
   best-effort (si l'URL est down, on affiche tout).
 
-**⚠️ Pré-requis DNS** : un enregistrement **A `run.juulieen.fr` → ***REMOVED*****
-(comme les autres sous-domaines). Sans lui, caddy ne peut pas émettre le certif
-et le frontend retombe simplement sur « aucune exclusion ».
+**⚠️ Pré-requis DNS** : un enregistrement **A `run.juulieen.fr`** pointant vers
+le serveur (comme les autres sous-domaines). Sans lui, caddy ne peut pas
+émettre le certif et le frontend retombe simplement sur « aucune exclusion ».
 
 ## Token Beeper (~30 jours)
 
-Obtenir un token demande d'**accepter une popup sur le T14** — donc on le prend
-une fois et on le réutilise :
+Obtenir un token demande d'**accepter une popup sur Beeper Desktop** — donc on
+le prend une fois et on le réutilise :
 
 ```bash
 docker exec -it runevent86-notify python /app/notify.py token
-# → accepte la popup sur Beeper (T14). Token stocké dans /data (volume), ~30j.
+# → accepte la popup sur Beeper Desktop. Token stocké dans /data (volume), ~30j.
 ```
 
 Le `send` ne redemande **jamais** de token automatiquement (sinon il faudrait
