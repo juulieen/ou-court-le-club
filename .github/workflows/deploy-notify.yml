@@ -30,7 +30,7 @@ jobs:
           BEEPER_API=${{ secrets.RUNEVENT86_NOTIFY_BEEPER_API }}
           BEEPER_CHAT_ID=${{ secrets.RUNEVENT86_NOTIFY_CHAT_ID }}
           BEEPER_REMINDER_CHAT_ID=${{ secrets.RUNEVENT86_NOTIFY_REMINDER_CHAT_ID }}
-          NOTIFY_ARGS=
+          NOTIFY_ARGS=${{ vars.RUNEVENT86_NOTIFY_ARGS }}
           EOF
 
       - name: Rsync to deploy dir
