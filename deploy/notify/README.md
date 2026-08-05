@@ -1,7 +1,10 @@
 # Notifieur de courses — conteneur
 
 Poste un message Beeper/WhatsApp à chaque **nouvelle course à venir** détectée
-pour le club, une fois par jour, après le scan CI.
+pour le club, et **un message par nouvelle inscription** sur une course déjà
+connue (compteur de membres en hausse ; un message par membre opt-in nommé —
+pour qu'un 🚫 vise toujours une seule personne — plus un message groupé pour
+l'éventuel reliquat anonyme), une fois par jour, après le scan CI.
 
 ## Comment ça marche
 
@@ -66,13 +69,23 @@ Fixes dans `compose.yaml` : `RACES_URL` (Pages public), `NOTIFIED_PATH` et
 ## Correction des homonymes (réaction 🚫)
 
 Le matching par nom attrape parfois un homonyme (même prénom, pas un membre).
-Sur une notif, **réagir avec 🚫 masque la course de la carte** — n'importe quel
-membre peut le faire, aucune identité n'est stockée : l'id de course est lu dans
-le lien `#race/<id>` du message.
+Sur une notif, **réagir avec 🚫 masque le membre cité par le message** — pas la
+course entière : les autres inscrits restent sur la carte. N'importe quel
+membre peut le faire, aucune identité de réacteur n'est stockée : l'id de
+course (lien `#race/<id>`) et le prénom affiché (ligne 🎉/👥) sont lus dans le
+message lui-même.
 
+- Chaque nouvelle inscription donne lieu à **un message par membre nommé** :
+  un 🚫 vise donc toujours une seule personne. Cas ambigus (annonce de course
+  à plusieurs noms, inscrit non opt-in « prénom non public ») : rien n'est
+  masqué, le bot poste **une** demande de précision → exclusion à la main dans
+  `exclusions.json` (entrée `{"race": "<id>", "name": "<prénom affiché>"}`).
 - `notify.py reactions` (cron toutes les 2h) relit les réactions et réécrit
-  `exclusions.json` (recalcul complet → **enlever la réaction ré-affiche** la
-  course). Écrit dans `./public/` (volume partagé avec caddy).
+  `exclusions.json` (format `{members: [{race, name}], asked: [...]}` →
+  **enlever la réaction ré-affiche** le membre). Écrit dans `./public/`
+  (volume partagé avec caddy).
+- Le frontend retire le prénom de `first_names` et décrémente `member_count` ;
+  la course ne disparaît que si le compteur tombe à 0 (mono-inscrit).
 - caddy sert `./public/exclusions.json` sur `https://run.juulieen.fr/exclusions.json`
   (bloc dédié dans le Caddyfile du serveur, en-tête CORS `*`).
 - Le frontend (`app.ts` → `EXCLUSIONS_URL`) le charge et filtre les courses ;

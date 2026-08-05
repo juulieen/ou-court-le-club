@@ -80,9 +80,12 @@ declare const maplibregl: any;
     window.addEventListener("hashchange", handleRoute);
   }
 
-  // Liste des courses masquées par réaction 🚫 (homonymes), maintenue par le
-  // notifieur et servie par le caddy de l'ASUS. Best-effort : si indisponible,
-  // on affiche tout (aucune course masquée par erreur).
+  // Membres masqués par réaction 🚫 (homonymes), maintenus par le notifieur
+  // et servis par le caddy de l'ASUS. Format : {members: [{race, name}]} —
+  // on retire le prénom de first_names et on décrémente member_count ; la
+  // course ne disparaît que si son compteur tombe à 0. L'ancien format
+  // {excluded: [raceId]} (masquage de course entière) reste supporté.
+  // Best-effort : si indisponible, on affiche tout (rien de masqué par erreur).
   const EXCLUSIONS_URL =
     import.meta.env.PUBLIC_EXCLUSIONS_URL ||
     "https://run.juulieen.fr/exclusions.json";
@@ -95,13 +98,32 @@ declare const maplibregl: any;
       ),
       fetch(EXCLUSIONS_URL, { cache: "no-cache" })
         .then((r: Response) => r.json())
-        .catch(() => ({ excluded: [] })),
+        .catch(() => ({ members: [], excluded: [] })),
     ])
       .then(([data, excl]: [any, any]) => {
-        const excluded = new Set<string>(excl?.excluded || []);
-        allRaces = (data.races || []).filter(
-          (r: any) => r.member_count > 0 && !excluded.has(r.id),
-        );
+        const excludedRaces = new Set<string>(excl?.excluded || []);
+        const exByRace = new Map<string, Set<string>>();
+        for (const e of excl?.members || []) {
+          if (!e?.race || !e?.name) continue;
+          if (!exByRace.has(e.race)) exByRace.set(e.race, new Set());
+          exByRace.get(e.race)!.add(e.name);
+        }
+        allRaces = (data.races || [])
+          .map((r: any) => {
+            const names = exByRace.get(r.id);
+            if (!names || excludedRaces.has(r.id)) return r;
+            const removed = (r.first_names || []).filter((n: string) =>
+              names.has(n),
+            ).length;
+            return {
+              ...r,
+              first_names: (r.first_names || []).filter(
+                (n: string) => !names.has(n),
+              ),
+              member_count: Math.max(0, (r.member_count || 0) - removed),
+            };
+          })
+          .filter((r: any) => r.member_count > 0 && !excludedRaces.has(r.id));
         raceGroups = groupEditions(allRaces);
         updateLastUpdated(data.last_updated);
         updateStats(allRaces);

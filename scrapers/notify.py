@@ -2,9 +2,15 @@
 
 **Autonomous ``send``** (the active path, used by the Docker cron) —
 self-contained, stdlib only. It fetches the public ``races.json``, diffs it
-against a persistent ``notified.json``, and posts each *new upcoming* race
-straight to the Beeper Desktop HTTP API (the T14 Desktop, reachable over
-Tailscale). Dry-run by default; pass ``--live`` to actually send. This is what
+against a persistent ``notified.json``, and posts straight to the Beeper
+Desktop HTTP API (the T14 Desktop, reachable over Tailscale):
+- each *new upcoming* race (full announcement), and
+- each *new registration* on an already-known race (member_count increase,
+  detected via a per-race snapshot stored in ``notified.json``) — **one
+  message per newly-joined member**, named only if they are in
+  ``display_optin`` (so a 🚫 reaction always targets a single person), plus
+  one grouped message for the anonymous remainder.
+Dry-run by default; pass ``--live`` to actually send. This is what
 runs daily after the scrape, in a container on the ASUS.
 
 The older ``list``/``build``/``mark``/``clear`` commands drive a manual
@@ -87,9 +93,13 @@ REMINDER_CHAT_ID = os.environ.get(
 # abandonne proprement au lieu de bloquer.
 OAUTH_ACCEPT_TIMEOUT = int(os.environ.get("OAUTH_ACCEPT_TIMEOUT", "60"))
 
-# Correction des homonymes : un membre réagit avec cet emoji sur la notif d'une
-# course → la course est masquée de la carte. L'id de course est lu depuis le
-# lien #race/<id> présent dans le message (donc aucune identité à stocker).
+# Correction des homonymes : un membre réagit avec cet emoji sur une notif →
+# le membre cité par le message est masqué de la carte (PAS la course entière :
+# les autres inscrits restent visibles). Si le message ne désigne pas une seule
+# personne (plusieurs noms, membre anonyme), rien n'est masqué et une demande
+# de précision est postée dans le chat. L'id de course et le prénom sont lus
+# depuis le message lui-même (lien #race/<id>, ligne 🎉/👥) — aucune identité
+# de réacteur n'est stockée.
 HIDE_EMOJI = os.environ.get("HIDE_EMOJI", "🚫")
 _EXCL_ENV = os.environ.get("EXCLUSIONS_PATH")
 EXCLUSIONS_PATH = Path(_EXCL_ENV) if _EXCL_ENV else (ROOT / "data" / "exclusions.json")
@@ -128,6 +138,14 @@ def _fmt_date(iso: str) -> str:
     return iso or "date à venir"
 
 
+def _hide_hint() -> str:
+    """Ligne d'aide pour la correction des homonymes par réaction."""
+    return (
+        f"👉 Un homonyme s'est glissé dans cette notif (pas un membre du club) ? "
+        f"Réagis avec {HIDE_EMOJI} à ce message pour le retirer de la carte."
+    )
+
+
 def build_message(item: dict) -> str:
     """Build the WhatsApp message text for one race."""
     name = item.get("name", "Course")
@@ -159,8 +177,59 @@ def build_message(item: dict) -> str:
     site_link = f"{SITE_URL}#race/{race_id}" if race_id else SITE_URL
     lines += ["", f"🗺️ Où court le club : {site_link}"]
     lines += ["", "Qui d'autre y va ? 👀"]
-    # Auto-correction des homonymes : réagir masque la course de la carte.
-    lines += [f"({HIDE_EMOJI} = homonyme, pas un membre → retirer de la carte)"]
+    # Auto-correction des homonymes : réagir masque le membre de la carte.
+    lines += [_hide_hint()]
+    return "\n".join(lines)
+
+
+def _join_lines(item: dict) -> list[str]:
+    """Lignes communes aux messages de nouvelle inscription."""
+    name = item.get("name", "Course")
+    date = _fmt_date(item.get("date", ""))
+    location = item.get("location") or ""
+    count = item.get("member_count", 0)
+    names = item.get("first_names") or []
+
+    when = f"🗓️ {date}" + (f" — {location}" if location else "")
+    if names:
+        shown = names[:_MAX_NAMES]
+        suffix = f" +{len(names) - _MAX_NAMES}" if len(names) > _MAX_NAMES else ""
+        who = " : " + ", ".join(shown) + suffix
+    else:
+        who = ""
+    plural = "s" if count > 1 else ""
+
+    race_id = item.get("id")
+    site_link = f"{SITE_URL}#race/{race_id}" if race_id else SITE_URL
+    return [
+        "🏃 Nouvel inscrit repéré pour le club !",
+        "",
+        f"📍 {name}",
+        when,
+        "{who_line}",
+        f"👥 {count} membre{plural} inscrit{plural}{who}",
+        "",
+        f"🗺️ Où court le club : {site_link}",
+        _hide_hint(),
+    ]
+
+
+def build_join_message(item: dict, name: str) -> str:
+    """Message pour UN nouvel inscrit nommé (opt-in) sur une course connue.
+    Un message par inscription : un 🚫 vise ainsi toujours une seule personne."""
+    lines = _join_lines(item)
+    lines[lines.index("{who_line}")] = f"🎉 {name} a rejoint la course !"
+    return "\n".join(lines)
+
+
+def build_anon_join_message(item: dict, added: int) -> str:
+    """Message pour de nouveaux inscrits non opt-in (prénom non public)."""
+    lines = _join_lines(item)
+    lines[lines.index("{who_line}")] = (
+        f"➕ {added} nouveaux membres (prénoms non publics)"
+        if added > 1
+        else "➕ 1 nouveau membre (prénom non public)"
+    )
     return "\n".join(lines)
 
 
@@ -383,8 +452,18 @@ def _fetch_races() -> list[dict]:
     return data.get("races", [])
 
 
-def _save_notified_ids(ids: set[str]) -> None:
-    _write_json(SEND_NOTIFIED_PATH, {"notified": sorted(ids)})
+def _snapshot(races: list[dict]) -> dict:
+    """Per-race state used to detect new registrations on known races."""
+    return {
+        r["id"]: {"count": r.get("member_count", 0), "names": r.get("first_names") or []}
+        for r in races
+    }
+
+
+def _save_notified_ids(ids: set[str], races_state: dict) -> None:
+    _write_json(
+        SEND_NOTIFIED_PATH, {"notified": sorted(ids), "races": races_state}
+    )
 
 
 def _eligible_upcoming(races: list[dict]) -> list[dict]:
@@ -472,27 +551,63 @@ def _list_my_messages(token: str, chat_id: str, limit: int) -> list[dict] | None
     return out[:limit] if got_page else None
 
 
-def _load_exclusions() -> set[str]:
-    return set(_read_json(EXCLUSIONS_PATH, {}).get("excluded", []))
+def _extract_member(text: str) -> str | None:
+    """Prénom affiché du membre visé par le message, None si ambigu.
+    - message de nouvel inscrit : « 🎉 X a rejoint la course ! » (un par message)
+    - annonce de course à UN seul inscrit nommé : « 👥 1 membre inscrit : X »
+    Tout le reste (plusieurs noms, membre anonyme, ancien format groupé
+    « X, Y ont rejoint ») est ambigu : le cron demandera plutôt que masquer.
+    Note : le prénom est celui affiché au moment du message ; si la
+    désambiguïsation évolue ensuite (« Romain » → « Romain F. »), l'exclusion
+    cesse silencieusement de matcher (le membre réapparaît)."""
+    m = re.search(r"🎉 (.+?) a rejoint la course", text or "")
+    if m:
+        return m.group(1).strip()
+    m = re.search(r"👥 1 membre inscrit : ([^\n]+)", text or "")
+    if m:
+        who = m.group(1).strip()
+        if "," not in who and "+" not in who:
+            return who
+    return None
 
 
-def _save_exclusions(ids: set[str]) -> None:
+def _load_exclusions() -> tuple[set[tuple[str, str]], set[str]]:
+    """Retourne (membres masqués {(race, name)}, courses déjà demandées)."""
+    d = _read_json(EXCLUSIONS_PATH, {})
+    members = {
+        (e.get("race", ""), e.get("name", ""))
+        for e in d.get("members", [])
+        if e.get("race") and e.get("name")
+    }
+    return members, set(d.get("asked", []))
+
+
+def _save_exclusions(members: set[tuple[str, str]], asked: set[str]) -> None:
     _write_json(
-        EXCLUSIONS_PATH, {"excluded": sorted(ids), "updated_at": int(time.time())}
+        EXCLUSIONS_PATH,
+        {
+            "members": [
+                {"race": rid, "name": name} for rid, name in sorted(members)
+            ],
+            "asked": sorted(asked),
+            "updated_at": int(time.time()),
+        },
     )
 
 
 def cmd_reactions(argv: list[str]) -> int:
     """Scan the notification chat for HIDE_EMOJI reactions and reconcile
-    exclusions.json. No identity is stored: the race id comes from the
-    message's own #race/<id> link.
+    exclusions.json (member-level). No identity is stored: the race id and
+    the member's display name come from the message itself.
 
     Réconciliation (et non recalcul total) pour être robuste :
       - lecture impossible (T14 injoignable) → on ne touche à rien ;
-      - une course déjà masquée dont le message est hors de la fenêtre de scan
-        (ou non lu ce run) reste masquée ;
-      - on ne ré-affiche une course QUE si on a vu son message SANS le 🚫
-        (réaction réellement retirée)."""
+      - un membre déjà masqué dont le message est hors de la fenêtre de scan
+        (ou non lu ce run) reste masqué ;
+      - on ne ré-affiche un membre QUE si on a vu son message SANS le 🚫
+        (réaction réellement retirée) ;
+      - 🚫 sur un message ambigu (plusieurs noms, membre anonyme) → rien de
+        masqué, une demande de précision est postée (une seule fois)."""
     token = _require_token()
     if not token:
         return 1
@@ -506,33 +621,64 @@ def cmd_reactions(argv: list[str]) -> int:
         return 1
 
     target = _norm_emoji(HIDE_EMOJI)
-    seen_race: set[str] = set()  # course vue dans un message ce run
-    seen_with: set[str] = set()  # course dont un message porte le 🚫
+    seen_key: set[tuple[str, str]] = set()  # membre vu dans un message ce run
+    seen_with: set[tuple[str, str]] = set()  # membre dont un message porte le 🚫
+    ambiguous_with: set[str] = set()  # courses avec un 🚫 sur message ambigu
     for m in msgs:
-        rid = _extract_race_id(m.get("text", ""))
+        text = m.get("text", "")
+        rid = _extract_race_id(text)
         if not rid:
             continue
-        seen_race.add(rid)
-        reactions = m.get("reactions") or []
-        if any(_norm_emoji(r.get("reactionKey", "")) == target for r in reactions):
-            seen_with.add(rid)
+        has_hide = any(
+            _norm_emoji(r.get("reactionKey", "")) == target
+            for r in (m.get("reactions") or [])
+        )
+        name = _extract_member(text)
+        if name is None:
+            if has_hide:
+                ambiguous_with.add(rid)
+            continue
+        key = (rid, name)
+        seen_key.add(key)
+        if has_hide:
+            seen_with.add(key)
 
-    before = _load_exclusions()
-    # Ajoute les 🚫 vus, garde l'existant pour les courses non vues ce run, et
-    # retire celles vues SANS 🚫 (réaction enlevée). `seen_with ⊆ seen_race`.
-    excluded = seen_with | (before - seen_race)
+    before, asked = _load_exclusions()
+    # Ajoute les 🚫 vus, garde l'existant pour les membres non vus ce run, et
+    # retire ceux vus SANS 🚫 (réaction enlevée). `seen_with ⊆ seen_key`.
+    excluded = seen_with | (before - seen_key)
 
-    _save_exclusions(excluded)
+    # 🚫 ambigu : demande de précision postée UNE fois par course (sinon le
+    # cron 2h spammerait). Seules les demandes réellement postées sont marquées.
+    newly_asked: set[str] = set()
+    for rid in sorted(ambiguous_with - asked):
+        ok, body = _post_message(
+            token,
+            BEEPER_CHAT_ID,
+            (
+                f"{HIDE_EMOJI} bien vu — mais cette notif cite plusieurs membres "
+                "(ou un membre non identifié publiquement) : je ne sais pas "
+                "lequel retirer de la carte. Julien, à exclure à la main ?\n"
+                f"{SITE_URL}#race/{rid}"
+            ),
+        )
+        if ok:
+            newly_asked.add(rid)
+            print(f"  ? demande de précision postée pour {rid}")
+        else:
+            print(f"  ❌ échec demande pour {rid}: {body[:120]}", file=sys.stderr)
+
+    _save_exclusions(excluded, asked | newly_asked)
     added = excluded - before
     removed = before - excluded
     print(
         f"# {len(msgs)} message(s) scanné(s) | emoji: {HIDE_EMOJI} | "
-        f"{len(excluded)} course(s) masquée(s)"
+        f"{len(excluded)} membre(s) masqué(s)"
     )
     if added:
-        print("  + masquées:", ", ".join(sorted(added)))
+        print("  + masqués:", ", ".join(f"{n} ({r})" for r, n in sorted(added)))
     if removed:
-        print("  - ré-affichées:", ", ".join(sorted(removed)))
+        print("  - ré-affichés:", ", ".join(f"{n} ({r})" for r, n in sorted(removed)))
     if not added and not removed:
         print("  (aucun changement)")
     print(f"→ {EXCLUSIONS_PATH}")
@@ -576,6 +722,24 @@ def cmd_send(argv: list[str]) -> int:
     known = set(notified.get("notified", [])) if notified else set()
     new = [r for r in eligible if r["id"] not in known]
 
+    # Nouvelles inscriptions sur des courses déjà connues : member_count en
+    # hausse vs le snapshot persisté. Les courses sans snapshot (état écrit
+    # avant cette feature) sont enregistrées silencieusement — pas de spam.
+    state = (notified or {}).get("races", {})
+    joins = []
+    for r in eligible:
+        if r["id"] not in known:
+            continue
+        prev = state.get(r["id"])
+        if prev is None:
+            continue
+        cur = r.get("member_count", 0)
+        prev_count = int(prev.get("count", 0))
+        if cur > prev_count:
+            prev_names = set(prev.get("names") or [])
+            joined = [n for n in (r.get("first_names") or []) if n not in prev_names]
+            joins.append((r, cur - prev_count, joined))
+
     # Token : réutilisé tant qu'il est valide (~30j). En LIVE on ne fait PAS de
     # fetch automatique (ça demanderait ton acceptation) : si le token manque ou
     # est expiré, on le signale et on s'arrête proprement.
@@ -587,13 +751,14 @@ def cmd_send(argv: list[str]) -> int:
     print(
         f"# source: {RACES_URL}\n"
         f"# {len(eligible)} course(s) à venir avec membres | "
-        f"{len(known)} déjà notifiée(s) | {len(new)} nouvelle(s)\n"
+        f"{len(known)} déjà notifiée(s) | {len(new)} nouvelle(s) course(s) | "
+        f"{len(joins)} nouvelle(s) inscription(s)\n"
         f"# cible: {BEEPER_CHAT_ID} | mode: {'LIVE' if live else 'DRY-RUN'} | "
         f"token: {'valide ' + str(days_left) + 'j' if stored else 'ABSENT/EXPIRÉ'}"
     )
 
     if first_run and not seed_send:
-        _save_notified_ids({r["id"] for r in eligible})
+        _save_notified_ids({r["id"] for r in eligible}, _snapshot(eligible))
         print(
             f"\n⚠️  Premier run — baseline enregistrée ({len(eligible)} courses), "
             "aucun envoi. Les prochains runs ne notifieront que les nouveautés."
@@ -620,20 +785,32 @@ def cmd_send(argv: list[str]) -> int:
             + ("envoyé" if ok else f"échec {body[:100]}")
         )
 
-    if not new:
+    if not new and not joins:
+        if live:
+            # Snapshot rafraîchi même les jours calmes (ex. désistement),
+            # pour qu'une remontée ultérieure du compteur soit bien vue
+            # comme une nouvelle inscription.
+            _save_notified_ids(known, _snapshot(eligible))
         print("\n✅ Rien de nouveau à notifier.")
         return 0
 
     if not live:
         for r in new:
             print(f"\n--- {r['id']} ---\n{build_message(r)}")
+        n_msgs = 0
+        for r, added, joined in joins:
+            for tag, msg in _join_messages(r, added, joined):
+                n_msgs += 1
+                print(f"\n--- {r['id']} ({tag}) ---\n{msg}")
         print(
-            f"\n(DRY-RUN) {len(new)} course(s) seraient envoyées. "
-            "Rien n'a été posté ni marqué. Ajoute --live pour envoyer."
+            f"\n(DRY-RUN) {len(new)} course(s) et {n_msgs} message(s) "
+            "d'inscription seraient envoyés. Rien n'a été posté ni marqué. "
+            "Ajoute --live pour envoyer."
         )
         return 0
 
     sent_ids = set()
+    failed_ids = set()
     for r in new:
         msg = build_message(r)
         print(f"\n--- {r['id']} ---\n{msg}")
@@ -643,11 +820,47 @@ def cmd_send(argv: list[str]) -> int:
             sent_ids.add(r["id"])
         else:
             print(f"   ❌ échec envoi: {body[:150]}", file=sys.stderr)
+            failed_ids.add(r["id"])
 
-    if sent_ids:
-        _save_notified_ids(known | sent_ids)
-    print(f"\n✅ {len(sent_ids)} envoyée(s), {len(new) - len(sent_ids)} échec(s).")
+    join_sent = set()
+    for r, added, joined in joins:
+        ok_all = True
+        for tag, msg in _join_messages(r, added, joined):
+            print(f"\n--- {r['id']} ({tag}) ---\n{msg}")
+            ok, body = _post_message(token, BEEPER_CHAT_ID, msg)
+            if ok:
+                print("   ✅ envoyé")
+            else:
+                print(f"   ❌ échec envoi: {body[:150]}", file=sys.stderr)
+                ok_all = False
+        # Course marquée seulement si tous ses messages sont partis, sinon
+        # l'ancien snapshot est conservé → retentative complète demain.
+        if ok_all:
+            join_sent.add(r["id"])
+        else:
+            failed_ids.add(r["id"])
+
+    # Les courses en échec gardent leur ancien snapshot (retentative demain) ;
+    # toutes les autres sont mises à jour.
+    new_state = _snapshot([r for r in eligible if r["id"] not in failed_ids])
+    for rid in failed_ids:
+        if rid in state:
+            new_state[rid] = state[rid]
+    _save_notified_ids(known | sent_ids | join_sent, new_state)
+    total = len(sent_ids) + len(join_sent)
+    print(f"\n✅ {total} envoyée(s), {len(failed_ids)} échec(s).")
     return 0
+
+
+def _join_messages(r: dict, added: int, joined: list[str]) -> list[tuple[str, str]]:
+    """Un message par inscription : chaque membre nommé (opt-in) a le sien —
+    un 🚫 vise ainsi toujours une seule personne. Le reliquat anonyme
+    (non opt-in) est groupé : impossible à individualiser."""
+    out: list[tuple[str, str]] = [(n, build_join_message(r, n)) for n in joined]
+    anon = added - len(joined)
+    if anon > 0:
+        out.append((f"{anon} anonyme(s)", build_anon_join_message(r, anon)))
+    return out
 
 
 def main(argv: list[str]) -> int:
