@@ -44,12 +44,38 @@ cd "$root" 2>/dev/null || exit 0
 head=$(git rev-parse HEAD 2>/dev/null || true)
 [ -n "$head" ] || exit 0  # pas un dépôt git → on ne bloque pas
 
+# Ne se déclenche que dans ce projet (le hook peut être enregistré
+# globalement, ex. config utilisateur Kimi Code).
+[ -f "$root/docs-internal/verify-checklist.md" ] || exit 0
+
 marker="$root/.claude/.verify-ok"
 if [ -f "$marker" ] && [ "$(cat "$marker" 2>/dev/null || true)" = "$head" ]; then
   exit 0  # déjà vérifié pour ce HEAD
 fi
 
-# Bloque et délègue à l'agent dédié (contexte principal gardé propre).
+# Bloque et délègue la vérification (contexte principal gardé propre).
+# Variante de message selon le runtime : `kimi` en $1 (hook Kimi Code) —
+# l'agent custom "pre-push-verifier" n'existe que sous Claude Code.
+if [ "${1:-}" = "kimi" ]; then
+cat >&2 <<EOF
+🛑 Vérification requise avant de pousser (HEAD ${head:0:12}).
+
+Lance un sous-agent de vérification qui applique la checklist projet :
+
+  Agent(subagent_type="coder",
+        prompt="Tu es le vérificateur pre-push du projet. Applique la checklist docs-internal/verify-checklist.md au diff origin/main..HEAD et termine par VERDICT: PASS ou VERDICT: FAIL.")
+
+Selon son verdict :
+  • VERDICT: PASS → si un test navigateur est signalé, lance-le et attends
+    qu'il soit vert ; puis marque le SHA vérifié DANS UNE COMMANDE SÉPARÉE
+    et relance le push :
+        git rev-parse HEAD > .claude/.verify-ok
+        git push ...
+  • VERDICT: FAIL → corrige les points remontés, re-commit, relance l'agent.
+
+Bypass ponctuel (cas trivial / vérif déjà faite) : préfixe par SKIP_VERIFY=1.
+EOF
+else
 cat >&2 <<EOF
 🛑 Vérification requise avant de pousser (HEAD ${head:0:12}).
 
@@ -69,4 +95,5 @@ Selon son verdict :
 
 Bypass ponctuel (cas trivial / vérif déjà faite) : préfixe par SKIP_VERIFY=1.
 EOF
+fi
 exit 2
