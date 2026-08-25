@@ -19,6 +19,9 @@ NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 # BAN often matches race names to street names (e.g. "marathon" -> "Rue de Marathon").
 # Keys are lowercase. Values are (lat, lng) or None (= ungeocodable).
 OVERRIDES: dict[str, tuple[float, float] | None] = {
+    # Trail du Loup Blanc — Guéret (Creuse); no address in the Njuko edition
+    "loup blanc 2026 - 20e anniversaire": (46.17, 1.87),
+    "loup blanc": (46.17, 1.87),
     # Marathon de Nantes — BAN returns "Rue de Marathon" in Rennes
     "abalone marathon de nantes 2023": (47.24, -1.56),
     "abalone marathon de nantes 2024": (47.24, -1.56),

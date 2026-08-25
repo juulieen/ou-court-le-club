@@ -4,8 +4,11 @@ Njuko is an Angular SPA. Registration data is fetched from a public REST API:
 1. GET /edition/url/{slug} -> edition data with _id and competitions[]
 2. GET /registrations/{editionId}/_search/{} -> all registrations as JSON
 
-Event discovery: no public directory exists. We use Wayback Machine CDX index
-to find all known event slugs on in.njuko.com.
+Event discovery: no public directory exists. We seed a persistent slug cache
+from Common Crawl's CDX index (every run), with Wayback Machine CDX as a
+fallback, to find all known event slugs on in.njuko.com and the white-label
+registration hosts (register-utmb.world, sporkrono-inscriptions.fr,
+sports107.com, timeto.com).
 """
 
 import json
@@ -214,7 +217,9 @@ class NjukoScraper(BaseScraper):
 
         njuko removed the old GET `/_search/{}` endpoint (now 410 Gone). The new
         endpoint is `POST /registrations/{id}` with a search body; `criteria:null`
-        returns everyone, paginated.
+        returns everyone, paginated — except on editions that reject bulk search
+        (403 "Criteria are required for front search"), which fall back to
+        per-name search.
 
         Returns:
         - list  : the registrations (possibly empty) — normal path.
@@ -241,7 +246,10 @@ class NjukoScraper(BaseScraper):
                 return regs if regs else None
             except requests.RequestException as e:
                 print(f"  [njuko] Registrations indisponible (edition {edition_id}): {e}")
-                return regs
+                # Some editions reject bulk search (403 "Criteria are required for
+                # front search") while still allowing per-name queries. If we have
+                # nothing, signal the caller to fall back to per-name search.
+                return regs if regs else None
             data = resp.json()
             results = data.get("results", []) if isinstance(data, dict) else (data or [])
             total = data.get("totalCount", len(results)) if isinstance(data, dict) else len(results)
@@ -341,6 +349,7 @@ _SEED_SLUGS = {
     "lavenivici-2026",
     "epopee-royale-2026",
     "la-foulee-des-geants-20261771423573439",
+    "trail-du-loup-blanc-2026---20e-anniversaire1783878606552",
 }
 
 # Slugs that are not events
@@ -352,11 +361,14 @@ _SLUG_BLACKLIST = {
 
 
 def discover_races() -> list[dict]:
-    """Discover Njuko events from a persistent slug cache + CDX seeding.
+    """Discover Njuko events from a persistent slug cache + index seeding.
 
     Slug cache grows over time:
-    - Seeded initially from Wayback Machine CDX (slow, best-effort)
+    - Seeded from Common Crawl's CDX index on every run (free, no key,
+      good coverage of in.njuko.com)
+    - Wayback Machine CDX as fallback if the cache is nearly empty
     - New slugs found by other means can be added to data/njuko_slugs.json
+      or to _SEED_SLUGS (manually curated)
     Each slug is validated against the Njuko API to get current data.
     """
     slugs = _load_slug_cache()
@@ -366,7 +378,13 @@ def discover_races() -> list[dict]:
         slugs.update(_SEED_SLUGS)
         _save_slug_cache(slugs)
 
-    # Try to seed from CDX if cache is small
+    # Common Crawl seeding: runs every time (a handful of index requests)
+    cc_slugs = _fetch_slugs_from_commoncrawl()
+    if cc_slugs - slugs:
+        slugs.update(cc_slugs)
+        _save_slug_cache(slugs)
+
+    # Fallback: seed from Wayback CDX if cache is nearly empty
     if len(slugs) < 50:
         new_slugs = _fetch_slugs_from_cdx()
         if new_slugs:
@@ -429,6 +447,94 @@ def _fetch_slugs_from_cdx() -> set[str]:
     return slugs
 
 
+# Common Crawl: non-profit monthly web crawl published as a free public index.
+# Its CDX API is designed for this kind of lookup — no key, no account. Usage
+# policy: stay polite (a few index requests per run) and send a descriptive UA.
+_CC_INDEX = "https://index.commoncrawl.org"
+_CC_HEADERS = {
+    "User-Agent": "RunEvent86-slug-discovery/1.0 "
+                  "(https://github.com/juulieen/ou-court-le-club)"
+}
+_CC_CRAWL_COUNT = 2  # latest N monthly crawls
+
+# White-label registration hosts (Njuko API under the hood) with their API
+# base. register-utmb.world shares the main njuko API. Cache entries for these
+# are stored as "domain/slug" so validation knows which API base to query.
+_WHITELABEL_API_BASES = {
+    "in.register-utmb.world": NJUKO_API,
+    "in.sporkrono-inscriptions.fr": "https://front-api.sporkrono-inscriptions.fr",
+    "in.sports107.com": "https://front-api.sports107.com",
+    "in.timeto.com": "https://front-api.timeto.com",
+}
+
+_CC_DOMAINS = ("in.njuko.com", "www.njuko.net", *_WHITELABEL_API_BASES)
+
+
+def _extract_cc_entry(url: str) -> str | None:
+    """Extract a slug-cache entry from a crawled URL.
+
+    njuko.com/net URLs -> plain slug; white-label URLs -> "domain/slug".
+    """
+    slug = _extract_slug(url)
+    if slug:
+        return slug
+    for domain in _WHITELABEL_API_BASES:
+        # [/?#]|$ after the slug rejects junk like /llms.txt
+        m = re.search(re.escape(domain) + r"/([a-zA-Z0-9_-]{4,})(?:[/?#]|$)", url)
+        if m:
+            slug = m.group(1).lower()
+            if slug not in _SLUG_BLACKLIST:
+                return f"{domain}/{slug}"
+    return None
+
+
+def _fetch_slugs_from_commoncrawl() -> set[str]:
+    """Query Common Crawl's CDX index for Njuko event URLs.
+
+    Much better coverage than Wayback for recent registration pages
+    (Wayback only knows pages someone archived). One request per domain
+    per crawl (~12 total).
+    """
+    slugs = set()
+    try:
+        resp = requests.get(f"{_CC_INDEX}/collinfo.json", headers=_CC_HEADERS,
+                            timeout=20)
+        resp.raise_for_status()
+        crawl_ids = [c["id"] for c in resp.json()[:_CC_CRAWL_COUNT]]
+    except Exception:
+        return slugs
+
+    for crawl_id in crawl_ids:
+        for domain in _CC_DOMAINS:
+            try:
+                resp = requests.get(
+                    f"{_CC_INDEX}/{crawl_id}-index",
+                    params={
+                        "url": f"{domain}/*",
+                        "output": "json",
+                        "filter": "status:200",
+                        "collapse": "urlkey",
+                        # well above current njuko URL count (~300); if the
+                        # index ever exceeds this, add page= pagination
+                        "pageSize": "10000",
+                    },
+                    headers=_CC_HEADERS,
+                    timeout=60,
+                )
+                resp.raise_for_status()
+            except Exception:
+                continue
+            for line in resp.text.splitlines():
+                try:
+                    rec = json.loads(line)
+                except ValueError:
+                    continue
+                entry = _extract_cc_entry(rec.get("url", ""))
+                if entry:
+                    slugs.add(entry)
+    return slugs
+
+
 def _extract_slug(url: str) -> str | None:
     match = re.search(r"njuko\.(?:com|net)/([a-zA-Z0-9_-]+)", url)
     if not match:
@@ -456,11 +562,23 @@ def _validate_slugs_concurrent(slugs: set[str]) -> list[dict]:
     return races
 
 
-def _validate_slug(slug: str) -> dict | None:
-    """Check if a slug corresponds to a valid, current Njuko edition."""
+def _validate_slug(entry: str) -> dict | None:
+    """Check if a cache entry corresponds to a valid, current Njuko edition.
+
+    Entries are plain slugs for njuko.com/net, or "domain/slug" for
+    white-label platforms (validated against their own API base).
+    """
+    if "/" in entry:
+        domain, slug = entry.split("/", 1)
+        api_base = _WHITELABEL_API_BASES.get(domain, NJUKO_API)
+        url = f"https://{domain}/{slug}"
+    else:
+        slug = entry
+        api_base = NJUKO_API
+        url = f"https://in.njuko.com/{slug}"
     try:
         resp = requests.get(
-            f"{NJUKO_API}/edition/url/{slug}",
+            f"{api_base}/edition/url/{slug}",
             headers={"User-Agent": BROWSER_UA},
             timeout=8,
         )
@@ -507,7 +625,7 @@ def _validate_slug(slug: str) -> dict | None:
 
     return {
         "platform": "njuko",
-        "url": f"https://in.njuko.com/{slug}",
+        "url": url,
         "name": name,
         "date": date_str,
         "location": location,
