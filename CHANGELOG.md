@@ -38,6 +38,15 @@ Historique des évolutions notables. Format inspiré de
   personne sous plusieurs graphies (`ROMAIN RICHARD`, `Romain RICHARD`,
   `RICHARD\xa0Romain`), gonflant le décompte à 85 coureurs distincts pour 36 réels.
   Chaque nom détecté est replié sur son orthographe de `config.yml`.
+- **Klikego : lieux parasités sur les cartes « Dernière minute ».** La découverte
+  prenait le premier `div` dont le texte ressemblait à « Ville, Département (XX) »,
+  or `select("div")` renvoie les parents avant les feuilles et le texte concaténé
+  d'un parent satisfait le motif tout autant : le lieu devenait « Dernière
+  minute20 sept. 2026TRAIL DES GORGES…Montbron, 16 », non géocodable (course
+  absente de la carte) ou géocodé de travers (Pons projeté dans le Cantal). Seuls
+  les `div` feuilles sont désormais retenus. Le lieu issu de la découverte prime
+  aussi sur celui d'une entrée de cache, pour réparer sans attendre l'expiration
+  du TTL.
 - **Le site ne dépend plus du chargement de la carte.** `loadData()` était
   accroché à `map.on("load")` : sans clé MapTiler valide, le style ne chargeait
   jamais et la page entière restait vide — pas seulement le fond de carte. Les

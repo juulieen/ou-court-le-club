@@ -727,6 +727,14 @@ def run():
                 # Forward structured metadata from discovery (e.g. race_type)
                 if rc.get("race_type") and not data.get("race_type"):
                     data["race_type"] = rc["race_type"]
+                # Discovery is the source of truth for the location on every
+                # platform that provides one, so a fresh run repairs entries
+                # cached by a buggy parser instead of waiting out their TTL.
+                # Platforms whose scraper derives a better location (IPITOS
+                # reads the town from the .clax) return "" here and are left
+                # alone.
+                if rc.get("location") and rc["location"] != data.get("location"):
+                    data["location"] = rc["location"]
                 cached_results.append(data)
 
     total = len(races_config)

@@ -534,6 +534,12 @@ def _parse_event_card_v8(link_el) -> dict | None:
     # Location: "City, Department (XX)" in a div
     location = ""
     for div in card.select("div"):
+        # Leaf divs only. select("div") yields parents first, and a parent's
+        # concatenated text ("Dernière minute20 sept. 2026…Montbron, Charente
+        # (16)") satisfies the pattern just as well, dragging the badge and the
+        # event name into the city name.
+        if div.find("div") is not None:
+            continue
         text = div.get_text(strip=True)
         loc_match = re.match(r"^([A-ZÀ-Ü].+?),\s*(.+?)\s*\((\d{2,3})\)$", text)
         if loc_match:
