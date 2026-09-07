@@ -9,6 +9,7 @@ Local cache:
     python -m scrapers.cache_cli clear --empty
     python -m scrapers.cache_cli geocache list [PATTERN]
     python -m scrapers.cache_cli geocache clear PATTERN
+    python -m scrapers.cache_cli repair-archive [--platform P] [--dry-run]
 
 CI/Prod cache (requires gh CLI):
     python -m scrapers.cache_cli ci list          # list CI caches
@@ -19,7 +20,8 @@ CI/Prod cache (requires gh CLI):
 
 Sync between local and CI:
     python -m scrapers.cache_cli sync pull        # download CI cache to local
-    python -m scrapers.cache_cli sync push        # upload local cache to CI (next run uses it)
+    python -m scrapers.cache_cli sync push        # (misnomer) offers to clear the CI cache
+                                                 # and trigger a fresh run — it uploads nothing
     python -m scrapers.cache_cli sync diff        # show differences
 """
 
@@ -38,6 +40,7 @@ DATA_DIR = ROOT / "data"
 SCRAPE_CACHE = DATA_DIR / "scrape_cache.json"
 GEOCACHE = DATA_DIR / "geocache.json"
 NJUKO_SLUGS = DATA_DIR / "njuko_slugs.json"
+ARCHIVE = DATA_DIR / "races_archive.json"
 RACES_JSON = DATA_DIR / "races.json"
 
 # Files that are synced between local and CI
@@ -307,6 +310,82 @@ def cmd_rescrape(args):
     print(f"\nDone. {found}/{len(matches)} avec membres.")
 
 
+def cmd_repair_archive(args):
+    """Refresh the event metadata of archived races that are missing fields.
+
+    Past races fall out of platform discovery, so a scraper fix never reaches
+    the copy kept in races_archive.json — they stay on the map with whatever
+    was parsed at the time (e.g. IPITOS races archived with no date and the
+    date glued onto the name). This re-scrapes them by URL and updates
+    name/date/location/race_type/distances plus coordinates.
+
+    Members are deliberately left untouched: the participant list of a
+    finished race is often offline, and the archive is the only record left.
+    """
+    import yaml
+    from .main import scrape_race, geocode_race
+
+    if not ARCHIVE.exists():
+        print("No archive at data/races_archive.json.")
+        return
+    archive = json.loads(ARCHIVE.read_text(encoding="utf-8"))
+    races = archive.get("races", [])
+
+    targets = [r for r in races if not r.get("date") or r.get("lat") is None]
+    if args.platform:
+        targets = [r for r in targets if r.get("platform") == args.platform]
+    if not targets:
+        print(f"Archive: {len(races)} race(s), none with missing metadata.")
+        return
+
+    print(f"Archive: {len(races)} race(s), {len(targets)} with missing date or coordinates:")
+    for r in targets:
+        print(f"  · [{r.get('platform')}] {r.get('date') or '(no date)':12} {r.get('name', '?')[:55]}")
+    if args.dry_run:
+        print("\n--dry-run: nothing written.")
+        return
+
+    config_path = ROOT / "config.yml"
+    if not config_path.exists():
+        print("config.yml not found — cannot re-scrape.")
+        return
+    club = (yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}).get("club", {})
+    patterns = club.get("patterns", [])
+    known_members = club.get("known_members", [])
+
+    print("\nRe-scraping metadata...")
+    fixed = 0
+    for race in targets:
+        # Seed with what is already archived: a scraper that echoes back its
+        # race_config then returns the current values rather than a placeholder.
+        rc = {"url": race.get("url", ""), "platform": race.get("platform", ""),
+              "name": race.get("name", ""), "date": race.get("date", ""),
+              "location": race.get("location", "")}
+        try:
+            data = scrape_race(rc, patterns, known_members)
+        except Exception as e:
+            print(f"  ✗ {race.get('name', '?')[:45]} — {e}")
+            continue
+        if not data:
+            print(f"  ✗ {race.get('name', '?')[:45]} — unreachable")
+            continue
+
+        for field in ("name", "date", "location", "race_type", "distances"):
+            if data.get(field):
+                race[field] = data[field]
+        geocode_race(race)
+        fixed += 1
+        print(f"  ✓ {race.get('date', ''):12} {race.get('location', ''):22} {race.get('name', '?')[:45]}")
+
+    ARCHIVE.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"\nDone. {fixed}/{len(targets)} repaired — local archive saved.")
+    print("This repairs the LOCAL archive only: there is no way to upload it to CI.")
+    print("To repair the CI archive, run the workflow with repair_archive=true:")
+    print("  gh workflow run scrape.yml -f repair_archive=true --repo juulieen/ou-court-le-club")
+    print("Do NOT use `ci clear --all` / `ci run --fresh` — that deletes the CI")
+    print("archive, losing every past race no longer surfaced by discovery.")
+
+
 def _gh(*args) -> subprocess.CompletedProcess:
     """Run a gh CLI command."""
     return subprocess.run(["gh", *args], capture_output=True, text=True)
@@ -548,6 +627,13 @@ def main():
     p_ci.add_argument("--fresh", action="store_true", help="Clear cache before running")
 
     # sync
+    p_repair = sub.add_parser(
+        "repair-archive",
+        help="Re-scrape metadata of archived races missing a date or coordinates",
+    )
+    p_repair.add_argument("--platform", help="Only repair this platform")
+    p_repair.add_argument("--dry-run", action="store_true", help="List targets without writing")
+
     p_sync = sub.add_parser("sync", help="Sync cache between local and CI")
     p_sync.add_argument("action", choices=["pull", "push", "diff"])
 
@@ -567,6 +653,8 @@ def main():
         cmd_geocache(args)
     elif args.command == "ci":
         cmd_ci(args)
+    elif args.command == "repair-archive":
+        cmd_repair_archive(args)
     elif args.command == "sync":
         cmd_sync(args)
     else:

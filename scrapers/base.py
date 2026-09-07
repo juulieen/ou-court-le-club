@@ -25,6 +25,11 @@ class RaceResult:
     members: list[Member] = field(default_factory=list)
     member_count: int = 0
     last_scraped: str = ""
+    # Optional metadata a platform can provide directly (e.g. IPITOS .clax
+    # headers). Left empty when the platform exposes nothing; main._enrich_race
+    # then falls back to detecting them from the race name and bibs.
+    race_type: str = ""
+    distances: list[float] = field(default_factory=list)
 
 
 def normalize_text(text: str) -> str:
@@ -40,17 +45,17 @@ def matches_club(club_name: str, patterns: list[str]) -> bool:
     return any(re.search(pattern, normalized, re.IGNORECASE) for pattern in patterns)
 
 
-def matches_known_member(name: str, known_members: list[str]) -> bool:
-    """Check if a participant name matches any known club member.
+def _match_known_member(name: str, known_members: list[str]) -> str | None:
+    """Return the config.yml entry matching a participant name, else None.
 
     Matching is order-independent and accent-insensitive:
     "Jean Dupont" matches "DUPONT Jean", "Dupont Jean", etc.
     """
     if not name or not known_members:
-        return False
+        return None
     name_parts = set(normalize_text(name).lower().split())
     if len(name_parts) < 2:
-        return False
+        return None
     for member in known_members:
         member_parts = set(normalize_text(member).lower().split())
         if len(member_parts) < 2:
@@ -58,8 +63,27 @@ def matches_known_member(name: str, known_members: list[str]) -> bool:
         # All parts of the shorter name must appear in the longer
         shorter, longer = (name_parts, member_parts) if len(name_parts) <= len(member_parts) else (member_parts, name_parts)
         if shorter.issubset(longer):
-            return True
-    return False
+            return member
+    return None
+
+
+def matches_known_member(name: str, known_members: list[str]) -> bool:
+    """Check if a participant name matches any known club member."""
+    return _match_known_member(name, known_members) is not None
+
+
+def canonical_member_name(name: str, known_members: list[str]) -> str:
+    """Fold a participant name onto its config.yml spelling.
+
+    Platforms spell the same runner in incompatible ways — "ROMAIN RICHARD",
+    "Romain RICHARD", "RICHARD Romain", or with a non-breaking space between the
+    two parts — which inflates the runner count and splits the per-member filter
+    into several entries.
+    Names that match no known member are returned with whitespace normalized
+    (non-breaking spaces included), so they at least dedupe against themselves.
+    """
+    cleaned = " ".join(name.split())
+    return _match_known_member(cleaned, known_members) or cleaned
 
 
 class BaseScraper(ABC):

@@ -14,11 +14,31 @@ from xml.etree import ElementTree
 import requests
 from bs4 import BeautifulSoup
 
-from .base import BaseScraper, Member, RaceResult, matches_club, matches_known_member
+from .base import BaseScraper, Member, RaceResult, matches_club, matches_known_member, normalize_text
 
 LIVE_BASE = "https://live.ipitos.com"
 BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 HEADERS = {"User-Agent": BROWSER_UA}
+
+# Accent-stripped keys — _parse_french_date normalizes before lookup.
+_MONTHS = {
+    "janvier": "01", "fevrier": "02", "mars": "03", "avril": "04",
+    "mai": "05", "juin": "06", "juillet": "07", "aout": "08",
+    "septembre": "09", "octobre": "10", "novembre": "11", "decembre": "12",
+}
+
+
+def _parse_french_date(text: str) -> str:
+    """Parse "dimanche 29 mars 2026" into "2026-03-29". Empty if unparseable."""
+    if not text:
+        return ""
+    match = re.search(r"(\d{1,2})\s+(\w+)\s+(\d{4})", text)
+    if not match:
+        return ""
+    month = _MONTHS.get(normalize_text(match.group(2)).lower(), "")
+    if not month:
+        return ""
+    return f"{match.group(3)}-{month}-{match.group(1).zfill(2)}"
 
 
 class IpitosScraper(BaseScraper):
@@ -39,19 +59,24 @@ class IpitosScraper(BaseScraper):
         if not clax_url:
             return None
 
-        # Download and parse the XML for club members
-        members = self._parse_clax(clax_url)
+        # Download and parse the XML for club members and event metadata
+        members, meta = self._parse_clax(clax_url)
 
+        # The .clax header is authoritative: it carries a clean event name, an
+        # ISO date, the host town and the list of courses. Prefer it over the
+        # values guessed during discovery.
         return RaceResult(
             id=f"ipitos-{slug}",
-            name=name,
-            date=date,
-            location=location,
+            name=meta.get("name") or name,
+            date=meta.get("date") or date,
+            location=meta.get("location") or location,
             platform="ipitos",
             url=url,
             members=members,
             member_count=len(members),
             last_scraped=datetime.now(timezone.utc).isoformat(),
+            race_type=meta.get("race_type", ""),
+            distances=meta.get("distances", []),
         )
 
     def _extract_slug(self, url: str) -> str | None:
@@ -119,22 +144,23 @@ class IpitosScraper(BaseScraper):
 
         return None
 
-    def _parse_clax(self, clax_url: str) -> list[Member]:
-        """Download and parse a .clax XML file for club members.
+    def _parse_clax(self, clax_url: str) -> tuple[list[Member], dict]:
+        """Download and parse a .clax XML file for club members and metadata.
 
         Uses dual matching: club patterns (c attribute) AND known member
-        names (n attribute).
+        names (n attribute). Also returns the event metadata carried by the
+        root <Epreuve> element (see _parse_meta).
         """
         try:
             resp = requests.get(clax_url, headers=HEADERS, timeout=15)
             resp.raise_for_status()
         except requests.RequestException:
-            return []
+            return [], {}
 
         try:
             root = ElementTree.fromstring(resp.content)
         except ElementTree.ParseError:
-            return []
+            return [], {}
 
         members = []
         seen = set()
@@ -162,7 +188,51 @@ class IpitosScraper(BaseScraper):
                 seen.add(name_key)
                 members.append(Member(name=name, bib=parcours))
 
-        return members
+        return members, self._parse_meta(root)
+
+    @staticmethod
+    def _parse_meta(root) -> dict:
+        """Extract event metadata from the root <Epreuve> element.
+
+        The header carries everything the index page lacks:
+          nom="Tout Poitiers Court" organisateur="Poitiers" dt1="2026-04-10"
+          ids="CAP_trail"
+        plus the list of courses in <PropCourses><C crs="10 Km" />.
+        """
+        meta = {
+            "name": (root.get("nom") or "").strip(),
+            # The organiser field holds the host town ("Poitiers", "Varrains").
+            "location": (root.get("organisateur") or "").strip(),
+            # Older editions carry no dt1, only the French "dates" label.
+            "date": (root.get("dt1") or "").strip() or _parse_french_date(root.get("dates") or ""),
+        }
+
+        # ids="CAP_route" / "CAP_trail" — absent on some events.
+        ids = (root.get("ids") or "").lower()
+        if "trail" in ids:
+            meta["race_type"] = "trail"
+        elif "route" in ids:
+            meta["race_type"] = "route"
+
+        # <PropCourses><C crs="Semi-Marathon" /><C crs="10 Km" /> — course names,
+        # from which distances in km can be read.
+        distances = set()
+        for course in root.findall(".//PropCourses/C"):
+            label = (course.get("crs") or "").strip()
+            if not label:
+                continue
+            for m in re.finditer(r"(\d+(?:[.,]\d+)?)\s*km\b", label, re.IGNORECASE):
+                distances.add(round(float(m.group(1).replace(",", ".")), 1))
+            # A course named "Semi-Marathon"/"Marathon" with no explicit
+            # mileage: same values as main._extract_distances, so both sources
+            # agree on 21.0 / 42.0 rather than each picking its own.
+            if re.search(r"\bsemi", label, re.IGNORECASE):
+                distances.add(21.0)
+            elif re.search(r"\bmarathon\b", label, re.IGNORECASE):
+                distances.add(42.0)
+        meta["distances"] = sorted(distances)
+
+        return meta
 
 
 # --- Event discovery ---
@@ -212,8 +282,9 @@ def discover_races() -> list[dict]:
             continue
         seen.add(slug)
 
-        # Extract event name from div.nom inside the link
-        nom_div = a.select_one("div.nom, .nom")
+        # Extract event name from the title div inside the link
+        # (live.ipitos.com uses div.name; div.nom is a legacy fallback)
+        nom_div = a.select_one("div.name, div.nom")
         if nom_div:
             name = nom_div.get_text(strip=True)
         else:
@@ -221,25 +292,13 @@ def discover_races() -> list[dict]:
         if not name or len(name) < 3:
             name = slug.replace("_", " ").replace("-", " ").title()
 
-        # Extract date from div.dt inside the link
+        # Extract date from the date div inside the link
+        # (live.ipitos.com uses div.date; div.dt is a legacy fallback)
         date_str = ""
-        dt_div = a.select_one("div.dt, .dt")
+        dt_div = a.select_one("div.date, div.dt")
         if dt_div:
-            dt_text = dt_div.get_text(strip=True)
-            # Parse French dates: "lundi 6 avril 2026", "dimanche 29 mars 2026"
-            _MONTHS = {
-                "janvier": "01", "février": "02", "mars": "03", "avril": "04",
-                "mai": "05", "juin": "06", "juillet": "07", "août": "08",
-                "septembre": "09", "octobre": "10", "novembre": "11", "décembre": "12",
-                "fevrier": "02", "aout": "08",
-            }
-            dm = re.search(r"(\d{1,2})\s+(\w+)\s+(\d{4})", dt_text)
-            if dm:
-                day = dm.group(1).zfill(2)
-                month = _MONTHS.get(dm.group(2).lower(), "")
-                year = dm.group(3)
-                if month:
-                    date_str = f"{year}-{month}-{day}"
+            # "lundi 6 avril 2026", "dimanche 29 mars 2026"
+            date_str = _parse_french_date(dt_div.get_text(strip=True))
 
         if not date_str:
             # Fallback: look for date patterns in parent text

@@ -5,7 +5,7 @@ Interactive map showing races where "Run Event 86" club members are registered a
 ## Architecture
 
 ```
-config.yml              -- club patterns (4 regex), known members (33), map settings, display_optin
+config.yml              -- club patterns (4 regex), known members (39), map settings, display_optin
 scrapers/
   __init__.py
   main.py               -- orchestrator: discover -> scrape -> geocode -> JSON
@@ -65,7 +65,7 @@ The `SCRAPERS` dict in `main.py` maps platform names to scraper classes (15 acti
 | **Endurance Chrono** | `endurancechrono.py` | Main page lists upcoming events | HTML table at `/fr/{slug}?list=part&order=club` | `order=club` URL param sorts by club for easier parsing |
 | **Listino** | `listino.py` | Paginated search at `/recherche/evenement` (11 per page) | HTML table at `/slug/inscrits/{race_id}/0`, Club column | |
 | **RunChrono** | `runchrono.py` | Local (dept 86) calendar at `runchrono.fr/inscription.php`; extracts OnSinscrit links from event divs | Discovery only -- produces `onsinscrit` platform entries that are scraped by `OnSinscritScraper` | No scraper class; only `discover_races()` function |
-| **IPITOS** | `ipitos.py` | Index page at `live.ipitos.com/` lists events with dates in `div.nom`/`div.dt` | Wiclax `.clax` XML files extracted from iframe `?f=` param; `<E>` elements with `n`(name), `c`(club), `p`(parcours), `d`(dossard) | Uses `live.ipitos.com` (no WAF); requires browser User-Agent header; `www.ipitos.com` is blocked by Sucuri |
+| **IPITOS** | `ipitos.py` | Index page at `live.ipitos.com/` lists events with names in `div.name` and dates in `div.date` | Wiclax `.clax` XML files extracted from iframe `?f=` param; `<E>` elements with `n`(name), `c`(club), `p`(parcours), `d`(dossard) | Uses `live.ipitos.com` (no WAF); requires browser User-Agent header; `www.ipitos.com` is blocked by Sucuri. The root `<Epreuve>` element is the authoritative source of event metadata (see below) |
 | **HelloAsso** | `helloasso.py` | Directory search via website (no auth needed) | N/A -- participants are private by design | `discover_races()` exists but returns `platform: manual`; members must be added manually in `config.yml` |
 | **SportsnConnect** | `sportsnconnect.py` | `/fr/client/events` page — all ~460 events in SSR `__NEXT_DATA__.props.pageProps.initialEditions` (single request, no pagination) | `/fr/client/events/{uuid}-{slug}` — all participants in SSR `__NEXT_DATA__.props.pageProps.initialEdition.participants`; `contact.club`, `contact.firstname`, `contact.lastname` | No API auth needed; HTML can be large (4000+ participants); timeout=60s. Filters discovery to `event.sports[].name == "Course à pied"` |
 | **Adeorun** | `adeorun.py` | `calendrier.adeorun.com/api/public/calendar2?page={N}` (20/page, upcoming only); filter `tags[].title` ∈ running set; `zip_city` = "VILLE (DEPT)" | Get `eventId` from `{sub}.adeorun.com/participants` `__NEXT_DATA__`, then `{sub}.adeorun.com/api/public/participants2?eventId={id}&page={N}&limit=20`; `name` + `team` (public club field) | No auth, no WAF. **Full dual matching** (club field `team` + name). `pCount` unreliable (use `total_hits`); `limit` hard-capped at 20; big events (> 800) use per-name search. Strong dept 86 coverage (Vienne/Deux-Sèvres/Charente) |
@@ -76,7 +76,7 @@ Club member detection uses two complementary strategies:
 
 1. **Club matching** -- Regex patterns from `config.yml` (`club.patterns`, currently 4 patterns) are tested against the club field in each registration list. The function `matches_club()` in `base.py` normalizes accents and does case-insensitive regex matching. This catches anyone who registered under a variant of "Run Event 86".
 
-2. **Name matching** -- A list of known member names from `config.yml` (`club.known_members`, currently 22 members) is checked against participant names. The function `matches_known_member()` in `base.py` does order-independent, accent-insensitive matching (e.g., "Jean Dupont" matches "DUPONT Jean"). This catches members who left the club field empty or filled it incorrectly.
+2. **Name matching** -- A list of known member names from `config.yml` (`club.known_members`, currently 39 members) is checked against participant names. The function `matches_known_member()` in `base.py` does order-independent, accent-insensitive matching (e.g., "Jean Dupont" matches "DUPONT Jean"). This catches members who left the club field empty or filled it incorrectly.
 
 Both strategies run on every platform. The `BaseScraper.find_club_members()` method handles club matching. Some platforms (Klikego, Protiming) use name matching as a fallback after club search yields 0 results; others check both simultaneously.
 
@@ -194,6 +194,12 @@ The full pipeline takes several minutes due to the number of platforms and rate 
 ## Known Limitations
 
 - **IPITOS** uses `live.ipitos.com` to bypass the Sucuri WAF on `www.ipitos.com`. Requires browser User-Agent header. If the live subdomain structure changes, discovery and scraping will break.
+- **IPITOS metadata comes from the `.clax` header, not from discovery.** The root
+  `<Epreuve>` element carries `nom` (clean event name), `organisateur` (host town,
+  used as `location`), `dt1` (ISO date; older editions only have the French
+  `dates` label), `ids` (`CAP_route`/`CAP_trail` → `race_type`) and
+  `<PropCourses><C crs="10 Km">` (→ `distances`). `_parse_meta()` reads them and
+  they take priority over what discovery guessed.
 - **HelloAsso** participants are private by design; no scraper possible. `helloasso.py` has a `discover_races()` function but participants must be added manually in `config.yml`.
 - **Njuko** discovery depends on a persistent slug cache (`njuko_slugs.json`), seeded every run from the Common Crawl CDX index (`index.commoncrawl.org`, latest 2 crawls, free, no key) — covering `in.njuko.com`, `www.njuko.net` and the white-label registration hosts (`in.register-utmb.world`, `in.sporkrono-inscriptions.fr`, `in.sports107.com`, `in.timeto.com`; cache entries prefixed `domain/slug`, validated against each platform's own `front-api.*`). Wayback Machine CDX remains as a fallback when the cache is nearly empty (< 50 slugs). Club-relevant slugs can be added to `_SEED_SLUGS` in `njuko.py`. UTMB also has its own discovery (French events only).
 - **Large events** (50k+ participants like Marathon de Paris on timeto.com) -- bulk registration fetch times out; falls back to per-name search of known members. This means club-field-only matches (members not in `known_members`) are missed on very large events.
@@ -228,6 +234,14 @@ Key commands:
 - `python -m scrapers.cache_cli list -m` — races with members
 - `python -m scrapers.cache_cli clear -p <platform>` — clear platform cache
 - `python -m scrapers.cache_cli sync diff` — compare local vs CI
+- `python -m scrapers.cache_cli repair-archive [--dry-run]` — re-scrape the event
+  metadata of archived races missing a date or coordinates. Past races drop out of
+  platform discovery, so a scraper fix never reaches them otherwise; members are
+  left untouched. **Repairs the local archive only** — `races_archive.json` has no
+  upload path (`sync push` uploads nothing; it offers `ci clear --all` + a fresh
+  run, which *deletes* the CI archive and loses every past race). To repair the CI
+  archive, run the workflow with the `repair_archive` input:
+  `gh workflow run scrape.yml -f repair_archive=true --repo juulieen/ou-court-le-club`
 - `python -m scrapers.cache_cli ci run --fresh` — clear CI cache + trigger run
 
 **Important:** Local and CI caches are independent. Code-level fixes (OVERRIDES in geocoder.py, _SEED_SLUGS in njuko.py) propagate automatically. Cache-level fixes (scrape_cache entries) do NOT sync — use `ci run --fresh` to rebuild CI cache.
@@ -300,6 +314,14 @@ Three stats computed in `updateStats()`:
 - Red pulsing "J-N" / "Demain" / "Aujourd'hui" badge on races within 7 days
 - `getCountdownLabel()` in `app.js` computes the label from date string
 - Only shown in sidebar cards (not popups — redundant with full date display)
+
+### Chargement carte / données (découplés)
+`init()` lance `loadData()` immédiatement, sans attendre la carte. Seul
+`setupMapLayers()` (qui appelle `addSource`/`addLayer`, lesquels exigent un style
+chargé) est différé via `whenMapReady()`. Conséquence : si la clé MapTiler manque
+ou est invalide, la liste, les stats et les filtres restent utilisables — avant,
+tout était accroché à `map.on("load")` et le site entier restait vide. Sans clé,
+le style retombe sur `demotiles.maplibre.org` pour rester testable en local.
 
 ### Legend
 Map overlay (not in sidebar) — positioned bottom-left on desktop, top-left on mobile. Semi-transparent background with backdrop blur.

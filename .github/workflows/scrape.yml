@@ -9,6 +9,10 @@ on:
         description: 'Skip scraping (deploy-only, uses cached data)'
         type: boolean
         default: false
+      repair_archive:
+        description: 'Re-scrape metadata of archived races missing a date or coordinates'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -55,6 +59,13 @@ jobs:
           key: scraper-data-${{ github.run_id }}
           restore-keys: |
             scraper-data-
+
+      # Past races leave platform discovery, so a scraper fix never reaches the
+      # copy kept in races_archive.json. This repairs them in place, in the CI
+      # cache — the local `repair-archive` cannot be uploaded. Off by default.
+      - name: Repair archived race metadata
+        if: ${{ !inputs.skip_scrape && inputs.repair_archive }}
+        run: python -m scrapers.cache_cli repair-archive
 
       - name: Run scrapers
         if: ${{ !inputs.skip_scrape }}

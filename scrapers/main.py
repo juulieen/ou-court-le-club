@@ -19,7 +19,7 @@ from pathlib import Path
 
 import yaml
 
-from .base import Member, RaceResult, normalize_text, matches_known_member
+from .base import Member, RaceResult, normalize_text, matches_known_member, canonical_member_name
 from .geocoder import geocode
 from .chronometrage import ChronometrageScraper
 from .chronometrage import discover_races as chronometrage_discover
@@ -279,8 +279,69 @@ def _extract_distances(bibs: list[str]) -> list[float]:
     return sorted(distances)
 
 
-def _enrich_race(race: dict) -> dict:
+def _canonicalize_members(race: dict, known_members: list[str]) -> None:
+    """Fold member names onto their config.yml spelling, in place.
+
+    Platforms return the same runner under several spellings, so a race can
+    end up listing "ROMAIN RICHARD" and "RICHARD Romain" as two people. Folding
+    them keeps the runner count honest; identical names left over are merged,
+    keeping every distinct bib.
+    """
+    merged: dict[str, dict] = {}
+    bibs: dict[str, list[str]] = {}
+    for member in race.get("members", []):
+        name = canonical_member_name(member.get("name", ""), known_members)
+        bib = member.get("bib", "")
+        if name not in merged:
+            merged[name] = {**member, "name": name}
+            bibs[name] = [bib] if bib else []
+        elif bib and bib not in bibs[name]:
+            bibs[name].append(bib)
+    for name, entry in merged.items():
+        entry["bib"] = " / ".join(bibs[name])
+    race["members"] = list(merged.values())
+    race["member_count"] = len(merged)
+
+
+def geocode_race(race: dict, verbose: bool = False) -> bool:
+    """Geocode a race in place. Returns True if a lookup set new coordinates.
+
+    Tries the platform-provided location first, then the race name, then the
+    city names extracted from it. Shared with cache_cli's archive repair so
+    both paths resolve places the same way.
+    """
+    if race.get("lat") is not None and race.get("lng") is not None:
+        # Already has coords (from scraper or cache). Keep if location
+        # was provided by the platform (trustworthy).
+        if race.get("location", "").strip():
+            return False
+        # No location field — coords came from name-based geocoding.
+        # Strip them so we re-geocode using the (possibly corrected) cache.
+        race.pop("lat", None)
+        race.pop("lng", None)
+
+    queries = [race.get("location", ""), race.get("name", "")]
+    name = race.get("name", "")
+    if name:
+        for candidate in _extract_location_from_name(name):
+            if candidate.lower() != name.lower() and candidate not in queries:
+                queries.append(candidate)
+
+    for query in queries:
+        if not query:
+            continue
+        if verbose:
+            print(f"  Geocoding '{query}'...")
+        coords = geocode(query)
+        if coords:
+            race["lat"], race["lng"] = coords
+            return True
+    return False
+
+
+def _enrich_race(race: dict, known_members: list[str] | None = None) -> dict:
     """Add race_type and distances fields to a race dict."""
+    _canonicalize_members(race, known_members or [])
     bibs = [m.get("bib", "") for m in race.get("members", []) if m.get("bib")]
     # Use platform-provided race_type if already set, else detect from text
     if not race.get("race_type"):
@@ -346,7 +407,7 @@ def save_data(
 ) -> None:
     # Enrich races with type and distances before saving
     for race in data.get("races", []):
-        _enrich_race(race)
+        _enrich_race(race, known_members)
 
     # Full version with member names (local only, gitignored)
     DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -569,7 +630,7 @@ def scrape_race(rc: dict, patterns: list[str], known_members: list[str]) -> dict
         data = asdict(race)
         # Forward structured metadata from discovery (e.g. race_type from
         # chronometrage.com tourism_category) so _enrich_race can use it.
-        if rc.get("race_type"):
+        if rc.get("race_type") and not data.get("race_type"):
             data["race_type"] = rc["race_type"]
         if rc.get("distances"):
             data.setdefault("distances", [])
@@ -742,33 +803,8 @@ def run():
     geo_start = time.time()
     geo_count = 0
     for race in results:
-        if race.get("lat") is not None and race.get("lng") is not None:
-            # Already has coords (from scraper or cache). Keep if location
-            # was provided by the platform (trustworthy).
-            if race.get("location", "").strip():
-                continue
-            # No location field — coords came from name-based geocoding.
-            # Strip them so we re-geocode using the (possibly corrected) cache.
-            race.pop("lat", None)
-            race.pop("lng", None)
-
-        # Build geocoding queries: location field, race name, cleaned name
-        queries = [race.get("location", ""), race.get("name", "")]
-        name = race.get("name", "")
-        if name:
-            candidates = _extract_location_from_name(name)
-            for c in candidates:
-                if c.lower() != name.lower() and c not in queries:
-                    queries.append(c)
-        for query in queries:
-            if not query:
-                continue
-            print(f"  Geocoding '{query}'...")
-            coords = geocode(query)
-            if coords:
-                race["lat"], race["lng"] = coords
-                geo_count += 1
-                break
+        if geocode_race(race, verbose=True):
+            geo_count += 1
 
     no_coords = sum(1 for r in results if r.get("lat") is None)
     print(f"  {geo_count} geocodes, {no_coords} sans coordonnees ({_elapsed(geo_start)})")
@@ -779,7 +815,7 @@ def run():
     print(f"{'─'*60}")
     # Enrich fresh races before archiving so the archive stores complete data
     for race in results:
-        _enrich_race(race)
+        _enrich_race(race, known_members)
 
     # Merge into the persistent archive: past races stay on the map, and we get
     # the list of races detected for the first time (for WhatsApp notifications).

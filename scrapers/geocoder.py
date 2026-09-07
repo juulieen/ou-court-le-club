@@ -24,6 +24,17 @@ OVERRIDES: dict[str, tuple[float, float] | None] = {
     "trail du loup blanc 2026 - 20e anniversaire": (46.17, 1.87),
     "loup blanc 2026 - 20e anniversaire": (46.17, 1.87),
     "loup blanc": (46.17, 1.87),
+    # La Baïlla Run — Saint-Georges-lès-Baillargeaux (86). OnSinscrit exposes
+    # the event nickname ("BaillaRun") in place of a town, which BAN can't match.
+    "baillarun": (46.67, 0.41),
+    "la baïlla run des galopins baillargeois": (46.67, 0.41),
+    # Laval Urban Trail — Laval (Mayenne). BAN's bare "Laval" lands on a
+    # hamlet in the Alpes-Maritimes.
+    "laval": (48.06, -0.77),
+    # Corrida de Magné — Magné (Deux-Sèvres, near Niort), not the Magné in
+    # Haute-Vienne that BAN returns, nor the one in the Vienne.
+    "magné": (46.31, -0.55),
+    "magne": (46.31, -0.55),
     # Marathon de Nantes — BAN returns "Rue de Marathon" in Rennes
     "abalone marathon de nantes 2023": (47.24, -1.56),
     "abalone marathon de nantes 2024": (47.24, -1.56),

@@ -15,6 +15,12 @@ declare const maplibregl: any;
   let map: any;
   let allRaces: any[] = [];
   let raceGroups: any[] = []; // grouped by event (multi-edition)
+  // Derniers groupes effectivement rendus (= filtres courants). setupMapLayers
+  // s'en sert pour amorcer la source : sur un deep-link #race/{id}, renderAll()
+  // sort en mode detail et ne peut pas reajuster la source apres coup.
+  // hasRendered distingue « pas encore rendu » de « rendu, mais vide ».
+  let renderedGroups: any[] = [];
+  let hasRendered = false;
   let currentPopup: any = null;
   let detailMode = false;
   const counterIntervals: Record<string, ReturnType<typeof setInterval>> = {};
@@ -62,7 +68,11 @@ declare const maplibregl: any;
   function init() {
     map = new maplibregl.Map({
       container: "map",
-      style: `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${MAPTILER_KEY}`,
+      // Sans clé MapTiler (dev local, ou clé expirée), on retombe sur le style
+      // libre de MapLibre : un fond sommaire vaut mieux qu'une carte blanche.
+      style: MAPTILER_KEY
+        ? `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${MAPTILER_KEY}`
+        : "https://demotiles.maplibre.org/style.json",
       center: [0.34, 46.58],
       zoom: 6,
       maxZoom: 17,
@@ -70,14 +80,24 @@ declare const maplibregl: any;
 
     map.addControl(new maplibregl.NavigationControl(), "top-right");
 
-    map.on("load", () => {
-      loadData();
-    });
-
     setupSidebar();
     setupLegalModal();
     setupCalendarModal();
     window.addEventListener("hashchange", handleRoute);
+
+    // Les données se chargent en parallèle du style : si le style ne répond
+    // jamais (clé absente ou invalide), la liste, les stats et les filtres
+    // restent utilisables. Avant, tout était accroché à map.on("load") et le
+    // site entier restait vide.
+    loadData();
+  }
+
+  // Exécute fn dès que le style de la carte est prêt (immédiatement s'il l'est
+  // déjà). Réservé aux opérations qui exigent un style chargé : addSource et
+  // addLayer lèvent "Style is not done loading".
+  function whenMapReady(fn: () => void) {
+    if (map.isStyleLoaded()) fn();
+    else map.once("load", fn);
   }
 
   // Membres masqués par réaction 🚫 (homonymes), maintenus par le notifieur
@@ -128,9 +148,13 @@ declare const maplibregl: any;
         updateLastUpdated(data.last_updated);
         updateStats(allRaces);
         populateMemberFilter(allRaces);
-        setupMapLayers();
         renderAll();
         handleRoute();
+        whenMapReady(() => {
+          setupMapLayers();
+          // Réapplique les filtres courants à la source fraîchement créée.
+          renderAll();
+        });
       })
       .catch((err: Error) => {
         console.error("Erreur chargement donnees:", err);
@@ -264,7 +288,7 @@ declare const maplibregl: any;
   function setupMapLayers() {
     map.addSource("races", {
       type: "geojson",
-      data: buildGeoJSON(raceGroups),
+      data: buildGeoJSON(hasRendered ? renderedGroups : raceGroups),
       cluster: true,
       clusterMaxZoom: 8,
       clusterRadius: 18,
@@ -590,6 +614,8 @@ declare const maplibregl: any;
     });
 
     const filteredGroups = groupEditions(filtered);
+    renderedGroups = filteredGroups;
+    hasRendered = true;
 
     // Update stats to reflect current filter
     updateStats(filtered);
