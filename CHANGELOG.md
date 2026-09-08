@@ -38,6 +38,19 @@ Historique des évolutions notables. Format inspiré de
   personne sous plusieurs graphies (`ROMAIN RICHARD`, `Romain RICHARD`,
   `RICHARD\xa0Romain`), gonflant le décompte à 85 coureurs distincts pour 36 réels.
   Chaque nom détecté est replié sur son orthographe de `config.yml`.
+- **Alerte sur les plateformes muettes.** Un site refondu répond HTTP 200 sans
+  correspondre aux sélecteurs : la découverte rend 0 course sans lever d'erreur
+  et le run reste vert — c'est ainsi que Protiming est passé inaperçu plusieurs
+  jours. La phase 1 récapitule désormais les plateformes qui n'ont rien trouvé,
+  et remonte l'avertissement dans le résumé du run GitHub Actions (`::warning::`)
+  plutôt que de le noyer dans le log.
+- **Protiming : découverte muette depuis la refonte du site.** `protiming.fr` a
+  été reconstruit en SPA Tailwind : `/Runnings/liste/…` redirige vers `/events`
+  et `div.panel-container` a disparu, donc la découverte trouvait **0 course**
+  — sans erreur ni exception, le run restait vert. Réécriture sur les nouvelles
+  routes (`/events?page={N}`, `/events/{id}-{slug}/runners`) : **242 courses**
+  redécouvertes, et le filtre serveur `?club=` restaure le matching par champ
+  club, qui capte les membres absents de `known_members`.
 - **Klikego : lieux parasités sur les cartes « Dernière minute ».** La découverte
   prenait le premier `div` dont le texte ressemblait à « Ville, Département (XX) »,
   or `select("div")` renvoie les parents avant les feuilles et le texte concaténé

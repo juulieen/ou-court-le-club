@@ -1,35 +1,66 @@
 """Scraper for Protiming platform.
 
-Protiming (protiming.fr) is a race timing/registration platform.
-- Event list filterable by department: /Runnings/liste?dep=86
-- Registration list: /Runnings/registers/{eventId}
-- Club filter via URL: /Runnings/registers/{eventId}/searchclub:{name}/distance:0/category:0
-- Table #lstParticipants with columns: Distance, Nom, Prenom, Categorie, Club
-- Server-side pagination: /Runnings/registers/{eventId}/page:{n}
+Protiming (protiming.fr) was rebuilt as a Tailwind SPA (Sept 2026). The old
+`/Runnings/*` routes now redirect to `/events`, and `#lstParticipants` /
+`searchclub:` are gone.
+
+- Event list: `/events?page={n}` — 14 cards per page, each linking to
+  `/events/{id}-{slug}`. Pagination ends when a page repeats known events.
+- Registration list: `/events/{id}-{slug}/runners` — server-rendered table,
+  50 rows per page, columns: Dossard, Épreuve, Nom/Prénom, Catégorie, Club.
+- Server-side filters: `?club={text}` (case-insensitive substring, so "rtv"
+  matches "RTV28" and "bonneval judo RTV28") and `?q={text}` (name/bib).
+
+The club filter is what makes Protiming valuable: it finds members who are
+not in `known_members`, without downloading full participant lists.
 """
 
 import re
 from datetime import datetime, timezone
-from urllib.parse import quote
 
 import requests
 from bs4 import BeautifulSoup
 
-from .base import BaseScraper, Member, RaceResult, normalize_text
+from .base import BaseScraper, Member, RaceResult, matches_club, matches_known_member
+
+BASE_URL = "https://www.protiming.fr"
+EVENT_HREF_RE = re.compile(r"^/events/(\d+)-[^/]+$")
+# "11 septembre 2026" on the event cards, or a range "12–13 septembre 2026"
+# (about one card in five) — the first day is the one we want.
+DATE_RE = re.compile(
+    r"\b(\d{1,2})(?:\s*[–-]\s*\d{1,2})?\s+([a-zéèûôà]+)\.?\s+(\d{4})\b",
+    re.IGNORECASE,
+)
+# "Châlette-sur-Loing (45)" — city then department number.
+LOCATION_RE = re.compile(r"^(.+?)\s*\((\d{2,3})\)$")
+
+MONTHS_FR = {
+    "janvier": "01", "fevrier": "02", "février": "02", "mars": "03",
+    "avril": "04", "mai": "05", "juin": "06", "juillet": "07",
+    "aout": "08", "août": "08", "septembre": "09", "octobre": "10",
+    "novembre": "11", "decembre": "12", "décembre": "12",
+    "janv": "01", "fev": "02", "fév": "02", "avr": "04", "juil": "07",
+    "sept": "09", "oct": "10", "nov": "11", "dec": "12", "déc": "12",
+}
+
+# A runners page holds 50 rows; stop paginating well before a huge event
+# drains the global scrape budget.
+MAX_RUNNER_PAGES = 20
 
 
-def _names_match(name1: str, name2: str) -> bool:
-    """Check if two names refer to the same person (order-independent)."""
-    parts1 = set(normalize_text(name1).lower().split())
-    parts2 = set(normalize_text(name2).lower().split())
-    shorter, longer = (parts1, parts2) if len(parts1) <= len(parts2) else (parts2, parts1)
-    return shorter.issubset(longer) and len(shorter) >= 2
+def _parse_french_date(text: str) -> str:
+    """Parse "11 septembre 2026" into "2026-09-11". Empty if unparseable."""
+    match = DATE_RE.search(text)
+    if not match:
+        return ""
+    month = MONTHS_FR.get(match.group(2).lower(), "")
+    if not month:
+        return ""
+    return f"{match.group(3)}-{month}-{match.group(1).zfill(2)}"
 
 
 class ProtimingScraper(BaseScraper):
     """Scrape registered participants from Protiming event pages."""
-
-    BASE_URL = "https://www.protiming.fr"
 
     def __init__(self, patterns: list[str], known_members: list[str] | None = None):
         super().__init__(patterns)
@@ -37,26 +68,17 @@ class ProtimingScraper(BaseScraper):
 
     def scrape(self, race_config: dict) -> RaceResult | None:
         url = race_config.get("url", "")
-        name = race_config.get("name", "Course inconnue")
-        date = race_config.get("date", "")
-        location = race_config.get("location", "")
-
-        event_id = self._extract_event_id(url)
-        if not event_id:
+        slug = self._extract_event_slug(url)
+        if not slug:
             return None
 
-        # Strategy 1: search by club name
-        members = self._search_members(event_id)
-
-        # Strategy 2: search by known member last names
-        if not members and self.known_members:
-            members = self._search_by_names(event_id)
+        members = self._search_by_club(slug)
 
         return RaceResult(
-            id=f"protiming-{event_id}",
-            name=name,
-            date=date,
-            location=location,
+            id=f"protiming-{slug.split('-')[0]}",
+            name=race_config.get("name", "Course inconnue"),
+            date=race_config.get("date", ""),
+            location=race_config.get("location", ""),
             platform="protiming",
             url=url,
             members=members,
@@ -64,189 +86,143 @@ class ProtimingScraper(BaseScraper):
             last_scraped=datetime.now(timezone.utc).isoformat(),
         )
 
-    def _extract_event_id(self, url: str) -> str | None:
-        """Extract numeric event ID from Protiming URL."""
-        match = re.search(r"/(?:registers|detail)/(\d+)", url)
-        if match:
-            return match.group(1)
-        # Maybe just a bare ID
-        if url.isdigit():
-            return url
-        return None
+    @staticmethod
+    def _extract_event_slug(url: str) -> str | None:
+        """Extract "{id}-{slug}" from a Protiming event URL."""
+        match = re.search(r"/events/(\d+-[^/?#]+)", url)
+        return match.group(1) if match else None
 
-    def _search_members(self, event_id: str) -> list[Member]:
-        """Search for club members using the club filter."""
-        members = []
-        seen = set()
+    def _search_by_club(self, slug: str) -> list[Member]:
+        """Fetch registrants whose club matches, using the server-side filter.
 
-        search_terms = self._get_search_terms()
+        One request per search term instead of downloading the whole list.
+        The server filter is a loose substring match, so every row is
+        re-checked locally with the real patterns.
+        """
+        members: list[Member] = []
+        seen: set[str] = set()
 
-        for term in search_terms:
-            encoded = quote(term)
-            page = 1
-            errored = False
-            while True:
-                url = (
-                    f"{self.BASE_URL}/Runnings/registers/{event_id}"
-                    f"/searchclub:{encoded}/distance:0/category:0/page:{page}"
-                )
-                try:
-                    resp = requests.get(url, timeout=8)
-                    resp.raise_for_status()
-                except requests.RequestException:
-                    errored = True
-                    break
-
-                found = self._parse_table(resp.text)
-                if not found:
-                    break
-
-                for m in found:
-                    if m.name not in seen:
-                        members.append(m)
-                        seen.add(m.name)
-
-                # Check for next page
-                if not self._has_next_page(resp.text, page):
-                    break
-                page += 1
-
-            if errored:
-                break
+        for term in self._club_search_terms():
+            for row in self._fetch_runners(slug, {"club": term}):
+                name, club = row["name"], row["club"]
+                if name in seen:
+                    continue
+                if matches_club(club, self.patterns) or matches_known_member(
+                    name, self.known_members
+                ):
+                    seen.add(name)
+                    members.append(Member(name=name, bib=row["bib"]))
 
         return members
 
-    def _search_by_names(self, event_id: str) -> list[Member]:
-        """Search for known members by last name (limit to first 5 for performance)."""
-        members = []
-        seen_names = set()
+    def _club_search_terms(self) -> list[str]:
+        """Derive plain-text search terms from the club regex patterns.
 
-        for full_name in self.known_members:
-            parts = full_name.strip().split()
-            if not parts:
-                continue
-            last_name = parts[0] if parts[0].isupper() else parts[-1]
+        `run\\s*'?\\s*event\\s*86` yields both "run event 86" and
+        "runevent86". Since the server filter matches substrings, only the
+        shortest term of each family is kept — "run event" and "runevent"
+        cover every spelling in two requests.
+        """
+        terms: set[str] = set()
+        for pattern in self.patterns:
+            for separator in (" ", ""):
+                term = re.sub(r"\\s[*+]", separator, pattern)
+                term = re.sub(r"[^\w\s]\?", "", term)  # optional literals like '?
+                term = re.sub(r"[\\^$.*+?()\[\]{}|]", "", term)
+                term = " ".join(term.split()) if separator == " " else term.strip()
+                if len(term) >= 4:
+                    terms.add(term.lower())
+        return sorted(t for t in terms if not any(o != t and o in t for o in terms))
 
-            encoded = quote(last_name)
-            url = (
-                f"{self.BASE_URL}/Runnings/registers/{event_id}"
-                f"/search:{encoded}/distance:0/category:0"
-            )
+    def _fetch_runners(self, slug: str, params: dict) -> list[dict]:
+        """Fetch and parse the runners table, following pagination."""
+        rows: list[dict] = []
+        for page in range(1, MAX_RUNNER_PAGES + 1):
             try:
-                resp = requests.get(url, timeout=8)
+                resp = requests.get(
+                    f"{BASE_URL}/events/{slug}/runners",
+                    params={**params, "page": page},
+                    timeout=15,
+                )
                 resp.raise_for_status()
             except requests.RequestException:
-                continue
+                break
 
-            found = self._parse_table(resp.text)
-            for m in found:
-                # Verify the name matches a known member
-                if _names_match(m.name, full_name) and m.name not in seen_names:
-                    members.append(m)
-                    seen_names.add(m.name)
+            page_rows = _parse_runners_table(resp.text)
+            rows.extend(page_rows)
+            # A short page is the last one.
+            if len(page_rows) < 50:
+                break
+        return rows
 
-        return members
 
-    def _get_search_terms(self) -> list[str]:
-        """Derive simple search terms from regex patterns."""
-        terms = set()
-        for pattern in self.patterns:
-            term = pattern.replace("\\s*", " ").replace("\\s+", " ")
-            term = re.sub(r"[\\^$.*+?()[\]{}|]", "", term).strip()
-            if term:
-                terms.add(term)
-        return list(terms)
+def _parse_runners_table(html: str) -> list[dict]:
+    """Parse the runners table.
 
-    def _parse_table(self, html: str) -> list[Member]:
-        """Parse #lstParticipants table.
+    Columns: [0] Dossard, [1] Épreuve, [2] Nom / Prénom, [3] Catégorie,
+    [4] Club. An empty club shows as an em dash.
+    """
+    soup = BeautifulSoup(html, "html.parser")
 
-        Columns: [0] Distance, [1] Nom, [2] Prenom, [3] Categorie, [4] Club
-        """
-        soup = BeautifulSoup(html, "html.parser")
-        table = soup.select_one("#lstParticipants")
-        if not table:
-            return []
-
-        members = []
-        for row in table.select("tbody tr"):
-            cells = row.find_all("td")
+    # Any table on the page, not just the first one: picking `select_one`
+    # would silently return nothing the day a second table is inserted above
+    # the runners — the very failure mode this rewrite fixes.
+    for table in soup.select("table"):
+        rows = []
+        for tr in table.select("tr"):
+            cells = tr.find_all("td")
             if len(cells) < 5:
-                continue
-
-            distance = cells[0].get_text(strip=True)
-            nom = cells[1].get_text(strip=True)
-            prenom = cells[2].get_text(strip=True)
-            # cells[3] = categorie
-            # cells[4] = club (already filtered by URL param)
-
-            name = f"{prenom} {nom}".strip()
+                continue  # header row
+            name = cells[2].get_text(" ", strip=True)
             if not name:
                 continue
-
-            members.append(Member(name=name, bib=distance))
-
-        return members
-
-    def _has_next_page(self, html: str, current_page: int) -> bool:
-        """Check if there's a next page in pagination."""
-        soup = BeautifulSoup(html, "html.parser")
-        next_page = str(current_page + 1)
-        for link in soup.select(f"a[href*='page:{next_page}']"):
-            return True
-        return False
+            club = cells[4].get_text(" ", strip=True)
+            rows.append({
+                "name": name,
+                "club": "" if club in ("—", "-") else club,
+                "bib": cells[1].get_text(" ", strip=True),
+            })
+        if rows:
+            return rows
+    return []
 
 
-MONTHS_FR = {
-    "janv.": "01", "fév.": "02", "mars": "03", "avr.": "04",
-    "mai": "05", "juin": "06", "juil.": "07", "août": "08",
-    "sept.": "09", "oct.": "10", "nov.": "11", "déc.": "12",
-    "janvier": "01", "février": "02", "avril": "04",
-    "juillet": "07", "septembre": "09", "octobre": "10",
-    "novembre": "11", "décembre": "12",
-}
+# --- Event discovery ---
 
+def discover_races() -> list[dict]:
+    """Discover all upcoming races from Protiming's event list.
 
-def discover_races(departments: list[str] | None = None) -> list[dict]:
-    """Discover ALL races from Protiming's event list.
-
-    Scans all pages of the event listing. No department filter is applied
-    since the URL param doesn't work — we keep all events and let the
-    scraper check each one for club members.
+    No department filter — every event is kept and checked for club members
+    by the scraper, which is cheap thanks to the server-side club filter.
     """
-    races = []
-    seen_ids = set()
-    page = 1
+    races: list[dict] = []
+    seen: set[str] = set()
 
+    page = 1
     while True:
-        url = (
-            f"https://www.protiming.fr/Runnings/liste/page:{page}"
-            f"/sort:Running.date/direction:asc"
-        )
         try:
-            resp = requests.get(url, timeout=15)
+            resp = requests.get(
+                f"{BASE_URL}/events", params={"page": page}, timeout=15
+            )
             resp.raise_for_status()
         except requests.RequestException as e:
             print(f"  [protiming] Erreur liste page {page}: {e}")
             break
 
         soup = BeautifulSoup(resp.text, "html.parser")
-        cards = soup.select("div.panel-container")
-        if not cards:
-            break
-
-        for card in cards:
-            race = _parse_event_card(card)
-            if not race:
+        new_on_page = 0
+        for link in soup.select("a[href]"):
+            match = EVENT_HREF_RE.match(link.get("href", "").split("?")[0])
+            if not match or match.group(1) in seen:
                 continue
-
-            event_id = race.get("_event_id", "")
-            if event_id not in seen_ids:
+            race = _parse_event_card(link)
+            if race:
+                seen.add(match.group(1))
                 races.append(race)
-                seen_ids.add(event_id)
+                new_on_page += 1
 
-        # Check for next page
-        next_page = soup.select_one(f"a[href*='page:{page + 1}']")
-        if not next_page:
+        # The listing keeps serving the last page past the end.
+        if not new_on_page:
             break
         page += 1
 
@@ -254,86 +230,41 @@ def discover_races(departments: list[str] | None = None) -> list[dict]:
     return races
 
 
-def _parse_event_card(card) -> dict | None:
-    """Parse a single Protiming event card.
+def _parse_event_card(link) -> dict | None:
+    """Parse an event card.
 
-    Structure:
-        div.panel-container
-          div.row  (visible summary)
-            div > div > div.col-md-12.textleft
-              span.Cuprum          -> EVENT NAME
-              p                    -> LOCATION "City (dept)"
-            div > time.icon
-              em                   -> YEAR
-              strong               -> MONTH
-              span                 -> DAY
-          div.row.hide (hidden detail)
-            a[href*=registers]     -> REGISTRATION LIST LINK
-            a[href*=detail]        -> EVENT DETAIL LINK
+    The card is one <a> holding, in order: a registration-status badge, an
+    <h3> with the event name, then spans for the date ("11 septembre 2026"),
+    the town ("Châlette-sur-Loing (45)") and the category. Fields are matched
+    by shape rather than by position, so an extra badge cannot shift them.
     """
-    # Event name
-    name_el = card.select_one("span.Cuprum")
+    name_el = link.select_one("h3")
     if not name_el:
         return None
-    name = name_el.get_text(strip=True)
-    if not name or len(name) < 3:
+    name = name_el.get_text(" ", strip=True)
+    if len(name) < 3:
         return None
 
-    # Location: "City (dept)" in <p> tag next to the name
-    location = ""
-    dept = ""
-    loc_el = card.select_one(".textleft p, .col-md-12.textleft p")
-    if loc_el:
-        loc_text = loc_el.get_text(strip=True)
-        loc_match = re.match(r"(.+?)\s*\((\d{2,3})\)", loc_text)
-        if loc_match:
-            city = loc_match.group(1).strip()
-            dept = loc_match.group(2)
-            location = f"{city}, {dept}"
-
-    # Date from time.icon
     date_str = ""
-    time_el = card.select_one("time.icon")
-    if time_el:
-        year_el = time_el.select_one("em")
-        month_el = time_el.select_one("strong")
-        day_el = time_el.select_one("span")
-        if year_el and month_el and day_el:
-            year = year_el.get_text(strip=True)
-            month_text = month_el.get_text(strip=True).lower()
-            day = day_el.get_text(strip=True).zfill(2)
-            month = MONTHS_FR.get(month_text, "")
-            if year and month and day:
-                date_str = f"{year}-{month}-{day}"
-
-    # Registration list link
-    event_id = ""
-    reg_link = card.select_one("a[href*='/Runnings/registers/']")
-    if reg_link:
-        match = re.search(r"/Runnings/registers/(\d+)", reg_link["href"])
-        if match:
-            event_id = match.group(1)
-
-    # Fall back to detail link
-    if not event_id:
-        detail_link = card.select_one("a[href*='/Runnings/detail/']")
-        if detail_link:
-            match = re.search(r"/Runnings/detail/(\d+)", detail_link["href"])
-            if match:
-                event_id = match.group(1)
-
-    if not event_id:
-        return None
-
-    url = f"https://www.protiming.fr/Runnings/registers/{event_id}"
+    location = ""
+    for el in link.select("span, p, div"):
+        if el.find(["span", "p", "div"]) is not None:
+            continue  # leaf nodes only, a parent concatenates its children
+        text = el.get_text(" ", strip=True)
+        if not text:
+            continue
+        if not date_str:
+            date_str = _parse_french_date(text)
+        if not location:
+            loc = LOCATION_RE.match(text)
+            if loc:
+                location = f"{loc.group(1).strip()}, {loc.group(2)}"
 
     return {
         "platform": "protiming",
-        "url": url,
+        "url": f"{BASE_URL}{link['href'].split('?')[0]}",
         "name": name,
         "date": date_str,
         "location": location,
-        "source": "protiming",
-        "_event_id": event_id,
-        "_dept": dept,
+        "source": "protiming-discovery",
     }

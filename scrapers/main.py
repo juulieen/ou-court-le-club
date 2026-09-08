@@ -695,6 +695,7 @@ def run():
     print(f"  PHASE 1/4 — Decouverte ({len(discoveries)} plateformes)")
     print(f"{'─'*60}")
     discovery_start = time.time()
+    silent = []
     for i, (label, discover_fn) in enumerate(discoveries, 1):
         print(f"  [{i:2d}/{len(discoveries)}] {label:25s}", end="", flush=True)
         try:
@@ -702,8 +703,24 @@ def run():
             discovered.extend(found)
             print(f" -> {len(found):5d} courses ({_elapsed(discovery_start)})")
         except Exception as e:
+            found = []
             print(f" -> ERREUR: {e}")
+        if not found:
+            silent.append(label)
     print(f"  Total: {len(discovered)} courses decouvertes ({_elapsed(discovery_start)})")
+    if silent:
+        # A redesigned platform returns HTTP 200 with no matching selector, so
+        # discovery yields 0 without raising and the run stays green. Protiming
+        # went unnoticed that way for days — say it out loud instead.
+        message = (
+            f"{len(silent)} plateforme(s) sans aucune course, "
+            f"scraper à vérifier: {', '.join(silent)}"
+        )
+        print(f"  ⚠️  {message}")
+        if os.environ.get("GITHUB_ACTIONS"):
+            # Surface it in the run summary: a line buried in 4000 lines of log
+            # is exactly what nobody read while Protiming was dead.
+            print(f"::warning title=Découverte muette::{message}")
 
     # Merge: config takes priority, then discovered (deduplicated by URL)
     config_urls = {rc.get("url", "").rstrip("/") for rc in races_config}
