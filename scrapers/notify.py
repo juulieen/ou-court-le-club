@@ -452,7 +452,7 @@ def _download_artifact_json(filename: str) -> dict | None:
     st, body = _http(
         "GET",
         f"https://api.github.com/repos/{GH_REPO}/actions/artifacts"
-        f"?name={GH_ARTIFACT_NAME}&per_page=1",
+        f"?name={GH_ARTIFACT_NAME}&per_page=10",
         headers=headers,
         timeout=20,
     )
