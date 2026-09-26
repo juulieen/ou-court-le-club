@@ -30,6 +30,9 @@ CLI:
     python -m scrapers.notify token           # obtain a token (accept popup on T14)
     python -m scrapers.notify send            # dry-run: print what WOULD be sent
     python -m scrapers.notify send --live      # post the digest if due this month
+    python -m scrapers.notify fetch-private    # drop races_private.json (full names)
+                                               # into PRIVATE_DIR for the
+                                               # tailnet-only courses.juulieen.fr
 
 The Beeper token requires a **manual popup acceptance on the Desktop** each time
 it is obtained, so it is fetched once via ``token`` and reused for ~30 days;
@@ -46,6 +49,7 @@ it is obtained, so it is fetched once via ``token`` and reused for ~30 days;
     BEEPER_API         Beeper Desktop API   (default: http://127.0.0.1:23373)
     BEEPER_CHAT_ID     target Matrix chatID (default: "Note to self" — SAFE)
     NOTIFIED_PATH      digest state path    (default: data/notified.json)
+    PRIVATE_DIR        fetch-private target (served by the tailnet-only vhost)
     TOKEN_PATH         stored token path    (default: data/beeper_token.json)
     TOKEN_REMINDER_DAYS  remind N days before expiry (default: 3)
 """
@@ -85,6 +89,9 @@ RACES_URL = os.environ.get(
 GH_TOKEN = os.environ.get("GH_TOKEN", "")
 GH_REPO = os.environ.get("GH_REPO", "juulieen/ou-court-le-club")
 GH_ARTIFACT_NAME = os.environ.get("GH_ARTIFACT_NAME", "scraper-data")
+# Dossier servi par le vhost tailnet-only courses.juulieen.fr : la commande
+# `fetch-private` y dépose le races_private.json de l'artifact (noms complets).
+PRIVATE_DIR = os.environ.get("PRIVATE_DIR", "")
 BEEPER_API = os.environ.get("BEEPER_API", "http://127.0.0.1:23373").rstrip("/")
 # Default target is "Note to self" so nothing lands in the club group by
 # accident. Point BEEPER_CHAT_ID at the group's Matrix id once validated.
@@ -423,10 +430,10 @@ def _post_message(token: str, chat_id: str, text: str) -> tuple[bool, str]:
     return st in (200, 201), body
 
 
-def _fetch_races_full() -> list[dict] | None:
-    """Le races.json COMPLET (noms de tous les membres) depuis l'artifact
-    `scraper-data` du workflow scrape. None si non configuré ou indisponible
-    (le caller retombe alors sur le flux public, prénoms opt-in seulement)."""
+def _download_artifact_json(filename: str) -> dict | None:
+    """Download the latest `scraper-data` artifact zip and return the parsed
+    JSON of `filename` inside it. None if GH_TOKEN is unset or on any failure
+    (callers fall back / retry at the next run)."""
     if not GH_TOKEN:
         return None
     headers = {
@@ -459,11 +466,18 @@ def _fetch_races_full() -> list[dict] | None:
         with urllib.request.urlopen(req, timeout=60) as resp:
             blob = resp.read()
         with zipfile.ZipFile(io.BytesIO(blob)) as zf:
-            data = json.loads(zf.read("data/races.json").decode("utf-8"))
+            return json.loads(zf.read(filename).decode("utf-8"))
     except Exception as e:
-        print(f"⚠️ téléchargement artifact: {e}", file=sys.stderr)
+        print(f"⚠️ téléchargement artifact ({filename}): {e}", file=sys.stderr)
         return None
-    return data.get("races", [])
+
+
+def _fetch_races_full() -> list[dict] | None:
+    """Le races.json COMPLET (noms de tous les membres) depuis l'artifact
+    `scraper-data` du workflow scrape. None si non configuré ou indisponible
+    (le caller retombe alors sur le flux public, prénoms opt-in seulement)."""
+    data = _download_artifact_json("data/races.json")
+    return data.get("races", []) if data else None
 
 
 def _fetch_races() -> list[dict]:
@@ -552,6 +566,29 @@ def cmd_test(argv: list[str]) -> int:
     ok, body = _post_message(token, BEEPER_CHAT_ID, msg)
     print("✅ envoyé (rien marqué)" if ok else f"❌ échec: {body[:150]}")
     return 0 if ok else 1
+
+
+def cmd_fetch_private(argv: list[str]) -> int:
+    """Dépose le races_private.json (noms complets) de l'artifact scraper-data
+    dans PRIVATE_DIR/races.json — servi par le vhost tailnet-only
+    courses.juulieen.fr. Écriture atomique ; en cas d'échec, le fichier
+    précédent est conservé (le site garde la dernière version valide)."""
+    if not PRIVATE_DIR:
+        print("❌ PRIVATE_DIR non défini.", file=sys.stderr)
+        return 1
+    if not GH_TOKEN:
+        print("❌ GH_TOKEN requis (PAT fine-grained, Actions: read).", file=sys.stderr)
+        return 1
+    data = _download_artifact_json("data/races_private.json")
+    if data is None:
+        return 1
+    out = Path(PRIVATE_DIR) / "races.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_suffix(".tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(out)
+    print(f"✅ {len(data.get('races', []))} courses (noms complets) → {out}")
+    return 0
 
 
 def cmd_send(argv: list[str]) -> int:
@@ -666,6 +703,8 @@ def main(argv: list[str]) -> int:
         return cmd_token(rest)
     if cmd == "test":
         return cmd_test(rest)
+    if cmd == "fetch-private":
+        return cmd_fetch_private(rest)
     print(__doc__)
     return 2
 

@@ -2,3 +2,6 @@
 # 11h30 : run quotidien (le récap mensuel part le dernier jour du mois,
 # args via NOTIFY_ARGS).
 30 11 * * * /app/run.sh
+# 11h35 : récupère le races_private.json (noms complets) de l'artifact CI pour
+# la vue privée tailnet-only (courses.juulieen.fr). Lecture GitHub seule.
+35 11 * * * python /app/notify.py fetch-private

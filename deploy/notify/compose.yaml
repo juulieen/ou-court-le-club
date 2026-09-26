@@ -30,9 +30,14 @@ services:
       # tu acceptes la popup sur le laptop ; valide ~30j, rappel auto avant expiry)
       TOKEN_PATH: "/data/beeper_token.json"
       TOKEN_REMINDER_DAYS: "3"
+      # Vue privée (noms complets) : fetch-private dépose races_private.json
+      # dans /private, servi par le vhost tailnet-only courses.juulieen.fr
+      # (montage caddy : ~/server/runevent86-notify/private → /srv/…-private)
+      PRIVATE_DIR: "/private"
     volumes:
       - runevent86-notify-data:/data
       - ./public:/public
+      - ./private:/private
 
 volumes:
   runevent86-notify-data:

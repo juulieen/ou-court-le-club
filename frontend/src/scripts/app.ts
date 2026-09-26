@@ -110,6 +110,14 @@ declare const maplibregl: any;
     import.meta.env.PUBLIC_EXCLUSIONS_URL ||
     "https://run.juulieen.fr/exclusions.json";
 
+  // Vue club (noms complets de tous les membres actuels) : même schéma que le
+  // flux public, servi par le vhost tailnet-only courses.juulieen.fr. Hors
+  // tailnet le fetch échoue (ou 404 via le catch-all caddy) et on retombe
+  // silencieusement sur le flux public.
+  const PRIVATE_DATA_URL =
+    import.meta.env.PUBLIC_PRIVATE_DATA_URL ||
+    "https://courses.juulieen.fr/races.json";
+
   // --- Data loading ---
   function loadData() {
     Promise.all([
@@ -119,8 +127,19 @@ declare const maplibregl: any;
       fetch(EXCLUSIONS_URL, { cache: "no-cache" })
         .then((r: Response) => r.json())
         .catch(() => ({ members: [], excluded: [] })),
+      fetch(PRIVATE_DATA_URL, {
+        cache: "no-cache",
+        signal: (AbortSignal as any).timeout?.(4000),
+      })
+        .then((r: Response) => (r.ok ? r.json() : null))
+        .catch(() => null),
     ])
-      .then(([data, excl]: [any, any]) => {
+      .then(([publicData, excl, privateData]: [any, any, any]) => {
+        const data =
+          privateData && privateData.races ? privateData : publicData;
+        if (data === privateData) {
+          document.getElementById("private-badge")?.removeAttribute("hidden");
+        }
         const excludedRaces = new Set<string>(excl?.excluded || []);
         const exByRace = new Map<string, Set<string>>();
         for (const e of excl?.members || []) {

@@ -3,6 +3,7 @@ config.yml
 
 # Data files with personal data
 data/races.json
+data/races_private.json
 data/races_archive.json
 data/scrape_cache.json
 

@@ -98,6 +98,26 @@ se gèrent **à la main** dans `exclusions.json` (sur le serveur, `./public/`) :
 le serveur (comme les autres sous-domaines). Sans lui, caddy ne peut pas
 émettre le certif et le frontend retombe simplement sur « aucune exclusion ».
 
+## Vue privée (noms complets) — courses.juulieen.fr
+
+Une version des données avec les **noms complets de tous les membres actuels**
+est servie par un vhost caddy **bindé tailnet-only** (`bind 100.117.235.23`)
+sur `courses.juulieen.fr` — invisible depuis Internet (le catch-all y répond
+404), aucune auth : la frontière réseau fait office de protection.
+
+- Le pipeline écrit `data/races_private.json` (même schéma que le public,
+  mais `first_names` = noms complets), inclus dans l'artifact `scraper-data`.
+- Ce conteneur (`notify.py fetch-private`, cron 11h35) le télécharge via
+  `GH_TOKEN` et le dépose dans `./private/races.json` (écriture atomique ;
+  échec = version précédente conservée).
+- Caddy sert `./private` (monté `/srv/runevent86-private`) avec
+  `Access-Control-Allow-Origin *` ; le frontend public tente ce fetch au
+  chargement — succès = appareil sur le tailnet → noms complets partout ;
+  échec → affichage public normal, sans erreur visible.
+- Rewrite AdGuard `courses.juulieen.fr → 100.117.235.23` pour les appareils
+  du LAN (même pattern que `s.`/`k1.`) ; hors LAN, Tailscale doit être actif
+  sur l'appareil.
+
 ## Token Beeper (~30 jours)
 
 Obtenir un token demande d'**accepter une popup sur Beeper Desktop** — donc on

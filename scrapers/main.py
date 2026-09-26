@@ -58,6 +58,10 @@ ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "config.yml"
 DATA_PATH = ROOT / "data" / "races.json"
 DOCS_DATA_PATH = ROOT / "docs" / "data" / "races.json"
+# Private full-names version (same public schema, but first_names = full names
+# of every current member). Shipped in the private scraper-data artifact and
+# served by the tailnet-only vhost courses.juulieen.fr — never by Pages.
+PRIVATE_DATA_PATH = ROOT / "data" / "races_private.json"
 # Public iCalendar feed (subscribe via webcal://) of races with members,
 # past editions included (the calendar doubles as club history).
 ICS_PATH = ROOT / "docs" / "data" / "races.ics"
@@ -467,6 +471,26 @@ def save_data(
     DOCS_DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
     DOCS_DATA_PATH.write_text(
         json.dumps(public_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    # Private full-names version: same public schema, but first_names carries
+    # the FULL names of every (current) member. Written next to the full
+    # races.json so it lands in the private scraper-data artifact — the
+    # tailnet-only vhost serves it, GitHub Pages never sees it.
+    private_races = []
+    for race in races:
+        private_race = {k: v for k, v in race.items() if k != "members"}
+        private_race["first_names"] = [
+            m.get("name", "") for m in race.get("members", []) if m.get("name")
+        ]
+        private_races.append(private_race)
+    PRIVATE_DATA_PATH.write_text(
+        json.dumps(
+            {"last_updated": data["last_updated"], "races": private_races},
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
     )
 
     # Public calendar feed (subscribe via webcal://) — full history included,

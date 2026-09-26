@@ -110,6 +110,7 @@ jobs:
             data/njuko_slugs.json
             data/races_archive.json
             data/races.json
+            data/races_private.json
           retention-days: 7
 
       # --- Astro frontend build ---

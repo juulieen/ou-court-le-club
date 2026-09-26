@@ -35,7 +35,7 @@ jobs:
           EOF
 
       - name: Rsync to deploy dir
-        run: rsync -a --delete --exclude 'public/exclusions.json' deploy/notify/ "$DEPLOY_DIR/"
+        run: rsync -a --delete --exclude 'public/exclusions.json' --exclude 'private/' deploy/notify/ "$DEPLOY_DIR/"
 
       - name: Build & up
         run: cd "$DEPLOY_DIR" && docker compose -f compose.yaml up -d --build
