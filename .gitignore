@@ -6,6 +6,13 @@ data/races.json
 data/races_archive.json
 data/scrape_cache.json
 
+# Beeper OAuth token (secret) + état local du notifieur
+data/beeper_token.json
+data/notified.json
+
+# Staged pipeline intermediates (proto harness, may embed member names)
+data/pipeline/
+
 # docs/ is now served via Astro build artifact — only the data subdir is used by CI
 docs/css/
 docs/js/

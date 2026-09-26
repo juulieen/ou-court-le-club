@@ -1,17 +1,20 @@
-"""WhatsApp/Beeper notification for newly-detected club races.
+"""WhatsApp/Beeper notification for club races — monthly digest.
 
 **Autonomous ``send``** (the active path, used by the Docker cron) —
-self-contained, stdlib only. It fetches the public ``races.json``, diffs it
-against a persistent ``notified.json``, and posts straight to the Beeper
-Desktop HTTP API (the T14 Desktop, reachable over Tailscale):
-- each *new upcoming* race (full announcement), and
-- each *new registration* on an already-known race (member_count increase,
-  detected via a per-race snapshot stored in ``notified.json``) — **one
-  message per newly-joined member**, named only if they are in
-  ``display_optin`` (so a 🚫 reaction always targets a single person), plus
-  one grouped message for the anonymous remainder.
-Dry-run by default; pass ``--live`` to actually send. This is what
-runs daily after the scrape, in a container on the ASUS.
+self-contained, stdlib only. Once a month (first cron run of the month), it
+posts ONE single message to the Beeper Desktop HTTP API (the T14 Desktop,
+reachable over Tailscale): the digest of all upcoming races with members.
+Member names come from the FULL private ``races.json`` (GitHub artifact, via
+``GH_TOKEN``) so the recap names everyone; without a token it falls back to
+the public ``races.json`` (opt-in first names only). Dry-run by default;
+pass ``--live`` to actually send.
+
+Contexte : demande de Maxime (Team com, 2026-09-20) — les notifications au
+fil de l'eau (une par nouvelle course + une par inscrit) étaient trop
+nombreuses et trop longues, et noyaient la conversation. Le récap mensuel
+unique les remplace ; le mécanisme de correction d'homonymes par réaction 🚫
+(qui exigeait un message par membre) est abandonné avec elles — les
+exclusions se gèrent désormais à la main dans ``exclusions.json``.
 
 The older ``list``/``build``/``mark``/``clear`` commands drive a manual
 MCP-based loop over ``data/notifications_queue.json``. **That queue is not
@@ -25,7 +28,7 @@ CLI:
     python -m scrapers.notify clear           # empty the queue
     python -m scrapers.notify token           # obtain a token (accept popup on T14)
     python -m scrapers.notify send            # dry-run: print what WOULD be sent
-    python -m scrapers.notify send --live      # actually post to Beeper
+    python -m scrapers.notify send --live      # post the digest if due this month
 
 The Beeper token requires a **manual popup acceptance on the Desktop** each time
 it is obtained, so it is fetched once via ``token`` and reused for ~30 days;
@@ -33,25 +36,31 @@ it is obtained, so it is fetched once via ``token`` and reused for ~30 days;
 "Note to self" a few days before the stored token dies.
 
 ``send``/``token`` configuration (all via env, sensible defaults):
-    RACES_URL          source of races.json (default: public GitHub Pages)
+    RACES_URL          fallback races.json  (default: public GitHub Pages,
+                       opt-in first names only)
+    GH_TOKEN           fine-grained PAT (Actions: read) — enables the FULL
+                       races.json (all member names) from the private
+                       ``scraper-data`` workflow artifact
+    GH_REPO            repo owning the artifact (default: juulieen/ou-court-le-club)
     BEEPER_API         Beeper Desktop API   (default: http://127.0.0.1:23373)
     BEEPER_CHAT_ID     target Matrix chatID (default: "Note to self" — SAFE)
-    NOTIFIED_PATH      dedup log path       (default: data/notified.json)
+    NOTIFIED_PATH      digest state path    (default: data/notified.json)
     TOKEN_PATH         stored token path    (default: data/beeper_token.json)
     TOKEN_REMINDER_DAYS  remind N days before expiry (default: 3)
 """
 
 import base64
 import hashlib
+import io
 import json
 import os
-import re
 import secrets
 import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -67,6 +76,14 @@ CLUB_CHAT_ID = "22548"
 RACES_URL = os.environ.get(
     "RACES_URL", "https://juulieen.github.io/ou-court-le-club/data/races.json"
 )
+# Source privilégiée : le races.json COMPLET (noms de tous les membres),
+# publié en artifact `scraper-data` à chaque run du workflow scrape (repo
+# privé, rétention 7j, scrape quotidien donc toujours frais). Nécessite un
+# PAT fine-grained (Actions: read) ; sans lui, fallback sur RACES_URL
+# (prénoms opt-in uniquement).
+GH_TOKEN = os.environ.get("GH_TOKEN", "")
+GH_REPO = os.environ.get("GH_REPO", "juulieen/ou-court-le-club")
+GH_ARTIFACT_NAME = os.environ.get("GH_ARTIFACT_NAME", "scraper-data")
 BEEPER_API = os.environ.get("BEEPER_API", "http://127.0.0.1:23373").rstrip("/")
 # Default target is "Note to self" so nothing lands in the club group by
 # accident. Point BEEPER_CHAT_ID at the group's Matrix id once validated.
@@ -93,23 +110,12 @@ REMINDER_CHAT_ID = os.environ.get(
 # abandonne proprement au lieu de bloquer.
 OAUTH_ACCEPT_TIMEOUT = int(os.environ.get("OAUTH_ACCEPT_TIMEOUT", "60"))
 
-# Correction des homonymes : un membre réagit avec cet emoji sur une notif →
-# le membre cité par le message est masqué de la carte (PAS la course entière :
-# les autres inscrits restent visibles). Si le message ne désigne pas une seule
-# personne (plusieurs noms, membre anonyme), rien n'est masqué et une demande
-# de précision est postée dans le chat. L'id de course et le prénom sont lus
-# depuis le message lui-même (lien #race/<id>, ligne 🎉/👥) — aucune identité
-# de réacteur n'est stockée.
-HIDE_EMOJI = os.environ.get("HIDE_EMOJI", "🚫")
-_EXCL_ENV = os.environ.get("EXCLUSIONS_PATH")
-EXCLUSIONS_PATH = Path(_EXCL_ENV) if _EXCL_ENV else (ROOT / "data" / "exclusions.json")
-# Nombre de messages récents scannés pour les réactions (couvre largement).
-REACTIONS_SCAN = int(os.environ.get("REACTIONS_SCAN", "300"))
-
 _MAX_NAMES = 5
-# Id de course dans un lien #race/<id> — jusqu'au prochain espace/parenthèse,
-# pour tolérer les ids exotiques.
-_RACE_LINK_RE = re.compile(r"#race/([^\s)]+)")
+# Noms de mois pour l'en-tête du récap (index 1-12).
+_MONTHS_FR = [
+    "", "janvier", "février", "mars", "avril", "mai", "juin", "juillet",
+    "août", "septembre", "octobre", "novembre", "décembre",
+]
 
 
 def _load_queue() -> list[dict]:
@@ -138,12 +144,11 @@ def _fmt_date(iso: str) -> str:
     return iso or "date à venir"
 
 
-def _hide_hint() -> str:
-    """Ligne d'aide pour la correction des homonymes par réaction."""
-    return (
-        f"👉 Un homonyme s'est glissé dans cette notif (pas un membre du club) ? "
-        f"Réagis avec {HIDE_EMOJI} à ce message pour le retirer de la carte."
-    )
+def _member_names(item: dict) -> list[str]:
+    """Noms affichés dans les messages : noms complets (flux privé artifact)
+    si disponibles, sinon prénoms opt-in (flux public)."""
+    names = [m.get("name", "") for m in item.get("members") or [] if m.get("name")]
+    return names or (item.get("first_names") or [])
 
 
 def build_message(item: dict) -> str:
@@ -152,7 +157,7 @@ def build_message(item: dict) -> str:
     date = _fmt_date(item.get("date", ""))
     location = item.get("location") or ""
     count = item.get("member_count", 0)
-    names = item.get("first_names") or []
+    names = _member_names(item)
 
     when = f"🗓️ {date}" + (f" — {location}" if location else "")
 
@@ -177,59 +182,35 @@ def build_message(item: dict) -> str:
     site_link = f"{SITE_URL}#race/{race_id}" if race_id else SITE_URL
     lines += ["", f"🗺️ Où court le club : {site_link}"]
     lines += ["", "Qui d'autre y va ? 👀"]
-    # Auto-correction des homonymes : réagir masque le membre de la carte.
-    lines += [_hide_hint()]
     return "\n".join(lines)
 
 
-def _join_lines(item: dict) -> list[str]:
-    """Lignes communes aux messages de nouvelle inscription."""
-    name = item.get("name", "Course")
-    date = _fmt_date(item.get("date", ""))
-    location = item.get("location") or ""
-    count = item.get("member_count", 0)
-    names = item.get("first_names") or []
-
-    when = f"🗓️ {date}" + (f" — {location}" if location else "")
-    if names:
-        shown = names[:_MAX_NAMES]
-        suffix = f" +{len(names) - _MAX_NAMES}" if len(names) > _MAX_NAMES else ""
-        who = " : " + ", ".join(shown) + suffix
-    else:
-        who = ""
-    plural = "s" if count > 1 else ""
-
-    race_id = item.get("id")
-    site_link = f"{SITE_URL}#race/{race_id}" if race_id else SITE_URL
-    return [
-        "🏃 Nouvel inscrit repéré pour le club !",
+def build_digest(races: list[dict]) -> str:
+    """Le récap mensuel : UN message regroupant toutes les courses à venir
+    avec des membres (demande de Maxime, Team com 2026-09-20). Tous les noms
+    sont affichés, sans troncature — le message reste dans le groupe privé."""
+    today = date.today()
+    lines = [
+        f"🗓️ Où court le club — récap de {_MONTHS_FR[today.month]} {today.year}",
         "",
-        f"📍 {name}",
-        when,
-        "{who_line}",
-        f"👥 {count} membre{plural} inscrit{plural}{who}",
-        "",
-        f"🗺️ Où court le club : {site_link}",
-        _hide_hint(),
     ]
-
-
-def build_join_message(item: dict, name: str) -> str:
-    """Message pour UN nouvel inscrit nommé (opt-in) sur une course connue.
-    Un message par inscription : un 🚫 vise ainsi toujours une seule personne."""
-    lines = _join_lines(item)
-    lines[lines.index("{who_line}")] = f"🎉 {name} a rejoint la course !"
-    return "\n".join(lines)
-
-
-def build_anon_join_message(item: dict, added: int) -> str:
-    """Message pour de nouveaux inscrits non opt-in (prénom non public)."""
-    lines = _join_lines(item)
-    lines[lines.index("{who_line}")] = (
-        f"➕ {added} nouveaux membres (prénoms non publics)"
-        if added > 1
-        else "➕ 1 nouveau membre (prénom non public)"
-    )
+    for r in races:
+        name = r.get("name", "Course")
+        when = _fmt_date(r.get("date", ""))
+        location = r.get("location") or ""
+        count = r.get("member_count", 0)
+        names = _member_names(r)
+        who = " : " + ", ".join(names) if names else ""
+        plural = "s" if count > 1 else ""
+        race_id = r.get("id")
+        site_link = f"{SITE_URL}#race/{race_id}" if race_id else SITE_URL
+        lines += [
+            f"📍 {when} — {name}" + (f" ({location})" if location else ""),
+            f"👥 {count} membre{plural} inscrit{plural}{who}",
+            f"🗺️ {site_link}",
+            "",
+        ]
+    lines.append("Qui d'autre y va ? 👀")
     return "\n".join(lines)
 
 
@@ -441,7 +422,55 @@ def _post_message(token: str, chat_id: str, text: str) -> tuple[bool, str]:
     return st in (200, 201), body
 
 
+def _fetch_races_full() -> list[dict] | None:
+    """Le races.json COMPLET (noms de tous les membres) depuis l'artifact
+    `scraper-data` du workflow scrape. None si non configuré ou indisponible
+    (le caller retombe alors sur le flux public, prénoms opt-in seulement)."""
+    if not GH_TOKEN:
+        return None
+    headers = {
+        "Authorization": f"Bearer {GH_TOKEN}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    st, body = _http(
+        "GET",
+        f"https://api.github.com/repos/{GH_REPO}/actions/artifacts"
+        f"?name={GH_ARTIFACT_NAME}&per_page=1",
+        headers=headers,
+        timeout=20,
+    )
+    if st != 200:
+        print(f"⚠️ artifacts GitHub: HTTP {st}", file=sys.stderr)
+        return None
+    artifacts = [
+        a for a in json.loads(body).get("artifacts", []) if not a.get("expired")
+    ]
+    if not artifacts:
+        print("⚠️ aucun artifact scraper-data disponible", file=sys.stderr)
+        return None
+    url = (
+        f"https://api.github.com/repos/{GH_REPO}"
+        f"/actions/artifacts/{artifacts[0]['id']}/zip"
+    )
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            blob = resp.read()
+        with zipfile.ZipFile(io.BytesIO(blob)) as zf:
+            data = json.loads(zf.read("data/races.json").decode("utf-8"))
+    except Exception as e:
+        print(f"⚠️ téléchargement artifact: {e}", file=sys.stderr)
+        return None
+    return data.get("races", [])
+
+
 def _fetch_races() -> list[dict]:
+    full = _fetch_races_full()
+    if full is not None:
+        print(f"# source: artifact {GH_ARTIFACT_NAME} (noms complets)")
+        return full
+    print(f"# source: {RACES_URL} (prénoms opt-in)")
     if RACES_URL.startswith(("http://", "https://")):
         st, body = _http("GET", RACES_URL, timeout=30)
         if st != 200:
@@ -452,18 +481,13 @@ def _fetch_races() -> list[dict]:
     return data.get("races", [])
 
 
-def _snapshot(races: list[dict]) -> dict:
-    """Per-race state used to detect new registrations on known races."""
-    return {
-        r["id"]: {"count": r.get("member_count", 0), "names": r.get("first_names") or []}
-        for r in races
-    }
+def _load_digest_state() -> dict:
+    """État persisté du récap : ``{"last_digest": "YYYY-MM"}`` ({} si absent)."""
+    return _read_json(SEND_NOTIFIED_PATH, {})
 
 
-def _save_notified_ids(ids: set[str], races_state: dict) -> None:
-    _write_json(
-        SEND_NOTIFIED_PATH, {"notified": sorted(ids), "races": races_state}
-    )
+def _save_digest_state(month: str) -> None:
+    _write_json(SEND_NOTIFIED_PATH, {"last_digest": month})
 
 
 def _eligible_upcoming(races: list[dict]) -> list[dict]:
@@ -508,183 +532,6 @@ def cmd_token(argv: list[str]) -> int:
     return 0
 
 
-def _extract_race_id(text: str) -> str | None:
-    """Pull the race id out of a message's '#race/<id>' link."""
-    m = _RACE_LINK_RE.search(text or "")
-    return m.group(1) if m else None
-
-
-def _norm_emoji(s: str) -> str:
-    """Retire le variation selector (U+FE0F) et les espaces pour comparer les
-    réactions de façon robuste entre réseaux (WhatsApp encode parfois 🚫️)."""
-    return (s or "").replace("️", "").strip()
-
-
-def _list_my_messages(token: str, chat_id: str, limit: int) -> list[dict] | None:
-    """Fetch up to `limit` recent messages of a chat (paginated). Returns None
-    if NOTHING could be read (T14 injoignable, token invalide…) so the caller
-    can avoid clobbering state on a transient failure — distinct from a valid
-    empty chat ([])."""
-    out: list[dict] = []
-    cursor = None
-    got_page = False
-    base = f"{BEEPER_API}/v1/chats/{urllib.parse.quote(chat_id, safe='')}/messages"
-    while len(out) < limit:
-        url = base + (f"?cursor={urllib.parse.quote(cursor)}" if cursor else "")
-        st, body = _http(
-            "GET", url, headers={"Authorization": f"Bearer {token}"}, timeout=20
-        )
-        if st != 200:
-            break
-        got_page = True
-        try:
-            data = json.loads(body)
-        except Exception:
-            break
-        items = data.get("items", [])
-        if not items:
-            break
-        out.extend(items)
-        cursor = data.get("oldestCursor") or data.get("newestCursor")
-        if not cursor or not data.get("hasMore", False):
-            break
-    return out[:limit] if got_page else None
-
-
-def _extract_member(text: str) -> str | None:
-    """Prénom affiché du membre visé par le message, None si ambigu.
-    - message de nouvel inscrit : « 🎉 X a rejoint la course ! » (un par message)
-    - annonce de course à UN seul inscrit nommé : « 👥 1 membre inscrit : X »
-    Tout le reste (plusieurs noms, membre anonyme, ancien format groupé
-    « X, Y ont rejoint ») est ambigu : le cron demandera plutôt que masquer.
-    Note : le prénom est celui affiché au moment du message ; si la
-    désambiguïsation évolue ensuite (« Romain » → « Romain F. »), l'exclusion
-    cesse silencieusement de matcher (le membre réapparaît)."""
-    m = re.search(r"🎉 (.+?) a rejoint la course", text or "")
-    if m:
-        return m.group(1).strip()
-    m = re.search(r"👥 1 membre inscrit : ([^\n]+)", text or "")
-    if m:
-        who = m.group(1).strip()
-        if "," not in who and "+" not in who:
-            return who
-    return None
-
-
-def _load_exclusions() -> tuple[set[tuple[str, str]], set[str]]:
-    """Retourne (membres masqués {(race, name)}, courses déjà demandées)."""
-    d = _read_json(EXCLUSIONS_PATH, {})
-    members = {
-        (e.get("race", ""), e.get("name", ""))
-        for e in d.get("members", [])
-        if e.get("race") and e.get("name")
-    }
-    return members, set(d.get("asked", []))
-
-
-def _save_exclusions(members: set[tuple[str, str]], asked: set[str]) -> None:
-    _write_json(
-        EXCLUSIONS_PATH,
-        {
-            "members": [
-                {"race": rid, "name": name} for rid, name in sorted(members)
-            ],
-            "asked": sorted(asked),
-            "updated_at": int(time.time()),
-        },
-    )
-
-
-def cmd_reactions(argv: list[str]) -> int:
-    """Scan the notification chat for HIDE_EMOJI reactions and reconcile
-    exclusions.json (member-level). No identity is stored: the race id and
-    the member's display name come from the message itself.
-
-    Réconciliation (et non recalcul total) pour être robuste :
-      - lecture impossible (T14 injoignable) → on ne touche à rien ;
-      - un membre déjà masqué dont le message est hors de la fenêtre de scan
-        (ou non lu ce run) reste masqué ;
-      - on ne ré-affiche un membre QUE si on a vu son message SANS le 🚫
-        (réaction réellement retirée) ;
-      - 🚫 sur un message ambigu (plusieurs noms, membre anonyme) → rien de
-        masqué, une demande de précision est postée (une seule fois)."""
-    token = _require_token()
-    if not token:
-        return 1
-    msgs = _list_my_messages(token, BEEPER_CHAT_ID, REACTIONS_SCAN)
-    if msgs is None:
-        print(
-            "⚠️ Lecture des messages impossible (T14 injoignable ?) — "
-            "exclusions inchangées.",
-            file=sys.stderr,
-        )
-        return 1
-
-    target = _norm_emoji(HIDE_EMOJI)
-    seen_key: set[tuple[str, str]] = set()  # membre vu dans un message ce run
-    seen_with: set[tuple[str, str]] = set()  # membre dont un message porte le 🚫
-    ambiguous_with: set[str] = set()  # courses avec un 🚫 sur message ambigu
-    for m in msgs:
-        text = m.get("text", "")
-        rid = _extract_race_id(text)
-        if not rid:
-            continue
-        has_hide = any(
-            _norm_emoji(r.get("reactionKey", "")) == target
-            for r in (m.get("reactions") or [])
-        )
-        name = _extract_member(text)
-        if name is None:
-            if has_hide:
-                ambiguous_with.add(rid)
-            continue
-        key = (rid, name)
-        seen_key.add(key)
-        if has_hide:
-            seen_with.add(key)
-
-    before, asked = _load_exclusions()
-    # Ajoute les 🚫 vus, garde l'existant pour les membres non vus ce run, et
-    # retire ceux vus SANS 🚫 (réaction enlevée). `seen_with ⊆ seen_key`.
-    excluded = seen_with | (before - seen_key)
-
-    # 🚫 ambigu : demande de précision postée UNE fois par course (sinon le
-    # cron 2h spammerait). Seules les demandes réellement postées sont marquées.
-    newly_asked: set[str] = set()
-    for rid in sorted(ambiguous_with - asked):
-        ok, body = _post_message(
-            token,
-            BEEPER_CHAT_ID,
-            (
-                f"{HIDE_EMOJI} bien vu — mais cette notif cite plusieurs membres "
-                "(ou un membre non identifié publiquement) : je ne sais pas "
-                "lequel retirer de la carte. Julien, à exclure à la main ?\n"
-                f"{SITE_URL}#race/{rid}"
-            ),
-        )
-        if ok:
-            newly_asked.add(rid)
-            print(f"  ? demande de précision postée pour {rid}")
-        else:
-            print(f"  ❌ échec demande pour {rid}: {body[:120]}", file=sys.stderr)
-
-    _save_exclusions(excluded, asked | newly_asked)
-    added = excluded - before
-    removed = before - excluded
-    print(
-        f"# {len(msgs)} message(s) scanné(s) | emoji: {HIDE_EMOJI} | "
-        f"{len(excluded)} membre(s) masqué(s)"
-    )
-    if added:
-        print("  + masqués:", ", ".join(f"{n} ({r})" for r, n in sorted(added)))
-    if removed:
-        print("  - ré-affichés:", ", ".join(f"{n} ({r})" for r, n in sorted(removed)))
-    if not added and not removed:
-        print("  (aucun changement)")
-    print(f"→ {EXCLUSIONS_PATH}")
-    return 0
-
-
 def cmd_test(argv: list[str]) -> int:
     """Envoie UN message d'exemple (la prochaine course à venir) vers la cible,
     sans toucher au log de dédup. Sert à vérifier la chaîne de bout en bout."""
@@ -708,7 +555,6 @@ def cmd_test(argv: list[str]) -> int:
 
 def cmd_send(argv: list[str]) -> int:
     live = "--live" in argv or "--send" in argv
-    seed_send = "--send-baseline" in argv  # notify even on first run
 
     try:
         races = _fetch_races()
@@ -717,28 +563,9 @@ def cmd_send(argv: list[str]) -> int:
         return 1
 
     eligible = _eligible_upcoming(races)
-    notified = _read_json(SEND_NOTIFIED_PATH, None)  # None ⇒ premier run
-    first_run = notified is None
-    known = set(notified.get("notified", [])) if notified else set()
-    new = [r for r in eligible if r["id"] not in known]
-
-    # Nouvelles inscriptions sur des courses déjà connues : member_count en
-    # hausse vs le snapshot persisté. Les courses sans snapshot (état écrit
-    # avant cette feature) sont enregistrées silencieusement — pas de spam.
-    state = (notified or {}).get("races", {})
-    joins = []
-    for r in eligible:
-        if r["id"] not in known:
-            continue
-        prev = state.get(r["id"])
-        if prev is None:
-            continue
-        cur = r.get("member_count", 0)
-        prev_count = int(prev.get("count", 0))
-        if cur > prev_count:
-            prev_names = set(prev.get("names") or [])
-            joined = [n for n in (r.get("first_names") or []) if n not in prev_names]
-            joins.append((r, cur - prev_count, joined))
+    month = date.today().strftime("%Y-%m")
+    last = _load_digest_state().get("last_digest")
+    due = last != month
 
     # Token : réutilisé tant qu'il est valide (~30j). En LIVE on ne fait PAS de
     # fetch automatique (ça demanderait ton acceptation) : si le token manque ou
@@ -749,23 +576,48 @@ def cmd_send(argv: list[str]) -> int:
     )
 
     print(
-        f"# source: {RACES_URL}\n"
         f"# {len(eligible)} course(s) à venir avec membres | "
-        f"{len(known)} déjà notifiée(s) | {len(new)} nouvelle(s) course(s) | "
-        f"{len(joins)} nouvelle(s) inscription(s)\n"
+        f"dernier récap: {last or 'jamais'} | récap {month}: "
+        f"{'DÛ' if due else 'déjà envoyé'}\n"
         f"# cible: {BEEPER_CHAT_ID} | mode: {'LIVE' if live else 'DRY-RUN'} | "
         f"token: {'valide ' + str(days_left) + 'j' if stored else 'ABSENT/EXPIRÉ'}"
     )
 
-    if first_run and not seed_send:
-        _save_notified_ids({r["id"] for r in eligible}, _snapshot(eligible))
+    # Rappel d'expiration (toujours vers Note to self), tant que le token vit.
+    if live and stored and days_left is not None and days_left <= REMINDER_DAYS:
+        ok, body = _post_message(
+            stored["access_token"],
+            REMINDER_CHAT_ID,
+            _reminder_text(days_left, stored["expires_at"]),
+        )
         print(
-            f"\n⚠️  Premier run — baseline enregistrée ({len(eligible)} courses), "
-            "aucun envoi. Les prochains runs ne notifieront que les nouveautés."
+            f"\n🔔 Rappel expiration token ({days_left}j): "
+            + ("envoyé" if ok else f"échec {body[:100]}")
+        )
+
+    if not due:
+        print("\n✅ Récap du mois déjà envoyé — rien à faire.")
+        return 0
+
+    if not eligible:
+        # Mois sans course à annoncer : on marque quand même pour ne pas
+        # ré-afficher ce bilan à chaque run quotidien.
+        if live:
+            _save_digest_state(month)
+        print("\n✅ Aucune course à venir avec membres — pas de récap ce mois-ci.")
+        return 0
+
+    msg = build_digest(eligible)
+    print(f"\n--- récap {month} ---\n{msg}")
+
+    if not live:
+        print(
+            "\n(DRY-RUN) ce récap serait envoyé. Rien n'a été posté ni marqué. "
+            "Ajoute --live pour envoyer."
         )
         return 0
 
-    if live and not stored:
+    if not stored:
         print(
             "\n❌ Pas de token valide. Lance `notify.py token` et accepte la popup "
             "sur le T14 (rien n'a été envoyé ni marqué).",
@@ -773,94 +625,14 @@ def cmd_send(argv: list[str]) -> int:
         )
         return 1
 
-    token = stored["access_token"] if stored else None
-
-    # Rappel d'expiration (toujours vers Note to self), tant que le token vit.
-    if live and days_left is not None and days_left <= REMINDER_DAYS:
-        ok, body = _post_message(
-            token, REMINDER_CHAT_ID, _reminder_text(days_left, stored["expires_at"])
-        )
-        print(
-            f"\n🔔 Rappel expiration token ({days_left}j): "
-            + ("envoyé" if ok else f"échec {body[:100]}")
-        )
-
-    if not new and not joins:
-        if live:
-            # Snapshot rafraîchi même les jours calmes (ex. désistement),
-            # pour qu'une remontée ultérieure du compteur soit bien vue
-            # comme une nouvelle inscription.
-            _save_notified_ids(known, _snapshot(eligible))
-        print("\n✅ Rien de nouveau à notifier.")
-        return 0
-
-    if not live:
-        for r in new:
-            print(f"\n--- {r['id']} ---\n{build_message(r)}")
-        n_msgs = 0
-        for r, added, joined in joins:
-            for tag, msg in _join_messages(r, added, joined):
-                n_msgs += 1
-                print(f"\n--- {r['id']} ({tag}) ---\n{msg}")
-        print(
-            f"\n(DRY-RUN) {len(new)} course(s) et {n_msgs} message(s) "
-            "d'inscription seraient envoyés. Rien n'a été posté ni marqué. "
-            "Ajoute --live pour envoyer."
-        )
-        return 0
-
-    sent_ids = set()
-    failed_ids = set()
-    for r in new:
-        msg = build_message(r)
-        print(f"\n--- {r['id']} ---\n{msg}")
-        ok, body = _post_message(token, BEEPER_CHAT_ID, msg)
-        if ok:
-            print("   ✅ envoyé")
-            sent_ids.add(r["id"])
-        else:
-            print(f"   ❌ échec envoi: {body[:150]}", file=sys.stderr)
-            failed_ids.add(r["id"])
-
-    join_sent = set()
-    for r, added, joined in joins:
-        ok_all = True
-        for tag, msg in _join_messages(r, added, joined):
-            print(f"\n--- {r['id']} ({tag}) ---\n{msg}")
-            ok, body = _post_message(token, BEEPER_CHAT_ID, msg)
-            if ok:
-                print("   ✅ envoyé")
-            else:
-                print(f"   ❌ échec envoi: {body[:150]}", file=sys.stderr)
-                ok_all = False
-        # Course marquée seulement si tous ses messages sont partis, sinon
-        # l'ancien snapshot est conservé → retentative complète demain.
-        if ok_all:
-            join_sent.add(r["id"])
-        else:
-            failed_ids.add(r["id"])
-
-    # Les courses en échec gardent leur ancien snapshot (retentative demain) ;
-    # toutes les autres sont mises à jour.
-    new_state = _snapshot([r for r in eligible if r["id"] not in failed_ids])
-    for rid in failed_ids:
-        if rid in state:
-            new_state[rid] = state[rid]
-    _save_notified_ids(known | sent_ids | join_sent, new_state)
-    total = len(sent_ids) + len(join_sent)
-    print(f"\n✅ {total} envoyée(s), {len(failed_ids)} échec(s).")
+    ok, body = _post_message(stored["access_token"], BEEPER_CHAT_ID, msg)
+    if not ok:
+        # Mois non marqué → retentative au prochain run.
+        print(f"\n❌ Échec envoi: {body[:150]}", file=sys.stderr)
+        return 1
+    _save_digest_state(month)
+    print("\n✅ Récap envoyé.")
     return 0
-
-
-def _join_messages(r: dict, added: int, joined: list[str]) -> list[tuple[str, str]]:
-    """Un message par inscription : chaque membre nommé (opt-in) a le sien —
-    un 🚫 vise ainsi toujours une seule personne. Le reliquat anonyme
-    (non opt-in) est groupé : impossible à individualiser."""
-    out: list[tuple[str, str]] = [(n, build_join_message(r, n)) for n in joined]
-    anon = added - len(joined)
-    if anon > 0:
-        out.append((f"{anon} anonyme(s)", build_anon_join_message(r, anon)))
-    return out
 
 
 def main(argv: list[str]) -> int:
@@ -881,8 +653,6 @@ def main(argv: list[str]) -> int:
         return cmd_token(rest)
     if cmd == "test":
         return cmd_test(rest)
-    if cmd == "reactions":
-        return cmd_reactions(rest)
     print(__doc__)
     return 2
 

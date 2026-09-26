@@ -10,8 +10,13 @@ services:
     environment:
       # Fuseau du cron : 11h30 locale = Europe/Paris (gère l'heure été/hiver).
       TZ: Europe/Paris
-      # Source des données (races.json public déployé par la CI)
+      # Source des données (races.json public déployé par la CI — fallback)
       RACES_URL: "https://juulieen.github.io/ou-court-le-club/data/races.json"
+      # Noms complets dans le récap : PAT fine-grained (Actions: read sur le
+      # repo) pour télécharger l'artifact scraper-data (races.json complet).
+      # Vide = fallback sur le flux public (prénoms opt-in uniquement).
+      GH_TOKEN: "${GH_TOKEN:-}"
+      GH_REPO: "${GH_REPO:-juulieen/ou-court-le-club}"
       # API Beeper Desktop (joignable via Tailscale) — voir .env
       BEEPER_API: "${BEEPER_API:?renseigner BEEPER_API dans .env}"
       # Cible : "Note to self" par défaut (SÛR). Groupe club une fois validé :
@@ -25,11 +30,6 @@ services:
       # tu acceptes la popup sur le laptop ; valide ~30j, rappel auto avant expiry)
       TOKEN_PATH: "/data/beeper_token.json"
       TOKEN_REMINDER_DAYS: "3"
-      # Correction homonymes : réagir avec cet emoji sur une notif masque la
-      # course de la carte. exclusions.json est écrit dans ./public (servi par
-      # caddy sous https://run.juulieen.fr/exclusions.json).
-      HIDE_EMOJI: "🚫"
-      EXCLUSIONS_PATH: "/public/exclusions.json"
     volumes:
       - runevent86-notify-data:/data
       - ./public:/public
