@@ -177,9 +177,10 @@ jobs:
 
       - name: Install private races.json for courses.juulieen.fr
         # Écriture atomique (tmp + mv) : caddy ne sert jamais un fichier
-        # partiellement écrit.
+        # partiellement écrit. NB : l'artifact v4 est aplati (les fichiers
+        # data/* sont à la racine du zip).
         run: |
           DEST="$HOME/server/runevent86-notify/private"
           mkdir -p "$DEST"
-          install -m 644 /tmp/scraper-data/data/races_private.json "$DEST/races.json.tmp"
+          install -m 644 /tmp/scraper-data/races_private.json "$DEST/races.json.tmp"
           mv "$DEST/races.json.tmp" "$DEST/races.json"
