@@ -1,13 +1,14 @@
 # Notifieur de courses — conteneur
 
-Poste **une fois par mois un unique message** Beeper/WhatsApp : le récap de
-toutes les courses à venir avec des membres du club (demande de Maxime, Team
-com 2026-09-20 — les notifs au fil de l'eau noyaient la conversation). Le
-récap affiche **les noms complets de tous les membres** (le message reste
-dans le groupe privé) : ils proviennent du `races.json` complet, téléchargé
-depuis l'artifact GitHub `scraper-data` du workflow scrape (repo privé,
-PAT fine-grained `Actions: read` dans `GH_TOKEN`). Sans `GH_TOKEN`, repli
-sur le `races.json` public (prénoms opt-in uniquement).
+Poste **une fois par mois un unique message** Beeper/WhatsApp, le **dernier
+jour du mois** : le récap de toutes les courses à venir avec des membres du
+club (demande de Maxime, Team com 2026-09-20 — les notifs au fil de l'eau
+noyaient la conversation). Le récap affiche **les noms complets de tous les
+membres** (le message reste dans le groupe privé) : ils proviennent du
+`races.json` complet, téléchargé depuis l'artifact GitHub `scraper-data` du
+workflow scrape (repo privé, PAT fine-grained `Actions: read` dans
+`GH_TOKEN`). Sans `GH_TOKEN`, repli sur le `races.json` public (prénoms
+opt-in uniquement).
 
 ## Comment ça marche
 
@@ -15,9 +16,9 @@ sur le `races.json` public (prénoms opt-in uniquement).
 2. Ce conteneur (sur le serveur perso) réveille un cron à **11h30 Europe/Paris**
    (`crontab`, `TZ` du conteneur).
 3. `notify.py send` récupère les courses (artifact GitHub si `GH_TOKEN`,
-   sinon flux public) et, si le récap du mois n'a pas encore été envoyé
-   (`notified.json` persistant dans le volume `/data`), poste UN message
-   groupé puis marque le mois.
+   sinon flux public) et, **le dernier jour du mois** si le récap n'a pas
+   encore été envoyé (`notified.json` persistant dans le volume `/data`),
+   poste UN message groupé puis marque le mois.
 4. L'envoi passe par l'**API Beeper Desktop** d'une machine du réseau Tailscale
    (voir `BEEPER_API` dans `.env`), avec un **token OAuth valable ~30 jours**.
 
@@ -30,9 +31,12 @@ l'envoi vit dans ce conteneur côté LAN, et non dans le workflow.
   enverrait sans rien poster. Passer à `--live` pour activer l'envoi réel.
 - **Cible par défaut = "Note to self"**. Groupe club seulement après validation
   (ID conservé dans le secret GitHub `RUNEVENT86_NOTIFY_CHAT_ID_PROD`).
-- **Un seul envoi par mois** : le mois est marqué dans `notified.json` après
-  un envoi réussi ; les runs quotidiens suivants ne font rien. En cas d'échec
-  d'envoi, le mois n'est pas marqué → retentative au run suivant.
+- **Un seul envoi par mois, le dernier jour** : le mois est marqué dans
+  `notified.json` après un envoi réussi ; les autres runs quotidiens ne font
+  rien. En cas d'échec d'envoi ce jour-là, le mois n'est pas marqué → mais la
+  retentative n'est possible que le jour même (le lendemain, on est déjà dans
+  le mois suivant) : si l'ASUS ou Beeper est down le dernier jour du mois, le
+  récap du mois est simplement sauté.
 - La machine Beeper doit être allumée au moment du run (sinon échec silencieux,
   réessai le lendemain — notifs non urgentes).
 

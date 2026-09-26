@@ -1,7 +1,8 @@
 """WhatsApp/Beeper notification for club races — monthly digest.
 
 **Autonomous ``send``** (the active path, used by the Docker cron) —
-self-contained, stdlib only. Once a month (first cron run of the month), it
+self-contained, stdlib only. Once a month (cron run of the LAST day of the
+month, so the picture of next month is as fresh as possible), it
 posts ONE single message to the Beeper Desktop HTTP API (the T14 Desktop,
 reachable over Tailscale): the digest of all upcoming races with members.
 Member names come from the FULL private ``races.json`` (GitHub artifact, via
@@ -61,7 +62,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -563,9 +564,13 @@ def cmd_send(argv: list[str]) -> int:
         return 1
 
     eligible = _eligible_upcoming(races)
-    month = date.today().strftime("%Y-%m")
+    today = date.today()
+    month = today.strftime("%Y-%m")
     last = _load_digest_state().get("last_digest")
-    due = last != month
+    # Récap envoyé le DERNIER jour du mois (photo la plus fraîche possible du
+    # mois à venir) : dû si on y est et qu'il n'a pas encore été envoyé.
+    is_last_day = (today + timedelta(days=1)).month != today.month
+    due = is_last_day and last != month
 
     # Token : réutilisé tant qu'il est valide (~30j). En LIVE on ne fait PAS de
     # fetch automatique (ça demanderait ton acceptation) : si le token manque ou
@@ -575,10 +580,15 @@ def cmd_send(argv: list[str]) -> int:
         int((stored["expires_at"] - time.time()) // 86400) if stored else None
     )
 
+    if due:
+        status = "DÛ"
+    elif last == month:
+        status = "déjà envoyé"
+    else:
+        status = "prévu le dernier jour du mois"
     print(
         f"# {len(eligible)} course(s) à venir avec membres | "
-        f"dernier récap: {last or 'jamais'} | récap {month}: "
-        f"{'DÛ' if due else 'déjà envoyé'}\n"
+        f"dernier récap: {last or 'jamais'} | récap {month}: {status}\n"
         f"# cible: {BEEPER_CHAT_ID} | mode: {'LIVE' if live else 'DRY-RUN'} | "
         f"token: {'valide ' + str(days_left) + 'j' if stored else 'ABSENT/EXPIRÉ'}"
     )
@@ -596,7 +606,10 @@ def cmd_send(argv: list[str]) -> int:
         )
 
     if not due:
-        print("\n✅ Récap du mois déjà envoyé — rien à faire.")
+        if last == month:
+            print("\n✅ Récap du mois déjà envoyé — rien à faire.")
+        else:
+            print("\n✅ Récap prévu le dernier jour du mois — rien à faire.")
         return 0
 
     if not eligible:

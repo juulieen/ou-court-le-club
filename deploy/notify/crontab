@@ -1,4 +1,4 @@
 # Fuseau du conteneur via TZ (Europe/Paris). supercronic logue sur stdout.
-# 11h30 : run quotidien (le récap mensuel part au premier run du mois,
+# 11h30 : run quotidien (le récap mensuel part le dernier jour du mois,
 # args via NOTIFY_ARGS).
 30 11 * * * /app/run.sh

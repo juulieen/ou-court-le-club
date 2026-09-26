@@ -26,14 +26,14 @@ Historique des évolutions notables. Format inspiré de
 
 ### Modifié
 - **Notifications groupées en récap mensuel** (`scrapers/notify.py send`,
-  demande de Maxime — Team com 2026-09-20) : un seul message par mois
-  regroupant toutes les courses à venir avec membres, au lieu d'un message
-  par nouvelle course et par nouvel inscrit. Le mois envoyé est persisté dans
-  `notified.json` (`last_digest`) ; échec d'envoi ⇒ retentative au run suivant.
-  Le récap affiche les **noms complets de tous les membres** (groupe privé) :
-  source = artifact GitHub `scraper-data` via un PAT fine-grained
-  (`GH_TOKEN`, secret `RUNEVENT86_NOTIFY_GH_TOKEN`), repli sur le flux public
-  (prénoms opt-in) s'il est absent.
+  demande de Maxime — Team com 2026-09-20) : un seul message par mois,
+  envoyé **le dernier jour du mois**, regroupant toutes les courses à venir
+  avec membres, au lieu d'un message par nouvelle course et par nouvel
+  inscrit. Le mois envoyé est persisté dans `notified.json` (`last_digest`) ;
+  échec d'envoi ⇒ mois non marqué. Le récap affiche les **noms complets de
+  tous les membres** (groupe privé) : source = artifact GitHub `scraper-data`
+  via un PAT fine-grained (`GH_TOKEN`, secret `RUNEVENT86_NOTIFY_GH_TOKEN`),
+  repli sur le flux public (prénoms opt-in) s'il est absent.
 
 ### Supprimé
 - **Correction des homonymes par réaction 🚫** (`notify.py reactions` + cron
