@@ -487,7 +487,13 @@ def _download_artifact_json(filename: str) -> dict | None:
             with urllib.request.urlopen(e.headers["Location"], timeout=60) as resp:
                 blob = resp.read()
         with zipfile.ZipFile(io.BytesIO(blob)) as zf:
-            return json.loads(zf.read(filename).decode("utf-8"))
+            # upload-artifact v4 aplatit les chemins sur leur ancêtre commun
+            # (tout est sous data/ → le zip contient les fichiers à plat).
+            try:
+                raw = zf.read(filename)
+            except KeyError:
+                raw = zf.read(Path(filename).name)
+            return json.loads(raw.decode("utf-8"))
     except Exception as e:
         print(f"⚠️ téléchargement artifact ({filename}): {e}", file=sys.stderr)
         return None
