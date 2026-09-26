@@ -58,7 +58,8 @@ ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "config.yml"
 DATA_PATH = ROOT / "data" / "races.json"
 DOCS_DATA_PATH = ROOT / "docs" / "data" / "races.json"
-# Public iCalendar feed (subscribe via webcal://) of upcoming races with members.
+# Public iCalendar feed (subscribe via webcal://) of races with members,
+# past editions included (the calendar doubles as club history).
 ICS_PATH = ROOT / "docs" / "data" / "races.ics"
 SCRAPE_CACHE_PATH = ROOT / "data" / "scrape_cache.json"
 # Persistent archive: accumulates every race ever found with members, so past
@@ -447,7 +448,8 @@ def save_data(
         json.dumps(public_data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
-    # Public calendar feed (subscribe via webcal://) — upcoming races only
+    # Public calendar feed (subscribe via webcal://) — full history included,
+    # so subscribers see past editions too (2026-09-26, demande Julien)
     generate_ics(public_races)
 
 
@@ -484,12 +486,12 @@ def _ics_fold(line: str) -> str:
 
 
 def generate_ics(public_races: list[dict]) -> None:
-    """Write docs/data/races.ics: one all-day VEVENT per upcoming race.
+    """Write docs/data/races.ics: one all-day VEVENT per race, past included.
 
     Uses the same public, opted-in data as the public JSON (first names only).
     Designed to be subscribed to via webcal:// so phones refresh it automatically.
+    Past races stay in the feed (archive) so the calendar doubles as history.
     """
-    today = datetime.now().strftime("%Y-%m-%d")
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
     lines = [
@@ -508,7 +510,7 @@ def generate_ics(public_races: list[dict]) -> None:
     count = 0
     for race in public_races:
         date = (race.get("date") or "")[:10]
-        if not date or date < today:
+        if not date:
             continue
         try:
             d = datetime.strptime(date, "%Y-%m-%d")
@@ -551,7 +553,7 @@ def generate_ics(public_races: list[dict]) -> None:
 
     ICS_PATH.parent.mkdir(parents=True, exist_ok=True)
     ICS_PATH.write_text("\r\n".join(_ics_fold(ln) for ln in lines) + "\r\n", encoding="utf-8")
-    print(f"  Calendrier .ics: {count} course(s) à venir → {ICS_PATH.name}")
+    print(f"  Calendrier .ics: {count} course(s) → {ICS_PATH.name}")
 
 
 # --- Scrape cache ---

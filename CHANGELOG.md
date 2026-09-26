@@ -34,6 +34,10 @@ Historique des évolutions notables. Format inspiré de
   tous les membres** (groupe privé) : source = artifact GitHub `scraper-data`
   via un PAT fine-grained (`GH_TOKEN`, secret `RUNEVENT86_NOTIFY_GH_TOKEN`),
   repli sur le flux public (prénoms opt-in) s'il est absent.
+- **Flux calendrier `.ics` : tout l'historique** (`scrapers/main.py
+  generate_ics`) : les courses passées ne sont plus filtrées — l'agenda
+  sert aussi d'historique du club (demande Julien 2026-09-26). Les abonnés
+  verront les éditions passées apparaître rétroactivement.
 
 ### Supprimé
 - **Correction des homonymes par réaction 🚫** (`notify.py reactions` + cron
