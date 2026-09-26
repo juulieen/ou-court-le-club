@@ -430,6 +430,14 @@ def _post_message(token: str, chat_id: str, text: str) -> tuple[bool, str]:
     return st in (200, 201), body
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Bloque le suivi automatique des redirections (géré à la main pour ne
+    pas fuiter le header Authorization vers l'URL signée Azure)."""
+
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
 def _download_artifact_json(filename: str) -> dict | None:
     """Download the latest `scraper-data` artifact zip and return the parsed
     JSON of `filename` inside it. None if GH_TOKEN is unset or on any failure
@@ -462,9 +470,19 @@ def _download_artifact_json(filename: str) -> dict | None:
         f"/actions/artifacts/{artifacts[0]['id']}/zip"
     )
     try:
+        # L'endpoint /zip renvoie une 302 vers une URL signée (blob Azure) :
+        # on lit la redirection à la main pour NE PAS renvoyer le header
+        # Authorization au blob — il répondrait 401 « failed to authenticate ».
         req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            blob = resp.read()
+        opener = urllib.request.build_opener(_NoRedirect)
+        try:
+            with opener.open(req, timeout=60) as resp:
+                blob = resp.read()
+        except urllib.error.HTTPError as e:
+            if e.code not in (301, 302, 303, 307, 308) or not e.headers.get("Location"):
+                raise
+            with urllib.request.urlopen(e.headers["Location"], timeout=60) as resp:
+                blob = resp.read()
         with zipfile.ZipFile(io.BytesIO(blob)) as zf:
             return json.loads(zf.read(filename).decode("utf-8"))
     except Exception as e:
