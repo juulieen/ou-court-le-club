@@ -9,11 +9,13 @@ Historique des évolutions notables. Format inspiré de
 - **Vue club tailnet-only avec noms complets** (`courses.juulieen.fr`) : le
   pipeline génère `races_private.json` (schéma public, `first_names` = noms
   complets de tous les membres actuels) dans l'artifact `scraper-data` ;
-  `notify.py fetch-private` (cron 11h35 sur l'ASUS) le dépose dans
-  `./private/`, servi par un vhost caddy bindé tailnet (`bind
+  le job `deploy-private` de `scrape.yml` (runner self-hosted ASUS) le dépose
+  dans le dossier servi par un vhost caddy bindé tailnet (`bind
   100.117.235.23` — depuis Internet le catch-all répond 404, aucune auth
-  nécessaire). Le frontend bascule automatiquement dessus quand l'appareil
-  est sur le tailnet (badge « vue club » dans le pied de la sidebar).
+  nécessaire) — **les deux sites sont mis à jour par la même CI**. Le cron
+  `notify.py fetch-private` (11h35) reste en filet de sécurité. Le frontend
+  bascule automatiquement dessus quand l'appareil est sur le tailnet
+  (badge « vue club » dans le pied de la sidebar).
 - **Notifications de courses** (`scrapers/notify.py` commande `send`) : détecte
   les nouvelles courses à venir avec des membres et poste un message vers
   l'API Beeper Desktop du T14 (via Tailscale). Lien vers « Où court le club »

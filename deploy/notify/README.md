@@ -107,9 +107,10 @@ sur `courses.juulieen.fr` — invisible depuis Internet (le catch-all y répond
 
 - Le pipeline écrit `data/races_private.json` (même schéma que le public,
   mais `first_names` = noms complets), inclus dans l'artifact `scraper-data`.
-- Ce conteneur (`notify.py fetch-private`, cron 11h35) le télécharge via
-  `GH_TOKEN` et le dépose dans `./private/races.json` (écriture atomique ;
-  échec = version précédente conservée).
+- Le job `deploy-private` de `scrape.yml` (runner self-hosted ASUS) dépose le
+  fichier dans `./private/races.json` à chaque run — **les deux sites sont
+  mis à jour par la même CI**. Le cron `notify.py fetch-private` (11h35) de
+  ce conteneur reste en filet de sécurité.
 - Caddy sert `./private` (monté `/srv/runevent86-private`) avec
   `Access-Control-Allow-Origin *` ; le frontend public tente ce fetch au
   chargement — succès = appareil sur le tailnet → noms complets partout ;

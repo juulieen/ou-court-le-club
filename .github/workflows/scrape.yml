@@ -94,8 +94,11 @@ jobs:
             data/races.json
           key: scraper-data-${{ github.run_id }}
 
-      # Note: save_data() in main.py generates two versions:
+      # Note: save_data() in main.py generates three versions:
       # - data/races.json (full, with member names — cached, never published)
+      # - data/races_private.json (public schema, full names — artifact only,
+      #   served by the tailnet-only vhost courses.juulieen.fr via the
+      #   deploy-private job below)
       # - docs/data/races.json (first names only — deployed via Pages artifact)
       # First names are never committed to Git history.
 
@@ -157,3 +160,26 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Met à jour la vue club (courses.juulieen.fr) dans la foulée du site
+  # public : le runner self-hosted de l'ASUS écrit races_private.json dans le
+  # dossier servi par le vhost tailnet-only. Le cron fetch-private du
+  # conteneur notify (11h35) reste en filet de sécurité.
+  deploy-private:
+    needs: scrape
+    if: ${{ !inputs.skip_scrape }}
+    runs-on: self-hosted
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: scraper-data
+          path: /tmp/scraper-data
+
+      - name: Install private races.json for courses.juulieen.fr
+        # Écriture atomique (tmp + mv) : caddy ne sert jamais un fichier
+        # partiellement écrit.
+        run: |
+          DEST="$HOME/server/runevent86-notify/private"
+          mkdir -p "$DEST"
+          install -m 644 /tmp/scraper-data/data/races_private.json "$DEST/races.json.tmp"
+          mv "$DEST/races.json.tmp" "$DEST/races.json"
