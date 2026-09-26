@@ -38,6 +38,12 @@ Historique des évolutions notables. Format inspiré de
   generate_ics`) : les courses passées ne sont plus filtrées — l'agenda
   sert aussi d'historique du club (demande Julien 2026-09-26). Les abonnés
   verront les éditions passées apparaître rétroactivement.
+- **Carte limitée aux adhérents actuels** (`scrapers/main.py save_data`,
+  demande Julien 2026-09-26) : seuls les inscrits présents dans
+  `known_members` sont conservés (listes et compteurs) ; une course dont
+  plus aucun inscrit détecté n'est adhérent disparaît de toutes les sorties
+  (carte, `.ics`, récap WhatsApp). L'archive brute conserve l'historique
+  intégral — le filtre est réversible via `config.yml`.
 
 ### Supprimé
 - **Correction des homonymes par réaction 🚫** (`notify.py reactions` + cron

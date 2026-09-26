@@ -406,9 +406,32 @@ def save_data(
     known_members: list[str] | None = None,
     display_optin: list[str] | None = None,
 ) -> None:
-    # Enrich races with type and distances before saving
+    km = known_members or []
+    optin = display_optin or []
+
+    # Ne garder que les inscrits adhérents actuels (known_members) : une course
+    # dont plus aucun inscrit détecté n'est au club disparaît de TOUTES les
+    # sorties — carte, flux .ics, récap WhatsApp (qui lit le races.json complet).
+    # L'archive brute (races_archive.json) n'est pas touchée : elle est écrite
+    # avant, dans merge_archive, et conserve l'historique intégral.
+    races = []
+    dropped = []
     for race in data.get("races", []):
-        _enrich_race(race, known_members)
+        _enrich_race(race, km)  # canonicalise les noms AVANT le filtre
+        current = [
+            m
+            for m in race.get("members", [])
+            if matches_known_member(m.get("name", ""), km)
+        ]
+        if not current:
+            dropped.append(race.get("name", "?"))
+            continue
+        races.append({**race, "members": current, "member_count": len(current)})
+    if dropped:
+        print(f"  {len(dropped)} course(s) sans membre actuel masquée(s) :")
+        for name in sorted(dropped):
+            print(f"    - {name}")
+    data = {**data, "races": races}
 
     # Full version with member names (local only, gitignored)
     DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -417,11 +440,9 @@ def save_data(
     # Public version for GitHub Pages: first names only (no last names)
     # Deployed via GitHub Actions artifact — never committed to Git.
     # Only members who explicitly opted in have their first name shown.
-    km = known_members or []
-    optin = display_optin or []
     display_names = _build_display_names(optin, km)
     public_races = []
-    for race in data.get("races", []):
+    for race in races:
         public_race = {k: v for k, v in race.items() if k != "members"}
         # Build first_names list — only for members who consented (opt-in)
         first_names = []
