@@ -465,6 +465,9 @@ def _download_artifact_json(filename: str) -> dict | None:
     if not artifacts:
         print("⚠️ aucun artifact scraper-data disponible", file=sys.stderr)
         return None
+    # L'API ne garantit pas l'ordre (vu : un artifact plus récent listé en
+    # 2e) — on trie explicitement par date de création décroissante.
+    artifacts.sort(key=lambda a: a.get("created_at", ""), reverse=True)
     url = (
         f"https://api.github.com/repos/{GH_REPO}"
         f"/actions/artifacts/{artifacts[0]['id']}/zip"
