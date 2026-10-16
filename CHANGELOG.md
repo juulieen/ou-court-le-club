@@ -34,6 +34,20 @@ Historique des évolutions notables. Format inspiré de
   `docs-internal/verify-checklist.md`) : force la revue (code, /simplify, doc,
   flows, RGPD) via sous-agents avant chaque `git push`.
 
+### Corrigé
+- **Njuko : lieu et date des courses** (2026-10-17). L'API publique des
+  éditions n'expose aucune adresse : la plupart des courses Njuko n'avaient
+  pas de lieu (rien dans le récap WhatsApp) et étaient placées d'après leur
+  nom, parfois très loin (Trail de Barbâtre à Reims, Épopée Royale à Tours,
+  Trails du Pignada à Mimizan). Nouvelle table `njuko._EVENT_LOCATIONS`
+  (fragment du nom de l'événement → « Ville (dép.) », valable pour toutes
+  les éditions), appliquée aussi aux courses passées de l'archive. Un
+  avertissement (`::warning::` en CI) liste les courses avec membres restées
+  sans lieu. Les dates étaient aussi **décalées d'un jour** : `startDate`
+  est minuit heure de Paris exprimé en UTC (`2026-11-07T23:00Z` = 8/11) ;
+  on prend désormais le début de la première épreuve, converti en heure de
+  Paris. Les courses passées de l'archive gardent leur ancienne date.
+
 ### Modifié
 - **Notifications groupées en récap mensuel** (`scrapers/notify.py send`,
   demande de Maxime — Team com 2026-09-20) : un seul message par mois,

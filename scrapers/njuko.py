@@ -14,11 +14,12 @@ sports107.com, timeto.com).
 import json
 import re
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 import requests
 
-from .base import BaseScraper, Member, RaceResult, matches_known_member
+from .base import BaseScraper, Member, RaceResult, matches_known_member, normalize_text
 
 
 class NjukoScraper(BaseScraper):
@@ -113,31 +114,11 @@ class NjukoScraper(BaseScraper):
             print(f"  [njuko] Gros event — recherche par nom ({slug})")
             members = self._search_by_names(edition_id, competitions, api_base=api_base)
 
-        # Extract location from edition data if not in config
-        if not location:
-            addr = edition.get("address", {})
-            if isinstance(addr, dict):
-                city = addr.get("city", "")
-                country = addr.get("country", "")
-                if city:
-                    location = city
-                elif country and country != "FR":
-                    location = country
-            # Fallback: try event object
-            if not location:
-                event_obj = edition.get("event", {})
-                if isinstance(event_obj, dict):
-                    addr2 = event_obj.get("address", {})
-                    if isinstance(addr2, dict):
-                        location = addr2.get("city", "")
-
-        # Extract name from edition if not in config
+        # Edition data wins over discovery: it may come from a stale cache.
+        date = _edition_date(edition) or date
         if not name:
-            name_arr = edition.get("name", [])
-            if isinstance(name_arr, list) and name_arr:
-                name = name_arr[0].get("translation", name_arr[0].get("value", "")) if isinstance(name_arr[0], dict) else str(name_arr[0])
-            if not name:
-                name = edition.get("reportName", slug)
+            name = _edition_name(edition) or edition.get("reportName", slug)
+        location = location or _edition_location(edition, name)
 
         return RaceResult(
             id=f"njuko-{slug}",
@@ -337,6 +318,103 @@ BROWSER_UA = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 )
+
+# The public edition API has no address at all (no `address`, no venue, no
+# geo field — checked Oct 2026), so most Njuko races came out with an empty
+# location: blank in the WhatsApp recap and geocoded from the race name, which
+# put Barbâtre (85) in Reims and the Épopée Royale (Blois) in Tours. Town of
+# each club-relevant event, keyed by a fragment of its name, normalized
+# (lowercase, no accents, punctuation → space) and without the year, so one
+# entry covers every edition. The run warns about races with members and no
+# location: add them here.
+_EVENT_LOCATIONS = {
+    "grenoble ekiden": "Grenoble (38)",
+    "landasienne": "Landas (59)",
+    "la bacchanale": "Vaison-la-Romaine (84)",
+    "trail de barbatre": "Barbâtre (85)",
+    "veni vici": "Uzès (30)",
+    "saintelyon": "Lyon (69)",
+    "epopee royale": "Blois (41)",
+    "trail du loup blanc": "Guéret (23)",
+    "trails du pignada": "Soustons (40)",
+    "trail de la balocha": "Angresse (40)",
+    "sente des moines": "Gruchet-le-Valasse (76)",
+    "fetes de seignosse": "Seignosse (40)",
+    "marathon poitiers futuroscope": "Chasseneuil-du-Poitou (86)",
+    "saumur marathon de la loire": "Saumur (49)",
+    "marathon de nantes": "Nantes (44)",
+    "10 et 20 km de tours": "Tours (37)",
+    "marathon de paris": "Paris (75)",
+}
+
+_PARIS = ZoneInfo("Europe/Paris")
+
+
+def _normalize_key(text: str) -> str:
+    text = normalize_text(text or "").lower()
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", text).split())
+
+
+def known_location(*names: str) -> str:
+    for name in names:
+        padded = f" {_normalize_key(name)} "
+        for key, town in _EVENT_LOCATIONS.items():
+            if f" {key} " in padded:
+                return town
+    return ""
+
+
+def _local_day(iso: str) -> str:
+    """'2026-11-07T23:00:00.000Z' → '2026-11-08' (Paris). Njuko stores local
+    midnight in UTC, so the first 10 characters are the day BEFORE."""
+    try:
+        dt = datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+    except ValueError:
+        m = re.match(r"\d{4}-\d{2}-\d{2}", str(iso))
+        return m.group(0) if m else ""
+    if dt.tzinfo is None:
+        return dt.date().isoformat()
+    return dt.astimezone(_PARIS).date().isoformat()
+
+
+def _edition_date(edition: dict) -> str:
+    """Race day: the earliest competition start (the edition's own startDate
+    is sometimes a day off — Barbâtre 2026: edition 16/11, races 15/11),
+    falling back to the edition startDate. Both converted to Paris time."""
+    starts = sorted(
+        c["startDate"]
+        for c in edition.get("competitions") or []
+        if isinstance(c, dict) and c.get("startDate")
+    )
+    raw = starts[0] if starts else edition.get("startDate", "")
+    return _local_day(raw) if raw else ""
+
+
+def _edition_name(edition: dict) -> str:
+    names = edition.get("name") or []
+    if isinstance(names, list) and names:
+        first = names[0]
+        if isinstance(first, dict):
+            return first.get("translation") or first.get("value") or ""
+        return str(first)
+    return ""
+
+
+def _edition_location(edition: dict, name: str = "") -> str:
+    """Town of the edition: address fields if Njuko ever fills them, else
+    the _EVENT_LOCATIONS table (edition name, event name, race name)."""
+    for addr in (edition.get("address"), (edition.get("event") or {}).get("address")):
+        if isinstance(addr, dict) and addr.get("city"):
+            return addr["city"]
+    addr = edition.get("address")
+    if isinstance(addr, dict) and addr.get("country") not in (None, "", "FR"):
+        return addr["country"]
+    return known_location(
+        name,
+        _edition_name(edition),
+        (edition.get("event") or {}).get("reportName", ""),
+    )
+
 
 _SLUG_CACHE_PATH = Path(__file__).resolve().parent.parent / "data" / "njuko_slugs.json"
 
@@ -593,35 +671,9 @@ def _validate_slug(entry: str) -> dict | None:
         return None
 
     edition_id = data.get("_id", "")
-    name_arr = data.get("name", [])
-    name = ""
-    if isinstance(name_arr, list) and name_arr:
-        name = name_arr[0].get("value", "") if isinstance(name_arr[0], dict) else str(name_arr[0])
-    if not name:
-        name = data.get("reportName", slug)
-
-    start_date = data.get("startDate", "")
-    date_str = ""
-    if start_date:
-        dm = re.match(r"(\d{4}-\d{2}-\d{2})", start_date)
-        if dm:
-            date_str = dm.group(1)
-
-    location = ""
-    address = data.get("address", {})
-    if isinstance(address, dict):
-        city = address.get("city", "")
-        country = address.get("country", "")
-        if city:
-            location = city
-        elif country and country != "FR":
-            location = country
-    if not location:
-        event_obj = data.get("event", {})
-        if isinstance(event_obj, dict):
-            addr2 = event_obj.get("address", {})
-            if isinstance(addr2, dict):
-                location = addr2.get("city", "")
+    name = _edition_name(data) or data.get("reportName", slug)
+    date_str = _edition_date(data)
+    location = _edition_location(data, name)
 
     return {
         "platform": "njuko",

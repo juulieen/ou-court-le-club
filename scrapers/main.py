@@ -34,6 +34,7 @@ from .listino import discover_races as listino_discover
 from .klikego import KlikegoScraper
 from .klikego import discover_races as klikego_discover
 from .njuko import NjukoScraper
+from .njuko import known_location as njuko_known_location
 from .njuko import discover_races as njuko_discover
 from .njuko import discover_utmb_races as utmb_discover
 from .onsinscrit import OnSinscritScraper
@@ -389,6 +390,18 @@ def merge_archive(results: list[dict]) -> tuple[list[dict], list[dict]]:
         if rid not in known_ids:
             new_races.append(race)
         archive[rid] = race  # fresh data wins
+
+    # Past Njuko races drop out of discovery, so they never get the town from
+    # njuko._EVENT_LOCATIONS: fill it here and re-place them (their
+    # coordinates came from the race name — Pignada was in Mimizan).
+    for race in archive.values():
+        if race.get("platform") == "njuko" and not race.get("location"):
+            town = njuko_known_location(race.get("name", ""))
+            if town:
+                race["location"] = town
+                race.pop("lat", None)
+                race.pop("lng", None)
+                geocode_race(race)
 
     ARCHIVE_PATH.parent.mkdir(parents=True, exist_ok=True)
     ARCHIVE_PATH.write_text(
@@ -880,6 +893,22 @@ def run():
 
     no_coords = sum(1 for r in results if r.get("lat") is None)
     print(f"  {geo_count} geocodes, {no_coords} sans coordonnees ({_elapsed(geo_start)})")
+    # A race without a location is shown with no town in the recap and placed
+    # from its name alone — which put Barbâtre (85) in Reims. Njuko exposes no
+    # address at all: those go in njuko._EVENT_LOCATIONS.
+    no_location = sorted(
+        f"{r.get('name', '?')} ({r.get('platform', '?')})"
+        for r in results
+        if not (r.get("location") or "").strip()
+    )
+    if no_location:
+        message = (
+            f"{len(no_location)} course(s) avec membres sans lieu, placées "
+            f"d'après leur nom: {', '.join(no_location)}"
+        )
+        print(f"  ⚠️  {message}")
+        if os.environ.get("GITHUB_ACTIONS"):
+            print(f"::warning title=Courses sans lieu::{message}")
 
     # --- Save ---
     print(f"\n{'─'*60}")
