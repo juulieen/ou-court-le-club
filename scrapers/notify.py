@@ -2,9 +2,11 @@
 
 **Autonomous ``send``** (the active path, used by the Docker cron) —
 self-contained, stdlib only. Once a month (cron run of the LAST day of the
-month, so the picture of next month is as fresh as possible), it
-posts ONE single message to the Beeper Desktop HTTP API (the T14 Desktop,
-reachable over Tailscale): the digest of all upcoming races with members.
+month, so the picture of next month is as fresh as possible; retried daily
+during the first ``DIGEST_CATCHUP_DAYS`` days of the next month if that send
+failed), it posts ONE short message to the Beeper Desktop HTTP API (the T14
+Desktop, reachable over Tailscale): one line per race of the coming month,
+later races reduced to a count, a single link to the map.
 Member names come from the FULL private ``races.json`` (GitHub artifact, via
 ``GH_TOKEN``) so the recap names everyone; without a token it falls back to
 the public ``races.json`` (opt-in first names only). Dry-run by default;
@@ -29,7 +31,8 @@ CLI:
     python -m scrapers.notify clear           # empty the queue
     python -m scrapers.notify token           # obtain a token (accept popup on T14)
     python -m scrapers.notify send            # dry-run: print what WOULD be sent
-    python -m scrapers.notify send --live      # post the digest if due this month
+    python -m scrapers.notify send --live      # post the digest if due
+    python -m scrapers.notify test             # digest preview → Note to self
     python -m scrapers.notify fetch-private    # drop races_private.json (full names)
                                                # into PRIVATE_DIR for the
                                                # tailnet-only courses.juulieen.fr
@@ -51,7 +54,10 @@ it is obtained, so it is fetched once via ``token`` and reused for ~30 days;
     NOTIFIED_PATH      digest state path    (default: data/notified.json)
     PRIVATE_DIR        fetch-private target (served by the tailnet-only vhost)
     TOKEN_PATH         stored token path    (default: data/beeper_token.json)
-    TOKEN_REMINDER_DAYS  remind N days before expiry (default: 3)
+    TOKEN_REMINDER_DAYS  remind daily from N days before expiry (default: 7)
+    ALERT_URL          out-of-Beeper alert (e.g. https://ntfy.sh/<topic>) when
+                       the token is expired or a due digest fails to send
+    DIGEST_CATCHUP_DAYS  retry window into the announced month (default: 7)
 """
 
 import base64
@@ -109,7 +115,14 @@ SITE_URL = os.environ.get(
 # est posté dans "Note to self" quelques jours avant l'expiration.
 _TOKEN_ENV = os.environ.get("TOKEN_PATH")
 TOKEN_PATH = Path(_TOKEN_ENV) if _TOKEN_ENV else (ROOT / "data" / "beeper_token.json")
-REMINDER_DAYS = int(os.environ.get("TOKEN_REMINDER_DAYS", "3"))
+REMINDER_DAYS = int(os.environ.get("TOKEN_REMINDER_DAYS", "7"))
+# Alerte hors Beeper (ex. topic ntfy : https://ntfy.sh/<topic>) : POST du texte
+# brut. Sert quand Beeper ne peut plus rien poster — token expiré, ou récap
+# dû qui échoue. Vide = alertes seulement dans les logs du conteneur.
+ALERT_URL = os.environ.get("ALERT_URL", "")
+# Le récap du mois M+1 part le dernier jour de M ; s'il échoue (T14 éteint,
+# token expiré…), on retente chaque jour jusqu'au CATCHUP_DAYS-ième jour de M+1.
+CATCHUP_DAYS = int(os.environ.get("DIGEST_CATCHUP_DAYS", "7"))
 # Le rappel d'expiration va toujours à "Note to self" (perso), jamais au groupe.
 REMINDER_CHAT_ID = os.environ.get(
     "BEEPER_REMINDER_CHAT_ID", ""
@@ -124,6 +137,9 @@ _MONTHS_FR = [
     "", "janvier", "février", "mars", "avril", "mai", "juin", "juillet",
     "août", "septembre", "octobre", "novembre", "décembre",
 ]
+_WEEKDAYS_FR = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."]
+# Noms affichés par course dans le récap avant de passer à « +N ».
+_DIGEST_MAX_NAMES = 3
 
 
 def _load_queue() -> list[dict]:
@@ -193,32 +209,63 @@ def build_message(item: dict) -> str:
     return "\n".join(lines)
 
 
-def build_digest(races: list[dict]) -> str:
-    """Le récap mensuel : UN message regroupant toutes les courses à venir
-    avec des membres (demande de Maxime, Team com 2026-09-20). Tous les noms
-    sont affichés, sans troncature — le message reste dans le groupe privé."""
-    today = date.today()
-    lines = [
-        f"🗓️ Où court le club — récap de {_MONTHS_FR[today.month]} {today.year}",
-        "",
-    ]
-    for r in races:
-        name = r.get("name", "Course")
-        when = _fmt_date(r.get("date", ""))
-        location = r.get("location") or ""
-        count = r.get("member_count", 0)
-        names = _member_names(r)
-        who = " : " + ", ".join(names) if names else ""
-        plural = "s" if count > 1 else ""
-        race_id = r.get("id")
-        site_link = f"{SITE_URL}#race/{race_id}" if race_id else SITE_URL
-        lines += [
-            f"📍 {when} — {name}" + (f" ({location})" if location else ""),
-            f"👥 {count} membre{plural} inscrit{plural}{who}",
-            f"🗺️ {site_link}",
-            "",
-        ]
-    lines.append("Qui d'autre y va ? 👀")
+def _display_race_name(name: str) -> str:
+    """« LA MONTBRUNIGHT » → « La Montbrunight » ; les noms déjà en casse
+    mixte sont laissés tels quels."""
+    if not name.isupper():
+        return name
+    small = {"de", "du", "des", "la", "le", "les", "et", "en", "à", "au", "aux"}
+    words = name.lower().split(" ")
+    # .title() gère les traits d'union et apostrophes (« St-Julien », « L'Ars »).
+    return " ".join(
+        w if i and w in small else w.title() for i, w in enumerate(words)
+    )
+
+
+def _digest_line(r: dict) -> str:
+    """• sam. 14 · Marathon du Cognac (Jarnac, Charente) — Lucas +3"""
+    iso = (r.get("date") or "")[:10]
+    try:
+        d = date.fromisoformat(iso)
+        when = f"{_WEEKDAYS_FR[d.weekday()]} {d.day}"
+    except ValueError:
+        when = _fmt_date(iso)
+    name = _display_race_name(r.get("name") or "Course")
+    location = r.get("location") or ""
+    count = r.get("member_count", 0)
+    names = _member_names(r)[:_DIGEST_MAX_NAMES]
+    if names:
+        rest = count - len(names)
+        who = ", ".join(names) + (f" +{rest}" if rest > 0 else "")
+    else:
+        who = f"{count} membre" + ("s" if count > 1 else "")
+    return f"• {when} · {name}" + (f" ({location})" if location else "") + f" — {who}"
+
+
+def build_digest(races: list[dict], period: str) -> str:
+    """Le récap mensuel : UN message court pour le mois ``period`` (YYYY-MM).
+    Demande de Maxime (Team com, 2026-09-20) : les messages longs se perdaient
+    dès que quelqu'un écrivait juste avant. Donc une ligne par course du mois
+    annoncé, les courses plus lointaines réduites à un compte, un seul lien.
+    ``races`` = courses à venir avec membres, triées par date."""
+    year, month = (int(x) for x in period.split("-"))
+    start = f"{period}-01"
+    end = date(year + month // 12, month % 12 + 1, 1).isoformat()
+    # Les courses d'avant le mois annoncé (celles du jour de l'envoi, le 31)
+    # n'ont rien à faire sous le titre « novembre ».
+    soon = [r for r in races if start <= (r.get("date") or "")[:10] < end]
+    races = [r for r in races if (r.get("date") or "")[:10] >= start]
+    later = len(races) - len(soon)
+
+    lines = [f"🗓️ **Où court le club — {_MONTHS_FR[month]} {year}**", ""]
+    if soon:
+        lines += [_digest_line(r) for r in soon]
+    else:
+        lines.append(f"Aucune course repérée en {_MONTHS_FR[month]} pour l'instant.")
+    if later:
+        s = "s" if later > 1 else ""
+        lines += ["", f"➕ {later} course{s} plus tard"]
+    lines += ["", f"🗺️ Toutes les courses : {SITE_URL}", "Qui d'autre y va ? 👀"]
     return "\n".join(lines)
 
 
@@ -523,13 +570,52 @@ def _fetch_races() -> list[dict]:
     return data.get("races", [])
 
 
-def _load_digest_state() -> dict:
-    """État persisté du récap : ``{"last_digest": "YYYY-MM"}`` ({} si absent)."""
-    return _read_json(SEND_NOTIFIED_PATH, {})
+def _next_month(ym: str) -> str:
+    y, m = (int(x) for x in ym.split("-"))
+    return f"{y + m // 12}-{m % 12 + 1:02d}"
 
 
-def _save_digest_state(month: str) -> None:
-    _write_json(SEND_NOTIFIED_PATH, {"last_digest": month})
+def _last_period() -> str | None:
+    """Dernier mois ANNONCÉ par un récap (``YYYY-MM``), ou None.
+    L'ancien état ``last_digest`` stockait le mois d'ENVOI (récap envoyé fin
+    août = septembre annoncé) : converti à la lecture."""
+    state = _read_json(SEND_NOTIFIED_PATH, {})
+    if state.get("last_period"):
+        return state["last_period"]
+    if state.get("last_digest"):
+        return _next_month(state["last_digest"])
+    return None
+
+
+def _save_last_period(period: str) -> None:
+    _write_json(SEND_NOTIFIED_PATH, {"last_period": period})
+
+
+def _digest_period(today: date) -> str | None:
+    """Mois que le récap doit annoncer aujourd'hui, ou None hors fenêtre.
+    Fenêtre : le dernier jour du mois (annonce le mois suivant), puis les
+    CATCHUP_DAYS premiers jours du mois (rattrapage si l'envoi a échoué)."""
+    tomorrow = today + timedelta(days=1)
+    if tomorrow.month != today.month:
+        return tomorrow.strftime("%Y-%m")
+    if today.day <= CATCHUP_DAYS:
+        return today.strftime("%Y-%m")
+    return None
+
+
+def _alert(text: str) -> None:
+    """Alerte hors Beeper (ALERT_URL, ex. ntfy). Toujours loguée sur stderr."""
+    print(f"\n🚨 {text}", file=sys.stderr)
+    if not ALERT_URL:
+        return
+    st, body = _http(
+        "POST",
+        ALERT_URL,
+        headers={"Title": "RunEvent86 notify", "Tags": "warning"},
+        data=text.encode("utf-8"),
+    )
+    if st not in (200, 201, 202, 204):
+        print(f"   (alerte non délivrée : {st} {body[:100]})", file=sys.stderr)
 
 
 def _eligible_upcoming(races: list[dict]) -> list[dict]:
@@ -575,8 +661,14 @@ def cmd_token(argv: list[str]) -> int:
 
 
 def cmd_test(argv: list[str]) -> int:
-    """Envoie UN message d'exemple (la prochaine course à venir) vers la cible,
-    sans toucher au log de dédup. Sert à vérifier la chaîne de bout en bout."""
+    """Envoie le récap du mois prochain, préfixé 🧪, sans rien marquer. Part
+    vers la conversation des rappels (Note to self), jamais vers le groupe."""
+    if not REMINDER_CHAT_ID:
+        print(
+            "❌ BEEPER_REMINDER_CHAT_ID vide : le test partirait dans le groupe.",
+            file=sys.stderr,
+        )
+        return 1
     token = _require_token()
     if not token:
         return 1
@@ -588,9 +680,10 @@ def cmd_test(argv: list[str]) -> int:
     if not eligible:
         print("Aucune course à venir avec membres à utiliser comme exemple.")
         return 1
-    msg = "🧪 TEST — " + build_message(eligible[0])
-    print(f"Envoi test vers {BEEPER_CHAT_ID} …\n{msg}\n")
-    ok, body = _post_message(token, BEEPER_CHAT_ID, msg)
+    period = _next_month(date.today().strftime("%Y-%m"))
+    msg = "🧪 TEST — " + build_digest(eligible, period)
+    print(f"Envoi test vers {REMINDER_CHAT_ID} …\n{msg}\n")
+    ok, body = _post_message(token, REMINDER_CHAT_ID, msg)
     print("✅ envoyé (rien marqué)" if ok else f"❌ échec: {body[:150]}")
     return 0 if ok else 1
 
@@ -628,37 +721,40 @@ def cmd_send(argv: list[str]) -> int:
         return 1
 
     eligible = _eligible_upcoming(races)
-    today = date.today()
-    month = today.strftime("%Y-%m")
-    last = _load_digest_state().get("last_digest")
-    # Récap envoyé le DERNIER jour du mois (photo la plus fraîche possible du
-    # mois à venir) : dû si on y est et qu'il n'a pas encore été envoyé.
-    is_last_day = (today + timedelta(days=1)).month != today.month
-    due = is_last_day and last != month
+    period = _digest_period(date.today())
+    last = _last_period()
+    due = period is not None and last != period
 
     # Token : réutilisé tant qu'il est valide (~30j). En LIVE on ne fait PAS de
     # fetch automatique (ça demanderait ton acceptation) : si le token manque ou
-    # est expiré, on le signale et on s'arrête proprement.
+    # est expiré, on alerte (hors Beeper, puisqu'il ne peut plus rien poster).
     stored = _load_stored_token()
     days_left = (
         int((stored["expires_at"] - time.time()) // 86400) if stored else None
     )
 
     if due:
-        status = "DÛ"
-    elif last == month:
-        status = "déjà envoyé"
+        status = f"DÛ ({period})"
+    elif period:
+        status = f"{period} déjà envoyé"
     else:
-        status = "prévu le dernier jour du mois"
+        status = "hors fenêtre (dernier jour du mois)"
     print(
         f"# {len(eligible)} course(s) à venir avec membres | "
-        f"dernier récap: {last or 'jamais'} | récap {month}: {status}\n"
+        f"dernier mois annoncé: {last or 'jamais'} | récap: {status}\n"
         f"# cible: {BEEPER_CHAT_ID} | mode: {'LIVE' if live else 'DRY-RUN'} | "
         f"token: {'valide ' + str(days_left) + 'j' if stored else 'ABSENT/EXPIRÉ'}"
     )
 
-    # Rappel d'expiration (toujours vers Note to self), tant que le token vit.
-    if live and stored and days_left is not None and days_left <= REMINDER_DAYS:
+    if live and not stored:
+        # Répétée à chaque run quotidien jusqu'au renouvellement.
+        _alert(
+            "Token Beeper expiré : plus aucun récap ne peut partir. "
+            "Relance `docker exec -it runevent86-notify python /app/notify.py "
+            "token` et accepte la popup sur le T14."
+        )
+    elif live and days_left is not None and days_left <= REMINDER_DAYS:
+        # Rappel quotidien (Note to self) tant que le token vit encore.
         ok, body = _post_message(
             stored["access_token"],
             REMINDER_CHAT_ID,
@@ -670,22 +766,19 @@ def cmd_send(argv: list[str]) -> int:
         )
 
     if not due:
-        if last == month:
-            print("\n✅ Récap du mois déjà envoyé — rien à faire.")
-        else:
-            print("\n✅ Récap prévu le dernier jour du mois — rien à faire.")
+        print("\n✅ Rien à envoyer aujourd'hui.")
         return 0
 
     if not eligible:
         # Mois sans course à annoncer : on marque quand même pour ne pas
-        # ré-afficher ce bilan à chaque run quotidien.
+        # ré-afficher ce bilan à chaque run de la fenêtre.
         if live:
-            _save_digest_state(month)
+            _save_last_period(period)
         print("\n✅ Aucune course à venir avec membres — pas de récap ce mois-ci.")
         return 0
 
-    msg = build_digest(eligible)
-    print(f"\n--- récap {month} ---\n{msg}")
+    msg = build_digest(eligible, period)
+    print(f"\n--- récap {period} ---\n{msg}")
 
     if not live:
         print(
@@ -695,19 +788,15 @@ def cmd_send(argv: list[str]) -> int:
         return 0
 
     if not stored:
-        print(
-            "\n❌ Pas de token valide. Lance `notify.py token` et accepte la popup "
-            "sur le T14 (rien n'a été envoyé ni marqué).",
-            file=sys.stderr,
-        )
+        # L'alerte token est déjà partie plus haut ; retentative au prochain run.
         return 1
 
     ok, body = _post_message(stored["access_token"], BEEPER_CHAT_ID, msg)
     if not ok:
-        # Mois non marqué → retentative au prochain run.
-        print(f"\n❌ Échec envoi: {body[:150]}", file=sys.stderr)
+        # Période non marquée → retentative au prochain run de la fenêtre.
+        _alert(f"Échec d'envoi du récap {period} (nouvel essai demain) : {body[:150]}")
         return 1
-    _save_digest_state(month)
+    _save_last_period(period)
     print("\n✅ Récap envoyé.")
     return 0
 

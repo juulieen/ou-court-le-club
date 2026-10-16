@@ -31,6 +31,7 @@ jobs:
           BEEPER_CHAT_ID=${{ secrets.RUNEVENT86_NOTIFY_CHAT_ID }}
           BEEPER_REMINDER_CHAT_ID=${{ secrets.RUNEVENT86_NOTIFY_REMINDER_CHAT_ID }}
           GH_TOKEN=${{ secrets.RUNEVENT86_NOTIFY_GH_TOKEN }}
+          ALERT_URL=${{ secrets.RUNEVENT86_NOTIFY_ALERT_URL }}
           NOTIFY_ARGS=${{ vars.RUNEVENT86_NOTIFY_ARGS }}
           EOF
 

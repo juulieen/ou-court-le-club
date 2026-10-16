@@ -39,11 +39,25 @@ Historique des évolutions notables. Format inspiré de
   demande de Maxime — Team com 2026-09-20) : un seul message par mois,
   envoyé **le dernier jour du mois**, regroupant toutes les courses à venir
   avec membres, au lieu d'un message par nouvelle course et par nouvel
-  inscrit. Le mois envoyé est persisté dans `notified.json` (`last_digest`) ;
-  échec d'envoi ⇒ mois non marqué. Le récap affiche les **noms complets de
+  inscrit. Le mois annoncé est persisté dans `notified.json` (`last_period`,
+  l'ancien `last_digest` est converti à la lecture). Le récap affiche les **noms complets de
   tous les membres** (groupe privé) : source = artifact GitHub `scraper-data`
   via un PAT fine-grained (`GH_TOKEN`, secret `RUNEVENT86_NOTIFY_GH_TOKEN`),
   repli sur le flux public (prénoms opt-in) s'il est absent.
+- **Récap court et fiable** (2026-10-17) : celui de fin septembre n'est
+  jamais parti (T14 injoignable le 30/09, l'envoi n'était tenté que ce
+  jour-là). Désormais :
+  - une ligne par course du mois annoncé, les suivantes réduites à un
+    compte, un seul lien vers la carte (les messages longs se perdaient
+    dans le groupe) ;
+  - rattrapage : nouvel essai chaque jour jusqu'au 7 du mois annoncé
+    (`DIGEST_CATCHUP_DAYS`) ;
+  - alertes hors Beeper via `ALERT_URL` (topic ntfy, secret
+    `RUNEVENT86_NOTIFY_ALERT_URL`) tant que le token est expiré ou quand un
+    récap dû échoue ;
+  - rappel d'expiration du token quotidien dès J-7 (au lieu de J-3) ;
+  - `notify.py test` envoie un aperçu du récap vers « Note to self »
+    uniquement (refusé si `BEEPER_REMINDER_CHAT_ID` est vide).
 - **Flux calendrier `.ics` : tout l'historique** (`scrapers/main.py
   generate_ics`) : les courses passées ne sont plus filtrées — l'agenda
   sert aussi d'historique du club (demande Julien 2026-09-26). Les abonnés

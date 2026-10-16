@@ -27,9 +27,13 @@ services:
       # "" = dry-run (défaut, sûr) ; "--live" = envoi réel
       NOTIFY_ARGS: "${NOTIFY_ARGS:-}"
       # Token Beeper (persisté dans le volume ; obtenu via `notify.py token`,
-      # tu acceptes la popup sur le laptop ; valide ~30j, rappel auto avant expiry)
+      # tu acceptes la popup sur le laptop ; valide ~30j, rappel quotidien à
+      # partir de J-7)
       TOKEN_PATH: "/data/beeper_token.json"
-      TOKEN_REMINDER_DAYS: "3"
+      TOKEN_REMINDER_DAYS: "7"
+      # Alerte hors Beeper (topic ntfy) quand le token est expiré ou qu'un
+      # récap dû échoue — vide = alertes uniquement dans les logs
+      ALERT_URL: "${ALERT_URL:-}"
       # Vue privée (noms complets) : fetch-private dépose races_private.json
       # dans /private, servi par le vhost tailnet-only courses.juulieen.fr
       # (montage caddy : ~/server/runevent86-notify/private → /srv/…-private)

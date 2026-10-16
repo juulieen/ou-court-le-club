@@ -1,8 +1,9 @@
 # Notifieur de courses — conteneur
 
-Poste **une fois par mois un unique message** Beeper/WhatsApp, le **dernier
-jour du mois** : le récap de toutes les courses à venir avec des membres du
-club (demande de Maxime, Team com 2026-09-20 — les notifs au fil de l'eau
+Poste **une fois par mois un unique message court** Beeper/WhatsApp, le
+**dernier jour du mois** : une ligne par course du mois qui vient (date, nom,
+lieu, membres), les courses plus lointaines réduites à un compte, un seul lien
+vers la carte (demande de Maxime, Team com 2026-09-20 — les notifs au fil de l'eau
 noyaient la conversation). Le récap affiche **les noms complets de tous les
 membres** (le message reste dans le groupe privé) : ils proviennent du
 `races.json` complet, téléchargé depuis l'artifact GitHub `scraper-data` du
@@ -17,8 +18,10 @@ opt-in uniquement).
    (`crontab`, `TZ` du conteneur).
 3. `notify.py send` récupère les courses (artifact GitHub si `GH_TOKEN`,
    sinon flux public) et, **le dernier jour du mois** si le récap n'a pas
-   encore été envoyé (`notified.json` persistant dans le volume `/data`),
-   poste UN message groupé puis marque le mois.
+   encore été envoyé (`notified.json` persistant dans le volume `/data`,
+   `{"last_period": "YYYY-MM"}` = dernier mois annoncé), poste UN message
+   groupé puis marque le mois. En cas d'échec, nouvel essai chaque jour
+   jusqu'au 7 du mois annoncé (`DIGEST_CATCHUP_DAYS`).
 4. L'envoi passe par l'**API Beeper Desktop** d'une machine du réseau Tailscale
    (voir `BEEPER_API` dans `.env`), avec un **token OAuth valable ~30 jours**.
 
@@ -31,14 +34,15 @@ l'envoi vit dans ce conteneur côté LAN, et non dans le workflow.
   enverrait sans rien poster. Passer à `--live` pour activer l'envoi réel.
 - **Cible par défaut = "Note to self"**. Groupe club seulement après validation
   (ID conservé dans le secret GitHub `RUNEVENT86_NOTIFY_CHAT_ID_PROD`).
-- **Un seul envoi par mois, le dernier jour** : le mois est marqué dans
-  `notified.json` après un envoi réussi ; les autres runs quotidiens ne font
-  rien. En cas d'échec d'envoi ce jour-là, le mois n'est pas marqué → mais la
-  retentative n'est possible que le jour même (le lendemain, on est déjà dans
-  le mois suivant) : si l'ASUS ou Beeper est down le dernier jour du mois, le
-  récap du mois est simplement sauté.
-- La machine Beeper doit être allumée au moment du run (sinon échec silencieux,
-  réessai le lendemain — notifs non urgentes).
+- **Un seul envoi par mois** : le mois annoncé est marqué dans
+  `notified.json` après un envoi réussi ; les autres runs ne font rien. Si
+  l'envoi du dernier jour échoue (T14 éteint, token expiré…), le mois n'est pas
+  marqué et le run quotidien retente jusqu'au 7 du mois annoncé. (Avant le
+  2026-10-17, un échec le dernier jour faisait sauter le mois : c'est ce qui
+  est arrivé au récap de fin septembre, token expiré le 23/09.)
+- **Alertes hors Beeper** (`ALERT_URL`, ex. topic ntfy) : à chaque run tant
+  que le token est expiré, et à chaque échec d'un récap dû. Beeper ne peut pas
+  prévenir de sa propre panne.
 
 ## Déploiement
 
@@ -71,10 +75,11 @@ docker compose -f compose.yaml up -d
 | `BEEPER_CHAT_ID` | conversation cible des notifs |
 | `BEEPER_REMINDER_CHAT_ID` | conversation pour les rappels d'expiration |
 | `GH_TOKEN` | PAT fine-grained (`Actions: read`) — noms complets via l'artifact `scraper-data` (vide = prénoms opt-in) |
+| `ALERT_URL` | alerte hors Beeper (ex. `https://ntfy.sh/<topic>`) — vide = logs seulement |
 | `NOTIFY_ARGS` | `""` (dry-run) ou `--live` |
 
 Fixes dans `compose.yaml` : `RACES_URL` (Pages public), `NOTIFIED_PATH` et
-`TOKEN_PATH` (dans le volume `/data`), `TOKEN_REMINDER_DAYS` (3j).
+`TOKEN_PATH` (dans le volume `/data`), `TOKEN_REMINDER_DAYS` (7j).
 
 ## Correction des homonymes (manuelle)
 
@@ -131,6 +136,7 @@ docker exec -it runevent86-notify python /app/notify.py token
 
 Le `send` ne redemande **jamais** de token automatiquement (sinon il faudrait
 accepter la popup à chaque run). À la place, quand le token approche de
-l'expiration (`TOKEN_REMINDER_DAYS`, 3j par défaut), il poste un **rappel dans
-"Note to self"** avec la commande à relancer. Il suffit de refaire un
+l'expiration (`TOKEN_REMINDER_DAYS`, 7j par défaut), il poste **chaque jour**
+un **rappel dans "Note to self"** avec la commande à relancer ; une fois le
+token expiré, l'alerte passe par `ALERT_URL`. Il suffit de refaire un
 `notify.py token` à ce moment-là.
