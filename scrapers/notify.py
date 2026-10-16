@@ -19,16 +19,7 @@ unique les remplace ; le mécanisme de correction d'homonymes par réaction 🚫
 (qui exigeait un message par membre) est abandonné avec elles — les
 exclusions se gèrent désormais à la main dans ``exclusions.json``.
 
-The older ``list``/``build``/``mark``/``clear`` commands drive a manual
-MCP-based loop over ``data/notifications_queue.json``. **That queue is not
-currently written by the pipeline**, so this path is dormant — kept only for a
-possible future human/MCP-driven flow; ``send`` fully covers today's need.
-
 CLI:
-    python -m scrapers.notify list            # formatted messages + ids (JSON)
-    python -m scrapers.notify build <id>      # message text for one race
-    python -m scrapers.notify mark <id>...    # remove races from the queue
-    python -m scrapers.notify clear           # empty the queue
     python -m scrapers.notify token           # obtain a token (accept popup on T14)
     python -m scrapers.notify send            # dry-run: print what WOULD be sent
     python -m scrapers.notify send --live      # post the digest if due
@@ -76,12 +67,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-NOTIFY_QUEUE_PATH = ROOT / "data" / "notifications_queue.json"
 NOTIFIED_LOG_PATH = ROOT / "data" / "notified.json"
-
-# "Blabla Run Event 86" WhatsApp group (Beeper MCP renderer id — NOT the API
-# Matrix chatID). The autonomous sender uses BEEPER_CHAT_ID instead.
-CLUB_CHAT_ID = "22548"
 
 # --- Autonomous `send` config (env-overridable) ---
 RACES_URL = os.environ.get(
@@ -131,7 +117,6 @@ REMINDER_CHAT_ID = os.environ.get(
 # abandonne proprement au lieu de bloquer.
 OAUTH_ACCEPT_TIMEOUT = int(os.environ.get("OAUTH_ACCEPT_TIMEOUT", "60"))
 
-_MAX_NAMES = 5
 # Noms de mois pour l'en-tête du récap (index 1-12).
 _MONTHS_FR = [
     "", "janvier", "février", "mars", "avril", "mai", "juin", "juillet",
@@ -140,24 +125,6 @@ _MONTHS_FR = [
 _WEEKDAYS_FR = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."]
 # Noms affichés par course dans le récap avant de passer à « +N ».
 _DIGEST_MAX_NAMES = 3
-
-
-def _load_queue() -> list[dict]:
-    if NOTIFY_QUEUE_PATH.exists():
-        try:
-            return json.loads(NOTIFY_QUEUE_PATH.read_text(encoding="utf-8")).get(
-                "pending", []
-            )
-        except Exception:
-            pass
-    return []
-
-
-def _save_queue(pending: list[dict]) -> None:
-    NOTIFY_QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    NOTIFY_QUEUE_PATH.write_text(
-        json.dumps({"pending": pending}, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
 
 
 def _fmt_date(iso: str) -> str:
@@ -173,40 +140,6 @@ def _member_names(item: dict) -> list[str]:
     si disponibles, sinon prénoms opt-in (flux public)."""
     names = [m.get("name", "") for m in item.get("members") or [] if m.get("name")]
     return names or (item.get("first_names") or [])
-
-
-def build_message(item: dict) -> str:
-    """Build the WhatsApp message text for one race."""
-    name = item.get("name", "Course")
-    date = _fmt_date(item.get("date", ""))
-    location = item.get("location") or ""
-    count = item.get("member_count", 0)
-    names = _member_names(item)
-
-    when = f"🗓️ {date}" + (f" — {location}" if location else "")
-
-    if names:
-        shown = names[:_MAX_NAMES]
-        suffix = f" +{len(names) - _MAX_NAMES}" if len(names) > _MAX_NAMES else ""
-        who = " : " + ", ".join(shown) + suffix
-    else:
-        who = ""
-
-    plural = "s" if count > 1 else ""
-    lines = [
-        "🏁 Nouvelle course repérée pour le club !",
-        "",
-        f"📍 {name}",
-        when,
-        f"👥 {count} membre{plural} inscrit{plural}{who}",
-    ]
-    # Lien vers "Où court le club" (deep-link sur la course) ; le lien
-    # d'inscription est accessible depuis la fiche de la course sur le site.
-    race_id = item.get("id")
-    site_link = f"{SITE_URL}#race/{race_id}" if race_id else SITE_URL
-    lines += ["", f"🗺️ Où court le club : {site_link}"]
-    lines += ["", "Qui d'autre y va ? 👀"]
-    return "\n".join(lines)
 
 
 def _display_race_name(name: str) -> str:
@@ -267,60 +200,6 @@ def build_digest(races: list[dict], period: str) -> str:
         lines += ["", f"➕ {later} course{s} plus tard"]
     lines += ["", f"🗺️ Toutes les courses : {SITE_URL}", "Qui d'autre y va ? 👀"]
     return "\n".join(lines)
-
-
-def cmd_list() -> int:
-    pending = _load_queue()
-    if not pending:
-        print("Aucune notification en attente.")
-        return 0
-    print(f"# {len(pending)} notification(s) en attente — chat cible: {CLUB_CHAT_ID}\n")
-    for item in pending:
-        print(f"--- id: {item.get('id')} ---")
-        print(build_message(item))
-        print()
-    # Machine-readable footer for tooling
-    print("# ids:", json.dumps([i.get("id") for i in pending]))
-    return 0
-
-
-def cmd_build(race_id: str) -> int:
-    for item in _load_queue():
-        if item.get("id") == race_id:
-            print(build_message(item))
-            return 0
-    print(f"id introuvable dans la file: {race_id}", file=sys.stderr)
-    return 1
-
-
-def cmd_mark(ids: list[str]) -> int:
-    pending = _load_queue()
-    targets = set(ids)
-    kept = [i for i in pending if i.get("id") not in targets]
-    sent = [i for i in pending if i.get("id") in targets]
-    _save_queue(kept)
-
-    # Append to a persistent log of what was already announced
-    log = []
-    if NOTIFIED_LOG_PATH.exists():
-        try:
-            log = json.loads(NOTIFIED_LOG_PATH.read_text(encoding="utf-8")).get(
-                "notified", []
-            )
-        except Exception:
-            log = []
-    log.extend(i.get("id") for i in sent)
-    NOTIFIED_LOG_PATH.write_text(
-        json.dumps({"notified": log}, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    print(f"{len(sent)} marquée(s) notifiée(s), {len(kept)} restante(s).")
-    return 0
-
-
-def cmd_clear() -> int:
-    _save_queue([])
-    print("File vidée.")
-    return 0
 
 
 # --------------------------------------------------------------------------
@@ -587,8 +466,20 @@ def _last_period() -> str | None:
     return None
 
 
-def _save_last_period(period: str) -> None:
-    _write_json(SEND_NOTIFIED_PATH, {"last_period": period})
+def _save_state(**values) -> None:
+    state = _read_json(SEND_NOTIFIED_PATH, {})
+    state.update(values)
+    _write_json(SEND_NOTIFIED_PATH, state)
+
+
+def _done_today(key: str) -> bool:
+    """Le cron tourne 3 fois par jour : rappels et alertes de token ne doivent
+    partir qu'une fois. ``key`` note le jour du dernier envoi réussi."""
+    return _read_json(SEND_NOTIFIED_PATH, {}).get(key) == date.today().isoformat()
+
+
+def _mark_today(key: str) -> None:
+    _save_state(**{key: date.today().isoformat()})
 
 
 def _digest_period(today: date) -> str | None:
@@ -746,14 +637,20 @@ def cmd_send(argv: list[str]) -> int:
         f"token: {'valide ' + str(days_left) + 'j' if stored else 'ABSENT/EXPIRÉ'}"
     )
 
-    if live and not stored:
-        # Répétée à chaque run quotidien jusqu'au renouvellement.
+    if live and not stored and not _done_today("token_alerted"):
+        # Répétée chaque jour jusqu'au renouvellement.
         _alert(
             "Token Beeper expiré : plus aucun récap ne peut partir. "
             "Relance `docker exec -it runevent86-notify python /app/notify.py "
             "token` et accepte la popup sur le T14."
         )
-    elif live and days_left is not None and days_left <= REMINDER_DAYS:
+        _mark_today("token_alerted")
+    elif (
+        live
+        and days_left is not None
+        and days_left <= REMINDER_DAYS
+        and not _done_today("token_reminded")
+    ):
         # Rappel quotidien (Note to self) tant que le token vit encore.
         ok, body = _post_message(
             stored["access_token"],
@@ -764,6 +661,8 @@ def cmd_send(argv: list[str]) -> int:
             f"\n🔔 Rappel expiration token ({days_left}j): "
             + ("envoyé" if ok else f"échec {body[:100]}")
         )
+        if ok:
+            _mark_today("token_reminded")
 
     if not due:
         print("\n✅ Rien à envoyer aujourd'hui.")
@@ -773,7 +672,7 @@ def cmd_send(argv: list[str]) -> int:
         # Mois sans course à annoncer : on marque quand même pour ne pas
         # ré-afficher ce bilan à chaque run de la fenêtre.
         if live:
-            _save_last_period(period)
+            _save_state(last_period=period)
         print("\n✅ Aucune course à venir avec membres — pas de récap ce mois-ci.")
         return 0
 
@@ -796,23 +695,13 @@ def cmd_send(argv: list[str]) -> int:
         # Période non marquée → retentative au prochain run de la fenêtre.
         _alert(f"Échec d'envoi du récap {period} (nouvel essai demain) : {body[:150]}")
         return 1
-    _save_last_period(period)
+    _save_state(last_period=period)
     print("\n✅ Récap envoyé.")
     return 0
 
 
 def main(argv: list[str]) -> int:
-    if not argv:
-        return cmd_list()
-    cmd, rest = argv[0], argv[1:]
-    if cmd == "list":
-        return cmd_list()
-    if cmd == "build" and rest:
-        return cmd_build(rest[0])
-    if cmd == "mark" and rest:
-        return cmd_mark(rest)
-    if cmd == "clear":
-        return cmd_clear()
+    cmd, rest = (argv[0], argv[1:]) if argv else ("", [])
     if cmd == "send":
         return cmd_send(rest)
     if cmd == "token":

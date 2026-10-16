@@ -345,6 +345,7 @@ _EVENT_LOCATIONS = {
     "marathon de nantes": "Nantes (44)",
     "10 et 20 km de tours": "Tours (37)",
     "marathon de paris": "Paris (75)",
+    "foulee des geants": "Les Epesses (85)",  # Puy du Fou
 }
 
 _PARIS = ZoneInfo("Europe/Paris")
@@ -378,16 +379,20 @@ def _local_day(iso: str) -> str:
 
 
 def _edition_date(edition: dict) -> str:
-    """Race day: the earliest competition start (the edition's own startDate
-    is sometimes a day off — Barbâtre 2026: edition 16/11, races 15/11),
-    falling back to the edition startDate. Both converted to Paris time."""
-    starts = sorted(
-        c["startDate"]
+    """Race day, in Paris time. The edition startDate is the main day of
+    multi-day events (Poitiers-Futuroscope: 10 km on Friday, marathon on
+    Sunday = edition day), but it is sometimes off (Barbâtre 2026: edition
+    16/11, every race 15/11) — so keep it only if some competition starts that
+    day, else take the earliest competition."""
+    edition_day = _local_day(edition.get("startDate") or "")
+    comp_days = sorted(
+        _local_day(c["startDate"])
         for c in edition.get("competitions") or []
         if isinstance(c, dict) and c.get("startDate")
     )
-    raw = starts[0] if starts else edition.get("startDate", "")
-    return _local_day(raw) if raw else ""
+    if not comp_days or edition_day in comp_days:
+        return edition_day
+    return comp_days[0]
 
 
 def _edition_name(edition: dict) -> str:

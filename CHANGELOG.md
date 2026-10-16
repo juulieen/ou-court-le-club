@@ -5,6 +5,10 @@ Historique des évolutions notables. Format inspiré de
 
 ## [Non publié]
 
+### Supprimé
+- `notify.py list/build/mark/clear` et la file `notifications_queue.json`,
+  que plus rien n'alimentait depuis le récap mensuel.
+
 ### Ajouté
 - **Vue club tailnet-only avec noms complets** (`courses.juulieen.fr`) : le
   pipeline génère `races_private.json` (schéma public, `first_names` = noms
@@ -45,10 +49,20 @@ Historique des évolutions notables. Format inspiré de
   avertissement (`::warning::` en CI) liste les courses avec membres restées
   sans lieu. Les dates étaient aussi **décalées d'un jour** : `startDate`
   est minuit heure de Paris exprimé en UTC (`2026-11-07T23:00Z` = 8/11) ;
-  on prend désormais le début de la première épreuve, converti en heure de
-  Paris. Les courses passées de l'archive gardent leur ancienne date.
+  on convertit en heure de Paris, en gardant le jour de l'édition si une
+  épreuve a lieu ce jour-là (Poitiers-Futuroscope : le marathon du dimanche,
+  pas le 10 km du vendredi), sinon le jour de la première épreuve. Les
+  courses passées se corrigent avec `repair-archive --all --platform njuko`
+  (nouvelle option ; en CI, input `repair_platform` du workflow).
 
 ### Modifié
+- **Notifieur : 3 essais par jour** (11h30, 18h, 21h) : si le T14 dort à
+  11h30, le récap part le soir même. Rappels et alertes de token limités à
+  un par jour (`token_reminded` / `token_alerted` dans `notified.json`).
+- **Actions GitHub sur Node 24** (versions majeures minimales : checkout v5,
+  setup-python v6, cache v5, upload-artifact v6, download-artifact v7,
+  setup-node v5, configure-pages v6, upload-pages-artifact v4,
+  deploy-pages v5) — fin de l'avertissement « Node.js 20 is deprecated ».
 - **Notifications groupées en récap mensuel** (`scrapers/notify.py send`,
   demande de Maxime — Team com 2026-09-20) : un seul message par mois,
   envoyé **le dernier jour du mois**, regroupant toutes les courses à venir

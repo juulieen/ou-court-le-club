@@ -9,7 +9,7 @@ Local cache:
     python -m scrapers.cache_cli clear --empty
     python -m scrapers.cache_cli geocache list [PATTERN]
     python -m scrapers.cache_cli geocache clear PATTERN
-    python -m scrapers.cache_cli repair-archive [--platform P] [--dry-run]
+    python -m scrapers.cache_cli repair-archive [--platform P [--all]] [--dry-run]
 
 CI/Prod cache (requires gh CLI):
     python -m scrapers.cache_cli ci list          # list CI caches
@@ -331,14 +331,22 @@ def cmd_repair_archive(args):
     archive = json.loads(ARCHIVE.read_text(encoding="utf-8"))
     races = archive.get("races", [])
 
-    targets = [r for r in races if not r.get("date") or r.get("lat") is None]
+    if args.all and not args.platform:
+        print("--all needs --platform (re-scraping the whole archive is too slow).")
+        return
+    # --all: a scraper fix changed fields that are present but wrong (Njuko
+    # dates were a day early), so "missing" is not enough to find them.
+    targets = races if args.all else [
+        r for r in races if not r.get("date") or r.get("lat") is None
+    ]
     if args.platform:
         targets = [r for r in targets if r.get("platform") == args.platform]
     if not targets:
         print(f"Archive: {len(races)} race(s), none with missing metadata.")
         return
 
-    print(f"Archive: {len(races)} race(s), {len(targets)} with missing date or coordinates:")
+    what = "to refresh" if args.all else "with missing date or coordinates"
+    print(f"Archive: {len(races)} race(s), {len(targets)} {what}:")
     for r in targets:
         print(f"  · [{r.get('platform')}] {r.get('date') or '(no date)':12} {r.get('name', '?')[:55]}")
     if args.dry_run:
@@ -632,6 +640,8 @@ def main():
         help="Re-scrape metadata of archived races missing a date or coordinates",
     )
     p_repair.add_argument("--platform", help="Only repair this platform")
+    p_repair.add_argument("--all", action="store_true",
+                          help="Refresh every archived race of --platform, not only incomplete ones")
     p_repair.add_argument("--dry-run", action="store_true", help="List targets without writing")
 
     p_sync = sub.add_parser("sync", help="Sync cache between local and CI")

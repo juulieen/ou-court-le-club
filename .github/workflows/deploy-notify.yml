@@ -18,7 +18,7 @@ jobs:
     env:
       DEPLOY_DIR: ${{ vars.RUNEVENT86_NOTIFY_DEPLOY_DIR }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Sync build copy of notify.py
         run: cp scrapers/notify.py deploy/notify/notify.py

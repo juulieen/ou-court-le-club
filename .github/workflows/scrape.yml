@@ -13,6 +13,10 @@ on:
         description: 'Re-scrape metadata of archived races missing a date or coordinates'
         type: boolean
         default: false
+      repair_platform:
+        description: 'With repair_archive: re-scrape EVERY archived race of this platform (e.g. njuko)'
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -28,9 +32,9 @@ jobs:
     # (discovery ~20min + scraping budget 20min + geocode + build).
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: ${{ !inputs.skip_scrape }}
         with:
           python-version: '3.12'
@@ -48,7 +52,7 @@ jobs:
 
       - name: Restore data caches
         if: ${{ !inputs.skip_scrape }}
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             data/geocache.json
@@ -65,7 +69,14 @@ jobs:
       # cache — the local `repair-archive` cannot be uploaded. Off by default.
       - name: Repair archived race metadata
         if: ${{ !inputs.skip_scrape && inputs.repair_archive }}
-        run: python -m scrapers.cache_cli repair-archive
+        env:
+          REPAIR_PLATFORM: ${{ inputs.repair_platform }}
+        run: |
+          if [ -n "$REPAIR_PLATFORM" ]; then
+            python -m scrapers.cache_cli repair-archive --all --platform "$REPAIR_PLATFORM"
+          else
+            python -m scrapers.cache_cli repair-archive
+          fi
 
       - name: Run scrapers
         if: ${{ !inputs.skip_scrape }}
@@ -84,7 +95,7 @@ jobs:
 
       - name: Save data caches
         if: ${{ !inputs.skip_scrape }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: |
             data/geocache.json
@@ -104,7 +115,7 @@ jobs:
 
       - name: Upload cache as artifact (for local sync)
         if: ${{ !inputs.skip_scrape }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: scraper-data
           path: |
@@ -117,7 +128,7 @@ jobs:
           retention-days: 7
 
       # --- Astro frontend build ---
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'npm'
@@ -142,9 +153,9 @@ jobs:
           PUBLIC_MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
 
       # --- Deploy to GitHub Pages ---
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: frontend/dist
 
@@ -159,7 +170,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
   # Met à jour la vue club (courses.juulieen.fr) dans la foulée du site
   # public : le runner self-hosted de l'ASUS écrit races_private.json dans le
@@ -170,7 +181,7 @@ jobs:
     if: ${{ !inputs.skip_scrape }}
     runs-on: self-hosted
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: scraper-data
           path: /tmp/scraper-data

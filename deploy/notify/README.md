@@ -14,7 +14,7 @@ opt-in uniquement).
 ## Comment ça marche
 
 1. La CI GitHub (cloud) scanne à 06:00 UTC et déploie `races.json` sur GitHub Pages.
-2. Ce conteneur (sur le serveur perso) réveille un cron à **11h30 Europe/Paris**
+2. Ce conteneur (sur le serveur perso) réveille un cron à **11h30, 18h et 21h Europe/Paris**
    (`crontab`, `TZ` du conteneur).
 3. `notify.py send` récupère les courses (artifact GitHub si `GH_TOKEN`,
    sinon flux public) et, **le dernier jour du mois** si le récap n'a pas
