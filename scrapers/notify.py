@@ -693,7 +693,7 @@ def cmd_send(argv: list[str]) -> int:
     ok, body = _post_message(stored["access_token"], BEEPER_CHAT_ID, msg)
     if not ok:
         # Période non marquée → retentative au prochain run de la fenêtre.
-        _alert(f"Échec d'envoi du récap {period} (nouvel essai demain) : {body[:150]}")
+        _alert(f"Échec d'envoi du récap {period} (nouvel essai au prochain run : 18h, 21h ou demain) : {body[:150]}")
         return 1
     _save_state(last_period=period)
     print("\n✅ Récap envoyé.")

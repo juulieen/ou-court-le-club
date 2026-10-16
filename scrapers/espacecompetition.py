@@ -116,7 +116,7 @@ class EspaceCompetitionScraper(BaseScraper):
                 continue
 
             epreuve = cells[epreuve_col].get_text(strip=True) if epreuve_col < len(cells) else ""
-            members.append(Member(name=name, bib=epreuve))
+            members.append(Member(name=name, bib=epreuve, by_name=not is_club))
 
         return members
 

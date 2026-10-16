@@ -186,7 +186,7 @@ class IpitosScraper(BaseScraper):
 
             if is_club_match or is_name_match:
                 seen.add(name_key)
-                members.append(Member(name=name, bib=parcours))
+                members.append(Member(name=name, bib=parcours, by_name=not is_club_match))
 
         return members, self._parse_meta(root)
 

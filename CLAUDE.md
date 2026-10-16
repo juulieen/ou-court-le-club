@@ -82,6 +82,8 @@ Both strategies run on every platform. The `BaseScraper.find_club_members()` met
 
 Members who neither fill the club field correctly NOR appear in the `known_members` list are invisible to the system.
 
+Every match site sets `Member.by_name = not is_club` (Njuko: always `True`). It reaches only the private feed (`races_private.json` → `by_name: [names]`), where the club view marks those names « (?) » as possible homonyms — never filtered automatically, and never in the public JSON.
+
 ## Config File Format (`config.yml`)
 
 ```yaml

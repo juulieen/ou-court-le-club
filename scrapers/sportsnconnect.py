@@ -166,7 +166,7 @@ class SportsnConnectScraper(BaseScraper):
                 .get("trial", {})
                 .get("title", "")
             )
-            members.append(Member(name=full_name, bib=trial))
+            members.append(Member(name=full_name, bib=trial, by_name=not is_club))
 
         return RaceResult(
             id=f"sportsnconnect-{uuid}",

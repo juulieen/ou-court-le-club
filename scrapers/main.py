@@ -301,8 +301,12 @@ def _canonicalize_members(race: dict, known_members: list[str]) -> None:
         if name not in merged:
             merged[name] = {**member, "name": name}
             bibs[name] = [bib] if bib else []
-        elif bib and bib not in bibs[name]:
+            continue
+        if bib and bib not in bibs[name]:
             bibs[name].append(bib)
+        # One club-field match is enough to vouch for the runner.
+        if not member.get("by_name"):
+            merged[name]["by_name"] = False
     for name, entry in merged.items():
         entry["bib"] = " / ".join(bibs[name])
     race["members"] = list(merged.values())
@@ -495,6 +499,12 @@ def save_data(
         private_race = {k: v for k, v in race.items() if k != "members"}
         private_race["first_names"] = [
             m.get("name", "") for m in race.get("members", []) if m.get("name")
+        ]
+        # Found by name only (club field empty or different): where homonyms
+        # come from. The club view marks them so Julien can check at a glance.
+        private_race["by_name"] = [
+            m["name"] for m in race.get("members", [])
+            if m.get("name") and m.get("by_name")
         ]
         private_races.append(private_race)
     PRIVATE_DATA_PATH.write_text(

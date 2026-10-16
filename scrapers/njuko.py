@@ -306,7 +306,8 @@ class NjukoScraper(BaseScraper):
             elif comp:
                 bib = competitions.get(comp, "")
 
-            members.append(Member(name=name, bib=bib))
+            # Njuko dropped the club field: every match is by name.
+            members.append(Member(name=name, bib=bib, by_name=True))
 
         return members
 

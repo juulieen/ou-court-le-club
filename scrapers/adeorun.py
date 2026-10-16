@@ -247,4 +247,4 @@ class AdeorunScraper(BaseScraper):
 
             seen.add(full_name.lower())
             bib = (p.get("parcours") or p.get("category") or "").strip()
-            yield Member(name=full_name, bib=bib)
+            yield Member(name=full_name, bib=bib, by_name=not is_club)

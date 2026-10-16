@@ -150,7 +150,7 @@ class OnSinscritScraper(BaseScraper):
             seen.add(name)
 
             epreuve = self._get_cell(cells, col_map.get("distance"))
-            members.append(Member(name=name, bib=epreuve))
+            members.append(Member(name=name, bib=epreuve, by_name=not is_club_match))
 
         return members
 

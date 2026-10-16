@@ -213,7 +213,7 @@ class ChronoStartScraper(BaseScraper):
                 continue
             seen.add(name)
 
-            members.append(Member(name=name, bib=course_name))
+            members.append(Member(name=name, bib=course_name, by_name=not is_club))
 
         return members
 

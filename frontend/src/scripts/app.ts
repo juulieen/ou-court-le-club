@@ -35,6 +35,18 @@ declare const maplibregl: any;
       .replace(/'/g, "&#039;");
   }
 
+  // Vue club : un inscrit trouvé par son nom seul (champ club vide ou autre)
+  // peut être un homonyme — on le marque « (?) » pour vérification. Affichage
+  // seulement : first_names reste intact pour le filtre membre et les
+  // exclusions. Le flux public n'a pas de by_name, rien n'est marqué.
+  const UNVERIFIED_MARK = " (?)";
+  function shownNames(race: any): string[] {
+    const byName = new Set<string>(race?.by_name || []);
+    return (race?.first_names || []).map((n: string) =>
+      byName.has(n) ? n + UNVERIFIED_MARK : n,
+    );
+  }
+
   function truncateNames(names: string[], max: number): string {
     if (!names || !names.length) return "";
     if (names.length <= max) return names.join(", ");
@@ -534,7 +546,7 @@ declare const maplibregl: any;
             name: e.name,
             date: e.date || "",
             member_count: e.member_count,
-            first_names: e.first_names || [],
+            first_names: shownNames(e),
             platform: e.platform || "",
             url: e.url || "",
             color: getColor(getTemporality(e.date)),
@@ -712,7 +724,7 @@ declare const maplibregl: any;
           ? `${displayEd.member_count} membre${displayEd.member_count > 1 ? "s" : ""}`
           : `${r.member_count} membre${r.member_count > 1 ? "s" : ""}`;
 
-        const firstNames = (group.isMulti ? displayEd.first_names : r.first_names) || [];
+        const firstNames = shownNames(group.isMulti ? displayEd : r);
         const namesLine = firstNames.length
           ? `<div class="race-names">${escapeHtml(truncateNames(firstNames, 3))}</div>`
           : "";
@@ -952,8 +964,12 @@ declare const maplibregl: any;
       ? race.distances.map((d: number) => `${d} km`).join(", ")
       : "";
 
-    const namesHtml = race.first_names && race.first_names.length
-      ? `<div class="detail-names">${escapeHtml(race.first_names.join(", "))}</div>`
+    const detailNames = shownNames(race);
+    const namesHtml = detailNames.length
+      ? `<div class="detail-names">${escapeHtml(detailNames.join(", "))}</div>` +
+        ((race.by_name || []).length
+          ? `<div class="detail-names-note">(?) trouvé par le nom seul, sans le club : peut être un homonyme</div>`
+          : "")
       : "";
 
     const linkHtml = race.url

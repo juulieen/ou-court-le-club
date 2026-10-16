@@ -116,7 +116,7 @@ class ChronometrageScraper(BaseScraper):
                 seen.add(name)
 
                 bib = race_name or str(sub.get("bib", ""))
-                members.append(Member(name=name, bib=bib))
+                members.append(Member(name=name, bib=bib, by_name=not is_club))
 
         return members
 

@@ -91,7 +91,7 @@ class ThreeWSportScraper(BaseScraper):
             seen.add(name)
 
             course = cells[course_col].get_text(strip=True) if course_col < len(cells) else ""
-            members.append(Member(name=name, bib=course))
+            members.append(Member(name=name, bib=course, by_name=not is_club))
 
         return members
 

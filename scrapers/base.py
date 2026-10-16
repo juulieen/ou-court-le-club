@@ -10,6 +10,9 @@ from dataclasses import dataclass, field
 class Member:
     name: str
     bib: str = ""
+    # True when found by matches_known_member() only — the club field was
+    # empty or different. Homonyms come from there; the club view flags them.
+    by_name: bool = False
 
 
 @dataclass

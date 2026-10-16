@@ -70,7 +70,7 @@ class KlikegoScraper(BaseScraper):
                     found = self._fetch_registrants(reference, course_val, url, session)
                     for m in found:
                         if m.name not in seen:
-                            all_members.append(Member(name=m.name, bib=course_label))
+                            all_members.append(Member(name=m.name, bib=course_label, by_name=m.by_name))
                             seen.add(m.name)
             else:
                 all_members = self._fetch_registrants(reference, "", url, session)
@@ -406,10 +406,11 @@ class KlikegoScraper(BaseScraper):
                         seen_raw.add(name)
                         if name in matched:
                             continue
-                        if (club and matches_club(club, self.patterns)) or \
-                           matches_known_member(name, self.known_members):
+                        is_club = bool(club and matches_club(club, self.patterns))
+                        if is_club or matches_known_member(name, self.known_members):
                             # Dossards are often unassigned pre-race → use distance.
-                            members.append(Member(name=name, bib=bib or heat_label))
+                            members.append(Member(name=name, bib=bib or heat_label,
+                                                  by_name=not is_club))
                             matched.add(name)
 
                     if len(rows) < 50:

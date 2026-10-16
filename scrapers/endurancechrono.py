@@ -132,7 +132,7 @@ class EnduranceChronoScraper(BaseScraper):
             if not name or name in seen:
                 continue
             seen.add(name)
-            members.append(Member(name=name, bib=bib))
+            members.append(Member(name=name, bib=bib, by_name=not is_club))
         return members
 
 

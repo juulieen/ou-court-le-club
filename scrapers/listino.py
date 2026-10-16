@@ -75,7 +75,7 @@ class ListinoScraper(BaseScraper):
                 continue
 
             seen.add(name)
-            members.append(Member(name=name, bib=""))
+            members.append(Member(name=name, bib="", by_name=not is_club))
         return members
 
 

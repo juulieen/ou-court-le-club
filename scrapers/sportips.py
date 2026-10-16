@@ -106,7 +106,7 @@ class SportipsScraper(BaseScraper):
                     continue
                 # Validate: must match a known member OR have a matching club
                 if matches_known_member(name, self.known_members):
-                    members.append(Member(name=name, bib=bib))
+                    members.append(Member(name=name, bib=bib, by_name=True))
                     seen.add(name)
 
         # Also do a broad club search with a small page size to catch
@@ -257,7 +257,7 @@ class SportipsScraper(BaseScraper):
             if not name or name in seen:
                 continue
             seen.add(name)
-            members.append(Member(name=name, bib=""))
+            members.append(Member(name=name, bib="", by_name=not is_club))
 
         return members
 

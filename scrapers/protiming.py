@@ -107,11 +107,10 @@ class ProtimingScraper(BaseScraper):
                 name, club = row["name"], row["club"]
                 if name in seen:
                     continue
-                if matches_club(club, self.patterns) or matches_known_member(
-                    name, self.known_members
-                ):
+                is_club = matches_club(club, self.patterns)
+                if is_club or matches_known_member(name, self.known_members):
                     seen.add(name)
-                    members.append(Member(name=name, bib=row["bib"]))
+                    members.append(Member(name=name, bib=row["bib"], by_name=not is_club))
 
         return members
 

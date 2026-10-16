@@ -10,6 +10,14 @@ Historique des évolutions notables. Format inspiré de
   que plus rien n'alimentait depuis le récap mensuel.
 
 ### Ajouté
+- **Vue club : inscrits à vérifier marqués « (?) »** (2026-10-17). Chaque
+  `Member` retient `by_name` (trouvé par le nom seul, champ club vide ou
+  différent — d'où viennent les homonymes). `races_private.json` porte la
+  liste `by_name` par course ; la vue club (`courses.juulieen.fr`) suffixe
+  ces noms de « (?) » dans les cartes, popups et fiches, avec une note
+  explicative. Rien n'est filtré automatiquement (le club court parfois
+  loin), et le flux public ne change pas. Njuko n'ayant plus de champ club,
+  tous ses inscrits sont marqués.
 - **Vue club tailnet-only avec noms complets** (`courses.juulieen.fr`) : le
   pipeline génère `races_private.json` (schéma public, `first_names` = noms
   complets de tous les membres actuels) dans l'artifact `scraper-data` ;

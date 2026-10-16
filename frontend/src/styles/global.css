@@ -833,6 +833,12 @@ body {
   line-height: 1.5;
 }
 
+.detail-names-note {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin: -8px 0 12px;
+}
+
 .detail-link {
   display: inline-block;
   font-size: 0.82rem;
