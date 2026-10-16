@@ -43,5 +43,12 @@ jobs:
 
       - name: Verify
         run: |
-          docker ps --filter name=runevent86-notify --format '{{.Names}} {{.Status}}'
+          docker ps --filter name=runevent86- --format '{{.Names}} {{.Status}}'
           curl -fsS https://run.juulieen.fr/exclusions.json > /dev/null
+          # Service d'exclusion vivant : sans en-tête Origin, il doit refuser (403).
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8786/api/exclusions || true)
+            [ "$code" = 403 ] && break
+            sleep 2
+          done
+          test "$code" = 403

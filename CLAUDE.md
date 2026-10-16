@@ -82,7 +82,7 @@ Both strategies run on every platform. The `BaseScraper.find_club_members()` met
 
 Members who neither fill the club field correctly NOR appear in the `known_members` list are invisible to the system.
 
-Every match site sets `Member.by_name = not is_club` (Njuko: always `True`). It reaches only the private feed (`races_private.json` → `by_name: [names]`), where the club view marks those names « (?) » as possible homonyms — never filtered automatically, and never in the public JSON.
+Every match site sets `Member.by_name = not is_club` (Njuko: always `True`). It reaches only the private feed (`races_private.json` → `by_name: [names]`), where the club view marks those names « (?) » as possible homonyms — never filtered automatically, and never in the public JSON. The club view's « ✕ pas un membre » button posts to `notify.py serve` (see `deploy/notify/README.md`): exclusions are stored with full names on the tailnet only and republished on `run.juulieen.fr/exclusions.json` with the public display name (`public_names` in `races_private.json`) or `null` — never a full name.
 
 ## Config File Format (`config.yml`)
 

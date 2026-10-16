@@ -80,6 +80,9 @@ jobs:
 
       - name: Run scrapers
         if: ${{ !inputs.skip_scrape }}
+        env:
+          # ntfy topic: pinged when the run's warnings change (new / resolved)
+          ALERT_URL: ${{ secrets.RUNEVENT86_NOTIFY_ALERT_URL }}
         run: python -m scrapers.main
 
       - name: Fetch races.json from live site (skip_scrape mode)
@@ -158,6 +161,16 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: frontend/dist
+
+      - name: Alert on failure (ntfy)
+        if: ${{ failure() }}
+        env:
+          ALERT_URL: ${{ secrets.RUNEVENT86_NOTIFY_ALERT_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$ALERT_URL" ] || exit 0
+          curl -fsS -m 10 -H "Title: RunEvent86 scrape ÉCHOUÉ" -H "Priority: 4" \
+            -H "Tags: rotating_light" -d "Le scrape a échoué : $RUN_URL" "$ALERT_URL" > /dev/null || true
 
   deploy:
     needs: scrape

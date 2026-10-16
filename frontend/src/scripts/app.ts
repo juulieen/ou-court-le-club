@@ -14,6 +14,10 @@ declare const maplibregl: any;
 
   let map: any;
   let allRaces: any[] = [];
+  // Vue club : courses dont tous les membres ont été exclus. Hors carte et
+  // liste, mais leur fiche reste ouvrable (#race/<id>) pour pouvoir rétablir.
+  let hiddenRaces: any[] = [];
+  let isPrivateView = false;
   let raceGroups: any[] = []; // grouped by event (multi-edition)
   // Derniers groupes effectivement rendus (= filtres courants). setupMapLayers
   // s'en sert pour amorcer la source : sur un deep-link #race/{id}, renderAll()
@@ -129,6 +133,11 @@ declare const maplibregl: any;
   const PRIVATE_DATA_URL =
     import.meta.env.PUBLIC_PRIVATE_DATA_URL ||
     "https://courses.juulieen.fr/races.json";
+  // Vue club : exclusions en noms complets et service d'écriture, sur le même
+  // vhost tailnet-only (le service publie lui-même la version publique).
+  const PRIVATE_BASE = PRIVATE_DATA_URL.replace(/[^/]*$/, "");
+  const PRIVATE_EXCLUSIONS_URL = PRIVATE_BASE + "exclusions.json";
+  const EXCLUSIONS_API_URL = PRIVATE_BASE + "api/exclusions";
 
   // --- Data loading ---
   function loadData() {
@@ -145,36 +154,47 @@ declare const maplibregl: any;
       })
         .then((r: Response) => (r.ok ? r.json() : null))
         .catch(() => null),
+      fetch(PRIVATE_EXCLUSIONS_URL, {
+        cache: "no-cache",
+        signal: (AbortSignal as any).timeout?.(4000),
+      })
+        .then((r: Response) => (r.ok ? r.json() : null))
+        .catch(() => null),
     ])
-      .then(([publicData, excl, privateData]: [any, any, any]) => {
+      .then(([publicData, publicExcl, privateData, privateExcl]: [any, any, any, any]) => {
         const data =
           privateData && privateData.races ? privateData : publicData;
-        if (data === privateData) {
+        isPrivateView = data === privateData;
+        if (isPrivateView) {
           document.getElementById("private-badge")?.removeAttribute("hidden");
         }
+        // Vue club : exclusions en noms complets. Public : noms publics, ou
+        // name null pour un inscrit anonyme (on décompte sans rien retirer).
+        const excl = isPrivateView ? privateExcl : publicExcl;
         const excludedRaces = new Set<string>(excl?.excluded || []);
-        const exByRace = new Map<string, Set<string>>();
+        const exByRace = new Map<string, { names: Set<string>; anon: number }>();
         for (const e of excl?.members || []) {
-          if (!e?.race || !e?.name) continue;
-          if (!exByRace.has(e.race)) exByRace.set(e.race, new Set());
-          exByRace.get(e.race)!.add(e.name);
+          if (!e?.race) continue;
+          if (!exByRace.has(e.race)) exByRace.set(e.race, { names: new Set(), anon: 0 });
+          const ex = exByRace.get(e.race)!;
+          if (e.name) ex.names.add(e.name);
+          else ex.anon += 1;
         }
-        allRaces = (data.races || [])
-          .map((r: any) => {
-            const names = exByRace.get(r.id);
-            if (!names || excludedRaces.has(r.id)) return r;
-            const removed = (r.first_names || []).filter((n: string) =>
-              names.has(n),
-            ).length;
-            return {
-              ...r,
-              first_names: (r.first_names || []).filter(
-                (n: string) => !names.has(n),
-              ),
-              member_count: Math.max(0, (r.member_count || 0) - removed),
-            };
-          })
-          .filter((r: any) => r.member_count > 0 && !excludedRaces.has(r.id));
+        const races = (data.races || []).map((r: any) => {
+          const ex = exByRace.get(r.id);
+          if (!ex || excludedRaces.has(r.id)) return r;
+          const names: string[] = r.first_names || [];
+          const removed = names.filter((n) => ex.names.has(n));
+          return {
+            ...r,
+            first_names: names.filter((n) => !ex.names.has(n)),
+            excluded_names: removed,
+            member_count: Math.max(0, (r.member_count || 0) - removed.length - ex.anon),
+          };
+        });
+        const visible = (r: any) => r.member_count > 0 && !excludedRaces.has(r.id);
+        allRaces = races.filter(visible);
+        hiddenRaces = isPrivateView ? races.filter((r: any) => !visible(r)) : [];
         raceGroups = groupEditions(allRaces);
         updateLastUpdated(data.last_updated);
         updateStats(allRaces);
@@ -923,6 +943,68 @@ declare const maplibregl: any;
   }
 
   // --- Routing ---
+  // --- Exclusions (vue club) ---
+  // Boutons « pas un membre » pour les inscrits trouvés par le nom seul, et
+  // « rétablir » pour ceux déjà exclus.
+  function exclusionControls(race: any): string {
+    const suspects = (race.by_name || []).filter((n: string) =>
+      (race.first_names || []).includes(n),
+    );
+    const excluded: string[] = race.excluded_names || [];
+    if (!suspects.length && !excluded.length) return "";
+    const btn = (name: string, exclude: boolean, label: string) =>
+      `<button class="exclusion-btn" data-name="${escapeHtml(name)}" data-exclude="${exclude ? "1" : "0"}">${escapeHtml(label)}</button>`;
+    const rows = [
+      ...suspects.map((n: string) =>
+        `<li><span>${escapeHtml(n)}</span>${btn(n, true, "✕ pas un membre")}</li>`),
+      ...excluded.map((n: string) =>
+        `<li class="excluded"><s>${escapeHtml(n)}</s>${btn(n, false, "rétablir")}</li>`),
+    ];
+    return `<ul class="exclusion-list">${rows.join("")}</ul>`;
+  }
+
+  function toggleExclusion(race: any, name: string, exclude: boolean, btn: HTMLButtonElement) {
+    btn.disabled = true;
+    // text/plain : requête « simple », sans preflight CORS.
+    fetch(EXCLUSIONS_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ race: race.id, name, exclude }),
+    })
+      .then((r: Response) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        applyExclusionLocally(race, name, exclude);
+        showRaceDetail(race.id);
+      })
+      .catch((err: Error) => {
+        console.error("Exclusion impossible:", err);
+        btn.disabled = false;
+        btn.textContent = "échec, réessayer";
+      });
+  }
+
+  // Reflète la réponse du service sans recharger (le flux est déjà en mémoire).
+  function applyExclusionLocally(race: any, name: string, exclude: boolean) {
+    const names: string[] = race.first_names || [];
+    const excluded: string[] = race.excluded_names || [];
+    if (exclude) {
+      race.first_names = names.filter((n) => n !== name);
+      race.excluded_names = [...excluded, name];
+      race.member_count = Math.max(0, race.member_count - 1);
+    } else {
+      race.first_names = [...names, name];
+      race.excluded_names = excluded.filter((n) => n !== name);
+      race.member_count += 1;
+    }
+    const pool = [...allRaces, ...hiddenRaces];
+    allRaces = pool.filter((r: any) => r.member_count > 0);
+    hiddenRaces = pool.filter((r: any) => r.member_count <= 0);
+    raceGroups = groupEditions(allRaces);
+    updateStats(allRaces);
+    populateMemberFilter(allRaces);
+    renderAll();
+  }
+
   function handleRoute() {
     const hash = window.location.hash;
     const match = hash.match(/^#race\/(.+)$/);
@@ -935,7 +1017,9 @@ declare const maplibregl: any;
   }
 
   function showRaceDetail(raceId: string) {
-    const race = allRaces.find((r: any) => r.id === raceId);
+    const race =
+      allRaces.find((r: any) => r.id === raceId) ||
+      hiddenRaces.find((r: any) => r.id === raceId);
     if (!race) {
       history.replaceState(null, "", window.location.pathname);
       if (detailMode) showDefaultView();
@@ -967,10 +1051,11 @@ declare const maplibregl: any;
     const detailNames = shownNames(race);
     const namesHtml = detailNames.length
       ? `<div class="detail-names">${escapeHtml(detailNames.join(", "))}</div>` +
-        ((race.by_name || []).length
+        (detailNames.some((n) => n.endsWith(UNVERIFIED_MARK))
           ? `<div class="detail-names-note">(?) trouvé par le nom seul, sans le club : peut être un homonyme</div>`
           : "")
       : "";
+    const exclusionHtml = isPrivateView ? exclusionControls(race) : "";
 
     const linkHtml = race.url
       ? `<a class="detail-link" href="${escapeHtml(race.url)}" target="_blank" rel="noopener">S'inscrire sur ${escapeHtml(race.platform)} &rarr;</a>`
@@ -995,6 +1080,7 @@ declare const maplibregl: any;
           <span class="member-badge">${race.member_count} membre${race.member_count > 1 ? "s" : ""} inscrit${race.member_count > 1 ? "s" : ""}</span>
         </div>
         ${namesHtml}
+        ${exclusionHtml}
         ${linkHtml}
         <div class="detail-actions">
           <a class="share-btn whatsapp-btn" href="${escapeHtml(shareUrl)}" target="_blank" rel="noopener">${WHATSAPP_SVG} Partager sur WhatsApp</a>
@@ -1002,6 +1088,12 @@ declare const maplibregl: any;
       </div>`;
 
     document.getElementById("race-list")!.innerHTML = html;
+
+    document.querySelectorAll<HTMLButtonElement>(".exclusion-btn").forEach((btn) =>
+      btn.addEventListener("click", () =>
+        toggleExclusion(race, btn.dataset.name || "", btn.dataset.exclude === "1", btn),
+      ),
+    );
 
     document.getElementById("detail-back")!.addEventListener("click", () => {
       history.pushState(null, "", window.location.pathname);

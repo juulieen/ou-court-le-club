@@ -43,5 +43,25 @@ services:
       - ./public:/public
       - ./private:/private
 
+  # Service d'exclusion (« pas un membre » depuis la vue club). Publié sur
+  # 127.0.0.1 seulement : caddy (network_mode host) le route sous /api/* du
+  # vhost tailnet-only courses.juulieen.fr — jamais exposé à Internet.
+  # Écrit ./private/exclusions.json (noms complets, tailnet) et en dérive
+  # ./public/exclusions.json (noms publics opt-in seulement).
+  runevent86-exclusions:
+    build: .
+    container_name: runevent86-exclusions
+    restart: unless-stopped
+    command: ["python", "/app/notify.py", "serve"]
+    environment:
+      PRIVATE_DIR: "/private"
+      PUBLIC_DIR: "/public"
+      EXCLUSIONS_PORT: "8786"
+    ports:
+      - "127.0.0.1:8786:8786"
+    volumes:
+      - ./public:/public
+      - ./private:/private
+
 volumes:
   runevent86-notify-data:

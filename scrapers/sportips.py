@@ -101,12 +101,12 @@ class SportipsScraper(BaseScraper):
             last_name = parts[0] if parts[0].isupper() else parts[-1]
 
             found = self._search_inscriptions(id_module, last_name)
-            for name, bib in found:
+            for name, bib, is_club in found:
                 if name in seen:
                     continue
                 # Validate: must match a known member OR have a matching club
-                if matches_known_member(name, self.known_members):
-                    members.append(Member(name=name, bib=bib, by_name=True))
+                if is_club or matches_known_member(name, self.known_members):
+                    members.append(Member(name=name, bib=bib, by_name=not is_club))
                     seen.add(name)
 
         # Also do a broad club search with a small page size to catch
@@ -114,9 +114,9 @@ class SportipsScraper(BaseScraper):
         search_terms = self._get_club_search_terms()
         for term in search_terms:
             found = self._search_inscriptions(id_module, term)
-            for name, bib in found:
+            for name, bib, is_club in found:
                 if name not in seen:
-                    members.append(Member(name=name, bib=bib))
+                    members.append(Member(name=name, bib=bib, by_name=not is_club))
                     seen.add(name)
 
         return members
@@ -133,10 +133,11 @@ class SportipsScraper(BaseScraper):
                 seen.add(term)
         return terms
 
-    def _search_inscriptions(self, id_module, search_term: str) -> list[tuple[str, str]]:
+    def _search_inscriptions(self, id_module, search_term: str) -> list[tuple[str, str, bool]]:
         """Search inscriptions API for a given term, handling pagination.
 
-        Returns list of (name, bib) tuples for matching participants.
+        Returns (name, bib, is_club) tuples for matching participants —
+        is_club tells a club-field match from a name-only one.
         """
         results = []
         page = 1
@@ -190,7 +191,7 @@ class SportipsScraper(BaseScraper):
                     continue
 
                 course = p.get("course", p.get("parcours", p.get("epreuve", "")))
-                results.append((name, course))
+                results.append((name, course, bool(is_club)))
 
             # Check if there are more pages
             total = None

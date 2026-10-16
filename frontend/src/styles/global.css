@@ -839,6 +839,41 @@ body {
   margin: -8px 0 12px;
 }
 
+.exclusion-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  font-size: 0.8rem;
+}
+
+.exclusion-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.exclusion-list li.excluded {
+  color: var(--text-secondary);
+}
+
+.exclusion-btn {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border: 1px solid var(--text-secondary);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.exclusion-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .detail-link {
   display: inline-block;
   font-size: 0.82rem;

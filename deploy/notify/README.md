@@ -81,27 +81,36 @@ docker compose -f compose.yaml up -d
 Fixes dans `compose.yaml` : `RACES_URL` (Pages public), `NOTIFIED_PATH` et
 `TOKEN_PATH` (dans le volume `/data`), `TOKEN_REMINDER_DAYS` (7j).
 
-## Correction des homonymes (manuelle)
+## Correction des homonymes (vue club, un clic)
 
-Le matching par nom attrape parfois un homonyme (même prénom, pas un membre).
-Depuis le passage au récap mensuel unique (2026-09-21), la correction par
-réaction 🚫 n'existe plus — elle exigeait un message par membre. Les exclusions
-se gèrent **à la main** dans `exclusions.json` (sur le serveur, `./public/`) :
+Le matching par nom attrape parfois un homonyme. Dans la vue club
+(`courses.juulieen.fr`, tailnet only), les inscrits trouvés par le nom seul
+sont marqués « (?) » et la fiche de la course propose **« ✕ pas un membre »**
+(et « rétablir » pour annuler).
 
-```json
-{"members": [{"race": "<id-course>", "name": "<prénom affiché>"}], "asked": []}
+- Le bouton appelle `POST https://courses.juulieen.fr/api/exclusions`, routé
+  par caddy vers le service `runevent86-exclusions` (`notify.py serve`,
+  publié sur `127.0.0.1:8786` seulement). Corps `{race, name, exclude}` en
+  `text/plain` (pas de preflight CORS) ; l'en-tête `Origin` doit être le site
+  public ou le dev local, et le couple (course, nom) doit exister dans
+  `private/races.json`.
+- **Source de vérité : `./private/exclusions.json`** (noms complets, servi sur
+  le tailnet seulement). Le service en dérive **`./public/exclusions.json`**
+  (servi sur `https://run.juulieen.fr/exclusions.json`) avec le **nom public**
+  du membre (prénom opt-in, via `public_names` de `races_private.json`) ou
+  `null` pour un inscrit anonyme — **jamais un nom complet**.
+- Le frontend retire le nom et décrémente `member_count` (`name: null` →
+  décompte seul) ; une course tombée à 0 disparaît de la carte, mais sa fiche
+  reste ouvrable dans la vue club pour la rétablir.
+- Le récap mensuel applique aussi les exclusions privées.
+
+**Caddy** (bloc `courses.juulieen.fr` du Caddyfile de `asus-1`) :
+
 ```
-
-- Le frontend retire le prénom de `first_names` et décrémente `member_count` ;
-  la course ne disparaît que si le compteur tombe à 0 (mono-inscrit).
-- caddy sert `./public/exclusions.json` sur `https://run.juulieen.fr/exclusions.json`
-  (bloc dédié dans le Caddyfile du serveur, en-tête CORS `*`).
-- Le frontend (`app.ts` → `EXCLUSIONS_URL`) le charge et filtre les courses ;
-  best-effort (si l'URL est down, on affiche tout).
-
-**⚠️ Pré-requis DNS** : un enregistrement **A `run.juulieen.fr`** pointant vers
-le serveur (comme les autres sous-domaines). Sans lui, caddy ne peut pas
-émettre le certif et le frontend retombe simplement sur « aucune exclusion ».
+handle /api/* {
+	reverse_proxy 127.0.0.1:8786
+}
+```
 
 ## Vue privée (noms complets) — courses.juulieen.fr
 

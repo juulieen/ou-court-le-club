@@ -6,10 +6,24 @@ Historique des évolutions notables. Format inspiré de
 ## [Non publié]
 
 ### Supprimé
+- `klikego._search_by_names` (code mort : la recherche par nom de Klikego
+  répond en 500 depuis longtemps).
 - `notify.py list/build/mark/clear` et la file `notifications_queue.json`,
   que plus rien n'alimentait depuis le récap mensuel.
 
 ### Ajouté
+- **Vue club : « ✕ pas un membre » en un clic** (2026-10-17). La fiche d'une
+  course propose d'exclure un inscrit marqué « (?) » (et de le rétablir).
+  Service `notify.py serve` (conteneur `runevent86-exclusions`, derrière
+  `/api/*` du vhost tailnet-only) : exclusions privées en noms complets,
+  version publique dérivée avec le seul nom public opt-in (ou `null` pour un
+  anonyme). Le récap mensuel applique aussi les exclusions.
+- **Alertes ntfy depuis la CI** : les avertissements du scrape (plateforme
+  muette, courses sans lieu) sont envoyés sur le topic ntfy quand la liste
+  change (nouveaux / résolus), et un échec du workflow est signalé. L'état
+  précédent vit dans `data/races.json` (clé `warnings`, jamais publiée) :
+  ajouter un chemin à `actions/cache` changerait sa version et perdrait
+  l'archive des courses passées.
 - **Vue club : inscrits à vérifier marqués « (?) »** (2026-10-17). Chaque
   `Member` retient `by_name` (trouvé par le nom seul, champ club vide ou
   différent — d'où viennent les homonymes). `races_private.json` porte la
@@ -47,6 +61,9 @@ Historique des évolutions notables. Format inspiré de
   flows, RGPD) via sous-agents avant chaque `git push`.
 
 ### Corrigé
+- **Sportips : moins de « (?) » à tort.** La recherche par nom relit le
+  champ club renvoyé par l'API : un membre qui a bien rempli son club n'est
+  plus marqué comme trouvé par le nom seul.
 - **Njuko : lieu et date des courses** (2026-10-17). L'API publique des
   éditions n'expose aucune adresse : la plupart des courses Njuko n'avaient
   pas de lieu (rien dans le récap WhatsApp) et étaient placées d'après leur

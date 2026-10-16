@@ -20,22 +20,12 @@ from .base import (
 _V8_MAX_PAGES = 40
 
 
-def _names_match(name1: str, name2: str) -> bool:
-    """Check if two names refer to the same person (order-independent)."""
-    parts1 = set(normalize_text(name1).lower().split())
-    parts2 = set(normalize_text(name2).lower().split())
-    # All parts of the shorter name must be in the longer name
-    shorter, longer = (parts1, parts2) if len(parts1) <= len(parts2) else (parts2, parts1)
-    return shorter.issubset(longer) and len(shorter) >= 2
-
-
 class KlikegoScraper(BaseScraper):
     """Scrape registered participants from Klikego race pages.
 
-    Klikego loads registrant data via an AJAX POST to findInInscrits.jsp.
-    Two search strategies:
-    1. Search by club name via "ville" field (works when members fill in club)
-    2. Search by known member names via "search" field (fallback)
+    v8 events: the registrant list is filtered server-side by club, per heat,
+    then matched locally (club pattern or known member name). Older v6 events:
+    AJAX POST to findInInscrits.jsp searched by club via the "ville" field.
     """
 
     SEARCH_URL = "https://www.klikego.com/types/generic/custo/x.running/findInInscrits.jsp"
@@ -101,55 +91,6 @@ class KlikegoScraper(BaseScraper):
         if match:
             return match.group(1)
         return None
-
-    def _search_by_names(self, reference: str, page_url: str,
-                         session: requests.Session) -> list[Member]:
-        """Search for known members by their last name."""
-        members = []
-        seen = set()
-
-        for full_name in self.known_members:
-            # Use last name for search (first token if UPPERCASE, else last token)
-            parts = full_name.strip().split()
-            if not parts:
-                continue
-            last_name = parts[0] if parts[0].isupper() else parts[-1]
-
-            try:
-                resp = session.post(
-                    self.SEARCH_URL,
-                    data={
-                        "search": last_name,
-                        "ville": "",
-                        "course": "",
-                        "sexe": "",
-                        "categorie": "",
-                        "favoris": "",
-                        "reference": reference,
-                        "version": "v6",
-                        "page": "0",
-                    },
-                    headers={
-                        "Referer": page_url,
-                        "X-Requested-With": "XMLHttpRequest",
-                    },
-                    timeout=8,
-                )
-                resp.raise_for_status()
-            except requests.RequestException:
-                continue
-
-            # Parse results and match against full name
-            found = self._parse_table(resp.text, "")
-            for m in found:
-                # Check if the found name matches the known member
-                if m.name.lower() == full_name.lower() or \
-                   _names_match(m.name, full_name):
-                    if m.name not in seen:
-                        members.append(m)
-                        seen.add(m.name)
-
-        return members
 
     def _get_courses(self, page_url: str, session: requests.Session) -> list[tuple[str, str]]:
         """Fetch the /inscrits/ page and extract epreuve options.

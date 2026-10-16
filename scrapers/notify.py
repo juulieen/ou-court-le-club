@@ -24,6 +24,7 @@ CLI:
     python -m scrapers.notify send            # dry-run: print what WOULD be sent
     python -m scrapers.notify send --live      # post the digest if due
     python -m scrapers.notify test             # digest preview → Note to self
+    python -m scrapers.notify serve            # exclusion API (/api/exclusions)
     python -m scrapers.notify fetch-private    # drop races_private.json (full names)
                                                # into PRIVATE_DIR for the
                                                # tailnet-only courses.juulieen.fr
@@ -84,6 +85,22 @@ GH_ARTIFACT_NAME = os.environ.get("GH_ARTIFACT_NAME", "scraper-data")
 # Dossier servi par le vhost tailnet-only courses.juulieen.fr : la commande
 # `fetch-private` y dépose le races_private.json de l'artifact (noms complets).
 PRIVATE_DIR = os.environ.get("PRIVATE_DIR", "")
+# Dossier servi PUBLIQUEMENT (run.juulieen.fr) : n'y écrire que des noms
+# publics (prénoms opt-in), jamais un nom complet.
+PUBLIC_DIR = os.environ.get("PUBLIC_DIR", "")
+# Service d'exclusion (`serve`), derrière /api/* du vhost tailnet-only.
+EXCLUSIONS_PORT = int(os.environ.get("EXCLUSIONS_PORT", "8786"))
+# Origines autorisées à écrire : le site public (qui charge la vue club) et
+# le dev local. Bloque un POST forgé par une autre page ouverte sur un
+# appareil du tailnet.
+ALLOWED_ORIGINS = {
+    o.strip()
+    for o in os.environ.get(
+        "EXCLUSIONS_ALLOWED_ORIGINS",
+        "https://juulieen.github.io,http://localhost:4321,http://localhost:4399",
+    ).split(",")
+    if o.strip()
+}
 BEEPER_API = os.environ.get("BEEPER_API", "http://127.0.0.1:23373").rstrip("/")
 # Default target is "Note to self" so nothing lands in the club group by
 # accident. Point BEEPER_CHAT_ID at the group's Matrix id once validated.
@@ -437,7 +454,7 @@ def _fetch_races() -> list[dict]:
     full = _fetch_races_full()
     if full is not None:
         print(f"# source: artifact {GH_ARTIFACT_NAME} (noms complets)")
-        return full
+        return _apply_exclusions(full)
     print(f"# source: {RACES_URL} (prénoms opt-in)")
     if RACES_URL.startswith(("http://", "https://")):
         st, body = _http("GET", RACES_URL, timeout=30)
@@ -447,6 +464,148 @@ def _fetch_races() -> list[dict]:
     else:
         data = json.loads(Path(RACES_URL).read_text(encoding="utf-8"))
     return data.get("races", [])
+
+
+# --------------------------------------------------------------------------
+# Exclusions (homonymes) — « pas un membre » depuis la vue club
+# --------------------------------------------------------------------------
+# Source de vérité : PRIVATE_DIR/exclusions.json, {"members": [{race, name}]}
+# en noms complets (tailnet only). PUBLIC_DIR/exclusions.json en est dérivé
+# avec le nom PUBLIC (prénom opt-in) ou null pour un inscrit anonyme : le
+# site public décompte alors sans rien nommer.
+
+
+def _private_exclusions_path() -> Path:
+    return Path(PRIVATE_DIR) / "exclusions.json"
+
+
+def _load_exclusions() -> list[dict]:
+    if not PRIVATE_DIR:
+        return []
+    data = _read_json(_private_exclusions_path(), {})
+    if not isinstance(data, dict):
+        return []
+    return [
+        e for e in data.get("members", [])
+        if isinstance(e, dict) and e.get("race") and e.get("name")
+    ]
+
+
+def _apply_exclusions(races: list[dict]) -> list[dict]:
+    """Retire les membres exclus (noms complets) du flux complet."""
+    excluded = {(e["race"], e["name"]) for e in _load_exclusions()}
+    if not excluded:
+        return races
+    out = []
+    for r in races:
+        members = [
+            m for m in r.get("members") or []
+            if (r.get("id"), m.get("name")) not in excluded
+        ]
+        removed = len(r.get("members") or []) - len(members)
+        if removed:
+            r = {**r, "members": members,
+                 "member_count": max(0, r.get("member_count", 0) - removed)}
+        out.append(r)
+    return out
+
+
+def _write_json_atomic(path: Path, obj) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(path)
+
+
+def _save_exclusions(entries: list[dict], races_by_id: dict) -> None:
+    """Écrit la liste privée puis régénère la publique (noms publics seuls)."""
+    now = int(time.time())
+    _write_json_atomic(_private_exclusions_path(), {"members": entries, "updated_at": now})
+    if not PUBLIC_DIR:
+        return
+    public = [
+        {
+            "race": e["race"],
+            # Nom public noté à l'exclusion : reste juste même si la course a
+            # quitté le races.json privé entre-temps.
+            "name": e.get("public_name")
+            or (races_by_id.get(e["race"], {}).get("public_names") or {}).get(e["name"]),
+        }
+        for e in entries
+    ]
+    _write_json_atomic(
+        Path(PUBLIC_DIR) / "exclusions.json", {"members": public, "updated_at": now}
+    )
+
+
+def _update_exclusion(race_id: str, name: str, exclude: bool) -> tuple[int, dict]:
+    """Ajoute/retire une exclusion. Le couple (course, nom) doit exister dans
+    le races.json privé : on n'écrit jamais un nom inventé par le client."""
+    races = _read_json(Path(PRIVATE_DIR) / "races.json", {}).get("races", [])
+    races_by_id = {r.get("id"): r for r in races if r.get("id")}
+    race = races_by_id.get(race_id)
+    if exclude and (not race or name not in (race.get("first_names") or [])):
+        return 404, {"error": "course ou membre inconnu"}
+    entries = [e for e in _load_exclusions() if (e["race"], e["name"]) != (race_id, name)]
+    if exclude:
+        entry = {"race": race_id, "name": name}
+        public_name = (race.get("public_names") or {}).get(name)
+        if public_name:
+            entry["public_name"] = public_name
+        entries.append(entry)
+    _save_exclusions(entries, races_by_id)
+    return 200, {"members": entries}
+
+
+def cmd_serve(argv: list[str]) -> int:
+    """Service HTTP d'exclusion, derrière /api/* du vhost tailnet-only
+    courses.juulieen.fr. POST /api/exclusions, corps JSON
+    {"race", "name", "exclude": true|false}, envoyé en text/plain par le
+    front (requête « simple », sans preflight CORS)."""
+    import threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    if not PRIVATE_DIR:
+        print("❌ PRIVATE_DIR non défini.", file=sys.stderr)
+        return 1
+    lock = threading.Lock()
+
+    class Handler(BaseHTTPRequestHandler):
+        def _reply(self, status: int, body: dict) -> None:
+            data = json.dumps(body, ensure_ascii=False).encode("utf-8")
+            self.send_response(status)
+            # Access-Control-Allow-Origin est posé par caddy sur tout le vhost.
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_POST(self):
+            if self.path.rstrip("/") != "/api/exclusions":
+                return self._reply(404, {"error": "not found"})
+            if self.headers.get("Origin", "") not in ALLOWED_ORIGINS:
+                return self._reply(403, {"error": "origine refusée"})
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if not 0 < length <= 4096:
+                    raise ValueError("longueur")
+                body = json.loads(self.rfile.read(length))
+                race_id, name = str(body["race"]), str(body["name"])
+                exclude = bool(body.get("exclude", True))
+            except (ValueError, KeyError, TypeError):
+                return self._reply(400, {"error": "corps invalide"})
+            with lock:
+                status, payload = _update_exclusion(race_id, name, exclude)
+            print(f"[exclusions] {'exclu' if exclude else 'rétabli'} {race_id} → {status}", flush=True)
+            self._reply(status, payload)
+
+        def log_message(self, *args):  # pas de noms dans les logs
+            pass
+
+    server = ThreadingHTTPServer(("0.0.0.0", EXCLUSIONS_PORT), Handler)
+    print(f"[exclusions] écoute sur :{EXCLUSIONS_PORT}", flush=True)
+    server.serve_forever()
+    return 0
 
 
 def _next_month(ym: str) -> str:
@@ -710,6 +869,8 @@ def main(argv: list[str]) -> int:
         return cmd_test(rest)
     if cmd == "fetch-private":
         return cmd_fetch_private(rest)
+    if cmd == "serve":
+        return cmd_serve(rest)
     print(__doc__)
     return 2
 

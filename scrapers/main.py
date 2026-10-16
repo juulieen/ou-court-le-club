@@ -17,6 +17,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+import requests
 import yaml
 
 from .base import Member, RaceResult, normalize_text, matches_known_member, canonical_member_name
@@ -462,23 +463,27 @@ def save_data(
     # Deployed via GitHub Actions artifact — never committed to Git.
     # Only members who explicitly opted in have their first name shown.
     display_names = _build_display_names(optin, km)
+
+    def public_name(name: str) -> str | None:
+        """Name shown on the public site: the opt-in display name, or None."""
+        if not name or not _is_opted_in(name, optin):
+            return None
+        for entry in optin:
+            if matches_known_member(name, [entry]):
+                return display_names[entry]
+        return None
+
     public_races = []
     for race in races:
         public_race = {k: v for k, v in race.items() if k != "members"}
         # Build first_names list — only for members who consented (opt-in)
-        first_names = []
-        for member in race.get("members", []):
-            name = member.get("name", "") if isinstance(member, dict) else member.name
-            if not name:
-                continue
-            if not _is_opted_in(name, optin):
-                continue
-            # Find which optin entry this member matches for display name
-            for entry in optin:
-                if matches_known_member(name, [entry]):
-                    first_names.append(display_names[entry])
-                    break
-        public_race["first_names"] = first_names
+        public_race["first_names"] = [
+            shown
+            for member in race.get("members", [])
+            if (shown := public_name(
+                member.get("name", "") if isinstance(member, dict) else member.name
+            ))
+        ]
         public_races.append(public_race)
 
     public_data = {
@@ -506,6 +511,13 @@ def save_data(
             m["name"] for m in race.get("members", [])
             if m.get("name") and m.get("by_name")
         ]
+        # Full name → public display name (opt-in only). Lets the exclusion
+        # service publish an exclusion without ever writing a full name to the
+        # public exclusions.json (anonymous members map to nothing).
+        private_race["public_names"] = {
+            m["name"]: shown for m in race.get("members", [])
+            if m.get("name") and (shown := public_name(m["name"]))
+        }
         private_races.append(private_race)
     PRIVATE_DATA_PATH.write_text(
         json.dumps(
@@ -722,9 +734,50 @@ def _elapsed(start: float) -> str:
     return f"{int(secs // 60)}m{int(secs % 60):02d}s"
 
 
+def _warn(title: str, message: str, items: list[str], run_warnings: list[str]) -> None:
+    """Log a run warning, surface it in the CI summary, and keep its items
+    (one per platform / race) for the end-of-run ntfy diff."""
+    print(f"  ⚠️  {message}")
+    if os.environ.get("GITHUB_ACTIONS"):
+        # A line buried in 4000 lines of log is exactly what nobody read while
+        # Protiming was dead — put it in the run summary.
+        print(f"::warning title={title}::{message}")
+    run_warnings.extend(f"{title} : {item}" for item in items)
+
+
+def _notify_warning_changes(run_warnings: list[str]) -> None:
+    """Ping ntfy (ALERT_URL) when this run's warnings differ from the last
+    run's: new ones and resolved ones. Same topic as the notify container.
+
+    The previous set is read from the full data/races.json (key "warnings"),
+    already cached in CI: adding a new path to actions/cache would change the
+    cache version and drop the cached races_archive.json — every past race.
+    Call BEFORE save_data() overwrites the file."""
+    try:
+        previous = set(json.loads(DATA_PATH.read_text(encoding="utf-8")).get("warnings", []))
+    except (OSError, ValueError):
+        previous = set()
+    current = set(run_warnings)
+    new, resolved = sorted(current - previous), sorted(previous - current)
+    url = os.environ.get("ALERT_URL", "")
+    if not url or not (new or resolved):
+        return
+    lines = [f"⚠️ {w}" for w in new] + [f"✅ résolu — {w}" for w in resolved]
+    try:
+        requests.post(
+            url,
+            data="\n".join(lines).encode("utf-8"),
+            headers={"Title": "RunEvent86 scrape", "Tags": "warning" if new else "white_check_mark"},
+            timeout=10,
+        )
+    except requests.RequestException as e:
+        print(f"  (alerte ntfy non délivrée : {e})")
+
+
 def run():
     import time
     run_start = time.time()
+    run_warnings: list[str] = []
 
     config = load_config()
     club = config.get("club", {})
@@ -782,15 +835,13 @@ def run():
         # A redesigned platform returns HTTP 200 with no matching selector, so
         # discovery yields 0 without raising and the run stays green. Protiming
         # went unnoticed that way for days — say it out loud instead.
-        message = (
+        _warn(
+            "Découverte muette",
             f"{len(silent)} plateforme(s) sans aucune course, "
-            f"scraper à vérifier: {', '.join(silent)}"
+            f"scraper à vérifier: {', '.join(silent)}",
+            silent,
+            run_warnings,
         )
-        print(f"  ⚠️  {message}")
-        if os.environ.get("GITHUB_ACTIONS"):
-            # Surface it in the run summary: a line buried in 4000 lines of log
-            # is exactly what nobody read while Protiming was dead.
-            print(f"::warning title=Découverte muette::{message}")
 
     # Merge: config takes priority, then discovered (deduplicated by URL)
     config_urls = {rc.get("url", "").rstrip("/") for rc in races_config}
@@ -912,13 +963,13 @@ def run():
         if not (r.get("location") or "").strip()
     )
     if no_location:
-        message = (
+        _warn(
+            "Courses sans lieu",
             f"{len(no_location)} course(s) avec membres sans lieu, placées "
-            f"d'après leur nom: {', '.join(no_location)}"
+            f"d'après leur nom: {', '.join(no_location)}",
+            no_location,
+            run_warnings,
         )
-        print(f"  ⚠️  {message}")
-        if os.environ.get("GITHUB_ACTIONS"):
-            print(f"::warning title=Courses sans lieu::{message}")
 
     # --- Save ---
     print(f"\n{'─'*60}")
@@ -939,9 +990,12 @@ def run():
     )
 
     display_optin = club.get("display_optin", [])
+    _notify_warning_changes(run_warnings)
     output = {
         "last_updated": datetime.now(timezone.utc).isoformat(),
         "races": all_races,
+        # Full file only (never published): baseline for the next run's diff.
+        "warnings": sorted(set(run_warnings)),
     }
     save_data(output, known_members=known_members, display_optin=display_optin)
 
