@@ -81,6 +81,8 @@ Historique des évolutions notables. Format inspiré de
   (nouvelle option ; en CI, input `repair_platform` du workflow).
 
 ### Modifié
+- **Astro 5 → 7** (frontend) : build identique (mêmes fichiers ; HTML plus
+  compact). Requiert Node ≥ 22.22 : la CI passe en Node 24 (LTS).
 - **Notifieur : 3 essais par jour** (11h30, 18h, 21h) : si le T14 dort à
   11h30, le récap part le soir même. Rappels et alertes de token limités à
   un par jour (`token_reminded` / `token_alerted` dans `notified.json`).

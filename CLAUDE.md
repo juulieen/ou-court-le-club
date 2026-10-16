@@ -1,6 +1,6 @@
 # RunEvent86
 
-Interactive map showing races where "Run Event 86" club members are registered across France. The frontend is a static MapLibre GL map built with Astro 5 and TypeScript, hosted via GitHub Pages. Data is produced by a Python scraper pipeline that discovers races on 19 registration platforms (including 4 Njuko white-labels), checks each for club members via dual matching (club name + known member names), geocodes results, and outputs a GDPR-compliant JSON file containing first names only for opted-in members.
+Interactive map showing races where "Run Event 86" club members are registered across France. The frontend is a static MapLibre GL map built with Astro 7 and TypeScript, hosted via GitHub Pages. Data is produced by a Python scraper pipeline that discovers races on 19 registration platforms (including 4 Njuko white-labels), checks each for club members via dual matching (club name + known member names), geocodes results, and outputs a GDPR-compliant JSON file containing first names only for opted-in members.
 
 ## Architecture
 
