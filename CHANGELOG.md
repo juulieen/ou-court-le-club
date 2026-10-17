@@ -88,7 +88,7 @@ Historique des évolutions notables. Format inspiré de
   un par jour (`token_reminded` / `token_alerted` dans `notified.json`).
 - **Actions GitHub sur Node 24** (versions majeures minimales : checkout v5,
   setup-python v6, cache v5, upload-artifact v6, download-artifact v7,
-  setup-node v5, configure-pages v6, upload-pages-artifact v4,
+  setup-node v5, configure-pages v6, upload-pages-artifact v5,
   deploy-pages v5) — fin de l'avertissement « Node.js 20 is deprecated ».
 - **Notifications groupées en récap mensuel** (`scrapers/notify.py send`,
   demande de Maxime — Team com 2026-09-20) : un seul message par mois,
