@@ -340,6 +340,20 @@ body {
 .dot-future { background: var(--purple); }
 .dot-past { background: #bbb; }
 
+/* Formes = type de course (la couleur reste celle de la date). */
+.legend-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+}
+
+.legend-shape {
+  width: 13px;
+  height: 11px;
+  flex-shrink: 0;
+  fill: var(--text-secondary);
+}
+
 /* ---- Race list ---- */
 #race-list {
   flex: 1;
@@ -1160,13 +1174,676 @@ body {
     bottom: auto;
     top: 10px;
     left: 10px;
-    gap: 8px;
+    /* Laisse la place aux boutons de zoom à droite ; passe à la ligne au besoin. */
+    max-width: calc(100% - 70px);
+    flex-wrap: wrap;
+    gap: 4px 8px;
     padding: 5px 10px;
     font-size: 0.6rem;
+  }
+
+  #legend .legend-item {
+    white-space: nowrap;
+  }
+
+  #legend .legend-sep {
+    display: none;
   }
 
   #legend .legend-dot {
     width: 7px;
     height: 7px;
+  }
+}
+
+/* ---- Intro & globe ---- */
+/* Fond « espace » autour du globe (vue très dézoomée et pendant l'intro). */
+#map {
+  background: radial-gradient(ellipse at center, #1b2550 0%, #0a0f24 55%, #04060f 100%);
+}
+
+#intro-skip {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 50;
+  padding: 10px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(10, 15, 36, 0.55);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font: 600 14px "DM Sans", system-ui, sans-serif;
+  cursor: pointer;
+  animation: intro-skip-in 0.6s 0.8s both;
+}
+
+#intro-skip:hover {
+  background: rgba(245, 124, 32, 0.85);
+  border-color: transparent;
+}
+
+@keyframes intro-skip-in {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+}
+
+/* Halo du club : animation CSS, sans redessin de la carte. */
+.club-halo {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.club-halo::before,
+.club-halo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(245, 124, 32, 0.55);
+  animation: club-halo 3s ease-out infinite;
+}
+
+.club-halo::after {
+  animation-delay: 1.5s;
+}
+
+@keyframes club-halo {
+  from { transform: scale(1); opacity: 0.9; }
+  to { transform: scale(2.4); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .club-halo::before,
+  .club-halo::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* ---- Rejouer la saison ---- */
+.season-ctrl .season-btn {
+  width: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  font: 600 0.72rem/1 "DM Sans", system-ui, sans-serif;
+  color: #6B2D5B;
+  white-space: nowrap;
+}
+
+.season-ctrl .season-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Pendant le film, la légende (qui parle d'aujourd'hui) s'efface. */
+#legend {
+  transition: opacity 0.3s;
+}
+
+.season-on #legend {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#season-hud {
+  position: fixed;
+  top: 16px;
+  /* Centré sur la partie de carte visible, à droite du panneau. */
+  left: calc(var(--sidebar-w) + (100% - var(--sidebar-w)) / 2);
+  transform: translateX(-50%);
+  z-index: 11; /* au-dessus de la légende, qui revient pendant le bilan */
+  width: 320px;
+  padding: 10px 14px 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.18);
+  color: #2b2b2b;
+  text-align: center;
+}
+
+#sidebar.collapsed ~ #season-hud {
+  left: 50%;
+}
+
+#season-hud[hidden] {
+  display: none;
+}
+
+.season-month {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 1.8rem;
+  line-height: 1.05;
+  color: #6B2D5B;
+  letter-spacing: 0.03em;
+}
+
+.season-stats {
+  margin-top: 1px;
+  font-size: 0.8rem;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
+
+.season-stats b {
+  color: #F57C20;
+  font-size: 0.95rem;
+}
+
+/* Nom de la saison, avec ‹ › pour passer à une autre saison. */
+.season-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #F57C20;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.season-prev,
+.season-next {
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 11px;
+  background: rgba(107, 45, 91, 0.1);
+  color: #6B2D5B;
+  font: 700 0.68rem/1 "DM Sans", system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.season-prev:hover:not(:disabled),
+.season-next:hover:not(:disabled) {
+  background: rgba(107, 45, 91, 0.2);
+}
+
+.season-prev:disabled,
+.season-next:disabled {
+  visibility: hidden;
+}
+
+/* Course qui vient d'arriver : une ligne, hauteur fixe (pas de saut). */
+.season-caption {
+  height: 1.2em;
+  margin-top: 3px;
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6B2D5B;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.season-seek:disabled {
+  cursor: default;
+}
+
+.season-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.season-play,
+.season-speed {
+  flex: none;
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border: 0;
+  border-radius: 15px;
+  cursor: pointer;
+  font: 700 0.75rem/1 "DM Sans", system-ui, sans-serif;
+}
+
+.season-play {
+  width: 30px;
+  background: #6B2D5B;
+  color: #fff;
+}
+
+.season-speed {
+  width: 38px;
+  background: rgba(107, 45, 91, 0.1);
+  color: #6B2D5B;
+  font-variant-numeric: tabular-nums;
+}
+
+.season-play:hover {
+  background: #57234a;
+}
+
+.season-speed:hover {
+  background: rgba(107, 45, 91, 0.18);
+}
+
+.season-bar {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(107, 45, 91, 0.15);
+}
+
+.season-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #6B2D5B, #F57C20);
+  pointer-events: none;
+}
+
+/* Repère « aujourd'hui » sur la barre. */
+.season-today {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 14px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: #E53935;
+  pointer-events: none;
+}
+
+.season-today[hidden] {
+  display: none;
+}
+
+/* Curseur natif posé sur la barre : clavier et glisser gratuits, seul le
+   bouton rond est visible. */
+.season-seek {
+  position: absolute;
+  inset: -10px 0;
+  width: 100%;
+  height: calc(100% + 20px);
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.season-seek::-webkit-slider-runnable-track {
+  height: 100%;
+  background: transparent;
+}
+
+.season-seek::-moz-range-track {
+  background: transparent;
+}
+
+.season-seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 6px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #F57C20;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.season-seek::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #F57C20;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.season-seek:focus-visible {
+  outline: 2px solid #6B2D5B;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.season-stop {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #888;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.season-stop:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #333;
+}
+
+#season-hud.season-done .season-month {
+  animation: season-pop 0.5s ease-out;
+}
+
+@keyframes season-pop {
+  0% { transform: scale(0.9); opacity: 0.4; }
+  60% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@media (max-width: 768px) {
+  #season-hud {
+    left: 10px;
+    transform: none;
+    width: calc(100% - 64px); /* laisse les boutons de zoom à droite */
+    padding: 8px 12px 9px;
+  }
+
+  .season-month {
+    font-size: 1.4rem;
+  }
+
+  .season-ctrl .season-btn span {
+    display: none; /* icône seule sur mobile, à côté du zoom */
+  }
+
+  .season-ctrl .season-btn {
+    width: 29px;
+    justify-content: center;
+    padding: 0;
+  }
+}
+
+/* ---- Plein écran (intro et film de la saison) ---- */
+#sidebar-toggle {
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+}
+
+.immersive #legend,
+.immersive .tour-ctrl {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Pendant l'intro, le bouton du film n'a pas d'usage (il reste visible,
+   grisé, pendant le film lui-même). */
+.immersive:not(.season-on) .season-ctrl {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.season-ctrl,
+.tour-ctrl {
+  transition: opacity 0.3s;
+}
+
+@media (min-width: 769px) {
+  .immersive #sidebar {
+    transform: translateX(calc(-1 * var(--sidebar-w)));
+  }
+
+  .immersive #sidebar-toggle {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Le bandeau du film, centré sur tout l'écran, comme un titre. */
+  .immersive #season-hud {
+    left: 50%;
+    width: 400px;
+    padding: 12px 18px;
+  }
+
+  .immersive .season-month {
+    font-size: 2.3rem;
+  }
+}
+
+/* Boutons du bilan : autre saison, visite guidée. */
+.season-end-actions {
+  display: none;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px 0 2px;
+}
+
+#season-hud.season-done .season-end-actions {
+  display: flex;
+}
+
+.season-other {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: rgba(107, 45, 91, 0.1);
+  color: #6B2D5B;
+  font: 700 0.8rem/1 "DM Sans", system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.season-other:hover {
+  background: rgba(107, 45, 91, 0.2);
+}
+
+.season-other[hidden] {
+  display: none;
+}
+
+.season-tour {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: #F57C20;
+  color: #fff;
+  font: 700 0.8rem/1 "DM Sans", system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.season-tour:hover {
+  background: #e06a10;
+}
+
+
+
+/* ---- Visite guidée ---- */
+.tour-btn {
+  font: 700 0.95rem/1 "DM Sans", system-ui, sans-serif;
+  color: #6B2D5B;
+}
+
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+}
+
+/* L'élément expliqué reste éclairé ; le reste de la page s'assombrit. */
+.tour-spot {
+  position: fixed;
+  z-index: 2001;
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(18, 10, 30, 0.58);
+  outline: 2px solid #F57C20;
+  pointer-events: none;
+  transition: left 0.3s, top 0.3s, width 0.3s, height 0.3s;
+}
+
+.tour-bubble {
+  position: fixed;
+  z-index: 2002;
+  width: min(290px, calc(100vw - 24px));
+  padding: 12px 14px 12px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  color: #2b2b2b;
+  transition: left 0.3s, top 0.3s;
+}
+
+.tour-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tour-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #F57C20;
+  letter-spacing: 0.04em;
+}
+
+.tour-close {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+}
+
+.tour-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.tour-title {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  color: #6B2D5B;
+  letter-spacing: 0.02em;
+}
+
+.tour-text {
+  margin: 4px 0 12px;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.tour-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tour-prev,
+.tour-next {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 16px;
+  font: 700 0.8rem/1 "DM Sans", system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.tour-prev {
+  background: rgba(107, 45, 91, 0.1);
+  color: #6B2D5B;
+}
+
+.tour-prev[hidden] {
+  visibility: hidden;
+  display: block;
+}
+
+.tour-next {
+  margin-left: auto;
+  background: #6B2D5B;
+  color: #fff;
+}
+
+.tour-next:hover {
+  background: #57234a;
+}
+
+.tour-next:focus-visible,
+.tour-prev:focus-visible,
+.tour-close:focus-visible {
+  outline: 2px solid #F57C20;
+  outline-offset: 2px;
+}
+
+/* Proposition de visite après l'intro. */
+#tour-offer {
+  position: fixed;
+  left: calc(var(--sidebar-w) + (100% - var(--sidebar-w)) / 2);
+  top: 16px; /* en bas, il chevaucherait la légende */
+  transform: translateX(-50%);
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 24px);
+  padding: 8px 8px 8px 16px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+  font-size: 0.85rem;
+  animation: tour-offer-in 0.4s ease-out;
+}
+
+#tour-offer b {
+  color: #6B2D5B;
+}
+
+.tour-offer-go {
+  flex: none;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: #F57C20;
+  color: #fff;
+  font: 700 0.8rem/1 "DM Sans", system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.tour-offer-close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+}
+
+@keyframes tour-offer-in-mobile {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes tour-offer-in {
+  from { opacity: 0; transform: translate(-50%, -12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (max-width: 768px) {
+  /* Pleine largeur, juste au-dessus du panneau à mi-hauteur. */
+  #tour-offer {
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: calc(55dvh + 10px);
+    transform: none;
+    max-width: none;
+    animation-name: tour-offer-in-mobile;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-spot,
+  .tour-bubble,
+  #tour-offer {
+    transition: none;
+    animation: none;
   }
 }

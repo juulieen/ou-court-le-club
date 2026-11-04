@@ -1,4 +1,9 @@
 // RunEvent86 — "Ou court le club ?" — MapLibre GL
+import * as fx from "./mapfx";
+import { addMarkerImages, iconName, normalizeType, TEXT_OFFSET } from "./markers";
+import { setupSeason, type Season } from "./season";
+import { setupTour, type Tour } from "./tour";
+
 declare const maplibregl: any;
 
 (function () {
@@ -27,6 +32,7 @@ declare const maplibregl: any;
   let hasRendered = false;
   let currentPopup: any = null;
   let detailMode = false;
+  let season: Season = { playing: () => false, stop: () => {} };
   const counterIntervals: Record<string, ReturnType<typeof setInterval>> = {};
 
   // --- HTML escaping ---
@@ -80,8 +86,131 @@ declare const maplibregl: any;
     return `J-${diffDays}`;
   }
 
+  // --- Intro (globe qui tourne, puis plongée sur les courses) ---
+  // "spinning" : le globe tourne en attendant données et style ; "flying" :
+  // vol vers les courses ; "done" : vue normale. Un clic sur « Passer » ou un
+  // geste sur la carte saute directement à la vue finale.
+  let introState: "spinning" | "flying" | "done" = fx.shouldPlayIntro() ? "spinning" : "done";
+  const introStart = performance.now();
+  let stopSpin = () => {};
+  let tour: Tour;
+
+  // Plein écran pour l'intro et le film de la saison : le panneau glisse hors
+  // de l'écran (ordinateur) ou se replie (mobile), puis revient.
+  let immersive = false;
+  let savedSheet: string | null = null;
+  function setImmersive(on: boolean) {
+    if (on === immersive) return;
+    immersive = on;
+    document.body.classList.toggle("immersive", on);
+    if (window.innerWidth > 768) return;
+    const sidebar = document.getElementById("sidebar")!;
+    const snaps = (window as any).__sidebarSnap;
+    if (on) {
+      savedSheet = sidebar.style.transform;
+      if (snaps) sidebar.style.transform = `translateY(${snaps().peek}px)`;
+    } else {
+      // Sans position mémorisée (intro : panneau pas encore placé), mi-hauteur.
+      sidebar.style.transform = savedSheet || (snaps ? `translateY(${snaps().half}px)` : "");
+      savedSheet = null;
+    }
+  }
+
+  function skipIntro() {
+    if (introState === "done") return;
+    const wasFlying = introState === "flying";
+    introState = "done";
+    stopSpin();
+    setImmersive(false);
+    document.getElementById("intro-skip")?.remove();
+    fx.markIntroSeen();
+    if (wasFlying) {
+      map.stop(); // déclenche moveend, donc la cascade
+      fitBounds(allRaces, 0);
+    }
+  }
+
+  function setupIntro() {
+    if (introState !== "spinning") return;
+    stopSpin = fx.startSpin(map);
+    const btn = document.createElement("button");
+    btn.id = "intro-skip";
+    btn.type = "button";
+    btn.textContent = "Passer l'intro";
+    btn.addEventListener("click", skipIntro);
+    document.body.appendChild(btn);
+    ["mousedown", "touchstart", "wheel"].forEach((ev) => map.once(ev, skipIntro));
+  }
+
+  // Cadre la carte sur les courses, puis lance la cascade (points + arcs).
+  function revealRaces() {
+    fx.hideForReveal(map);
+    if (detailMode) {
+      // Lien direct vers une course : la carte est déjà centrée dessus.
+      fx.playReveal(map);
+      return;
+    }
+    const intro = introState === "spinning";
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      if (introState === "flying") skipIntro();
+      fx.playReveal(map);
+      // Première visite : on propose la visite guidée une fois la carte posée.
+      if (intro) setTimeout(() => tour.offer(), 3500);
+    };
+    const fly = () => {
+      if (introState === "spinning") {
+        stopSpin();
+        introState = "flying";
+      }
+      map.once("moveend", start);
+      setTimeout(start, intro ? 9000 : 1500); // filet si moveend ne vient pas
+      // Le panneau revient à l'atterrissage (skipIntro) : on cadre déjà pour lui.
+      fitBounds(allRaces, introState === "flying" ? 5500 : 0, true);
+    };
+    // Laisse le globe tourner au moins 1,5 s : sinon l'intro passe inaperçue.
+    if (intro) setTimeout(fly, Math.max(0, introStart + 1500 - performance.now()));
+    else fly();
+  }
+
+  // Visite guidée : panneau visible (déplié ; à mi-hauteur sur mobile).
+  // Renvoie le délai de la transition à attendre avant de mesurer.
+  function prepareTour(): number {
+    if (season.playing()) season.stop();
+    const sidebar = document.getElementById("sidebar")!;
+    if (window.innerWidth <= 768) {
+      const snaps = (window as any).__sidebarSnap;
+      if (snaps) sidebar.style.transform = `translateY(${snaps().half}px)`;
+      sidebar.classList.remove("collapsed");
+      return 350;
+    }
+    if (sidebar.classList.contains("collapsed")) {
+      document.getElementById("sidebar-toggle")!.click();
+      return 350;
+    }
+    return 0;
+  }
+
+  // Bouton « ? » de la visite guidée, sous les autres contrôles de la carte.
+  function tourControl() {
+    const el = document.createElement("div");
+    el.className = "maplibregl-ctrl maplibregl-ctrl-group tour-ctrl";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "tour-btn";
+    btn.title = "Découvrir la carte";
+    btn.setAttribute("aria-label", "Découvrir la carte");
+    btn.textContent = "?";
+    btn.addEventListener("click", () => tour.start());
+    el.appendChild(btn);
+    return { onAdd: () => el, onRemove: () => el.remove() };
+  }
+
   // --- Init ---
   function init() {
+    const intro = introState === "spinning";
     map = new maplibregl.Map({
       container: "map",
       // Sans clé MapTiler (dev local, ou clé expirée), on retombe sur le style
@@ -89,14 +218,23 @@ declare const maplibregl: any;
       style: MAPTILER_KEY
         ? `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${MAPTILER_KEY}`
         : "https://demotiles.maplibre.org/style.json",
-      center: [0.34, 46.58],
-      zoom: 6,
+      center: intro ? [-35, 32] : [0.34, 46.58],
+      zoom: intro ? 1.2 : 6,
       maxZoom: 17,
+      // Pas de fondu à l'apparition des symboles : quand la caméra bouge à
+      // chaque image (film de la saison), le fondu repart sans cesse et les
+      // marqueurs restent invisibles.
+      fadeDuration: 0,
     });
+    fx.setupGlobe(map);
+    fx.calmBasemap(map);
+    setupIntro();
 
     map.addControl(new maplibregl.NavigationControl(), "top-right");
 
     setupSidebar();
+    if (introState === "spinning") setImmersive(true);
+    tour = setupTour(prepareTour);
     setupLegalModal();
     setupCalendarModal();
     window.addEventListener("hashchange", handleRoute);
@@ -205,6 +343,19 @@ declare const maplibregl: any;
           setupMapLayers();
           // Réapplique les filtres courants à la source fraîchement créée.
           renderAll();
+          revealRaces();
+          season = setupSeason({
+            map,
+            races: () => allRaces,
+            toGeoJSON: (races) => buildGeoJSON(groupEditions(races)),
+            restore: renderAll,
+            reframe: () => fitBounds(renderedGroups.map((g: any) => g.latest), 900),
+            padding: viewPadding,
+            immersive: setImmersive,
+            onTour: () => tour.start(),
+            canStart: () => !detailMode && introState === "done",
+          });
+          map.addControl(tourControl(), "top-right");
         });
       })
       .catch((err: Error) => {
@@ -326,6 +477,17 @@ declare const maplibregl: any;
     return "future";
   }
 
+  const TEMPORALITY_COLORS = ["#aaaaaa", "#E53935", "#F57C20", "#6B2D5B"];
+  // Proximité de la date (plus grand = plus proche) : couleur des regroupements.
+  const URGENCY: Record<string, number> = { past: 0, future: 1, "this-month": 2, "this-week": 3 };
+
+  // Décalage des bulles selon leur côté : l'icône dépasse ~30 px au-dessus du lieu.
+  const POPUP_OFFSET = {
+    top: [0, 4], "top-left": [0, 4], "top-right": [0, 4],
+    bottom: [0, -32], "bottom-left": [0, -32], "bottom-right": [0, -32],
+    left: [14, -16], right: [-14, -16], center: [0, -16],
+  };
+
   function getColor(temp: string) {
     switch (temp) {
       case "past": return "#aaaaaa";
@@ -345,75 +507,91 @@ declare const maplibregl: any;
       clusterRadius: 18,
       clusterProperties: {
         sum_members: ["+", ["get", "member_count"]],
+        // Instant d'apparition du cluster dans la cascade : son premier point.
+        min_reveal: ["min", ["get", "reveal_at"]],
+        // Pour dessiner le regroupement : types contenus et date la plus proche.
+        n_trail: ["+", ["case", ["==", ["get", "race_type"], "trail"], 1, 0]],
+        n_route: ["+", ["case", ["==", ["get", "race_type"], "route"], 1, 0]],
+        max_urgency: ["max", ["get", "urgency"]],
       },
     });
 
-    // Cluster circles
+    // Icônes : forme = type de course, couleur = date (voir markers.ts).
+    addMarkerImages(map, TEMPORALITY_COLORS);
+
+    // Regroupements : deux formes qui se chevauchent selon les types contenus,
+    // à la couleur de la course la plus proche ; nombre de courses en pastille.
+    const clusterColor = ["match", ["get", "max_urgency"],
+      3, TEMPORALITY_COLORS[1], 2, TEMPORALITY_COLORS[2], 1, TEMPORALITY_COLORS[3],
+      TEMPORALITY_COLORS[0],
+    ];
+    const clusterKind = ["case",
+      ["==", ["get", "n_trail"], 0], "route",
+      ["==", ["get", "n_route"], 0], "trail",
+      "mixed",
+    ];
     map.addLayer({
       id: "clusters",
-      type: "circle",
+      type: "symbol",
       source: "races",
       filter: ["has", "point_count"],
-      paint: {
-        "circle-color": "#F57C20",
-        "circle-opacity": 0.85,
-        "circle-radius": ["step", ["get", "point_count"], 18, 3, 24, 6, 30],
-        "circle-stroke-width": 2,
-        "circle-stroke-color": "#fff",
+      layout: {
+        "icon-image": ["concat", "mk-cluster-", clusterKind, "-", clusterColor],
+        "icon-anchor": "bottom",
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
       },
     });
-
-    // Cluster count label
     map.addLayer({
       id: "cluster-count",
       type: "symbol",
       source: "races",
       filter: ["has", "point_count"],
       layout: {
+        "icon-image": ["concat", "mk-pill-", clusterColor],
+        "icon-text-fit": "width",
+        "icon-text-fit-padding": [0, 4, 0, 4],
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
         "text-field": "{point_count}",
         "text-font": ["Noto Sans Bold"],
-        "text-size": 13,
+        "text-size": 10,
+        "text-offset": [2.2, -3.6],
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
       },
-      paint: {
-        "text-color": "#fff",
-      },
+      paint: { "text-color": clusterColor },
     });
 
-    // Individual race circles -- larger for multi-edition
+    // Une course : sommet (trail), panneau (route) ou losange, nombre de
+    // coureurs dessus. Un peu plus grand pour les épreuves à plusieurs éditions.
+    const pointLayout = {
+      "icon-image": ["concat", "mk-", ["get", "race_type"], "-", ["get", "color"]],
+      "icon-anchor": "bottom",
+      "icon-size": ["case", ["get", "is_multi"], 1.15, 1],
+      "icon-allow-overlap": true,
+      "icon-ignore-placement": true,
+      "text-field": ["to-string", ["get", "member_count"]],
+      "text-font": ["Noto Sans Bold"],
+      "text-size": 11,
+      "text-offset": ["match", ["get", "race_type"],
+        "trail", ["literal", TEXT_OFFSET.trail],
+        "route", ["literal", TEXT_OFFSET.route],
+        ["literal", TEXT_OFFSET.autre],
+      ],
+      "text-allow-overlap": true,
+      "text-ignore-placement": true,
+    };
     map.addLayer({
       id: "race-points",
-      type: "circle",
-      source: "races",
-      filter: ["!", ["has", "point_count"]],
-      paint: {
-        "circle-color": ["get", "color"],
-        "circle-radius": ["case", ["get", "is_multi"], 13, 10],
-        "circle-stroke-width": ["case", ["get", "is_multi"], 3.5, 2.5],
-        "circle-stroke-color": ["case",
-          ["get", "is_multi"], "#F57C20",
-          "#fff"
-        ],
-      },
-    });
-
-    // Member count label on individual points
-    map.addLayer({
-      id: "race-labels",
       type: "symbol",
       source: "races",
       filter: ["!", ["has", "point_count"]],
-      layout: {
-        "text-field": ["to-string", ["get", "member_count"]],
-        "text-font": ["Noto Sans Bold"],
-        "text-size": 11,
-        "text-allow-overlap": true,
-      },
-      paint: {
-        "text-color": "#fff",
-      },
+      layout: pointLayout,
+      paint: { "text-color": "#fff" },
     });
 
-    // Edition count badge (small circle at top-right of multi-edition markers)
+    // Badge « ×N » en haut à droite des épreuves à plusieurs éditions.
     map.addLayer({
       id: "edition-badge",
       type: "symbol",
@@ -423,8 +601,9 @@ declare const maplibregl: any;
         "text-field": ["concat", "\u00D7", ["to-string", ["get", "edition_count"]]],
         "text-font": ["Noto Sans Bold"],
         "text-size": 9,
-        "text-offset": [1.2, -1.2],
+        "text-offset": [1.9, -3.6],
         "text-allow-overlap": true,
+        "text-ignore-placement": true,
       },
       paint: {
         "text-color": "#F57C20",
@@ -433,15 +612,25 @@ declare const maplibregl: any;
       },
     });
 
+    // Arcs club → courses, sous les marqueurs.
+    fx.addArcLayers(map, "clusters");
+    // Couches du film de la saison (vides le reste du temps).
+    fx.addSeasonLayers(map, "clusters", pointLayout);
+    for (const layer of ["clusters", "cluster-count", "race-points"]) {
+      const key = layer === "race-points" ? "reveal_at" : "min_reveal";
+      fx.registerReveal(layer, "icon-opacity", 1, key, false);
+      fx.registerReveal(layer, "text-opacity", 1, key, false);
+    }
+
     // --- Interactions ---
 
     // Click cluster -> zoom in
-    map.on("click", "clusters", async (e: any) => {
-      const features = map.queryRenderedFeatures(e.point, { layers: ["clusters"] });
+    map.on("click", ["clusters", "cluster-count"], async (e: any) => {
+      const features = map.queryRenderedFeatures(e.point, { layers: ["clusters", "cluster-count"] });
       if (!features.length) return;
       const clusterId = features[0].properties.cluster_id;
       const zoom = await map.getSource("races").getClusterExpansionZoom(clusterId);
-      map.easeTo({ center: features[0].geometry.coordinates, zoom: zoom + 1 });
+      map.easeTo({ center: features[0].geometry.coordinates, zoom: zoom + 1, offset: centerOffset() });
     });
 
     // Click individual point -> popup with all editions
@@ -532,24 +721,23 @@ declare const maplibregl: any;
       }
 
       if (currentPopup) currentPopup.remove();
-      currentPopup = new maplibregl.Popup({ offset: 12, maxWidth: "300px" })
+      // Les icônes sont posées au-dessus du lieu : la bulle s'ouvre au-dessus d'elles.
+      currentPopup = new maplibregl.Popup({ offset: POPUP_OFFSET, maxWidth: "300px" })
         .setLngLat(coords)
         .setHTML(popupHtml)
         .addTo(map);
     });
 
     // Cursor
-    ["clusters", "race-points"].forEach((layer: string) => {
+    ["clusters", "cluster-count", "race-points"].forEach((layer: string) => {
       map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
     });
 
-    // Fit bounds to all races
-    fitBounds(allRaces);
   }
 
   function buildGeoJSON(groups: any[]) {
-    return {
+    const geojson = {
       type: "FeatureCollection",
       features: groups
         .filter((g: any) => g.latest.lat != null && g.latest.lng != null)
@@ -584,6 +772,8 @@ declare const maplibregl: any;
               url: r.url || "",
               member_count: g.isMulti ? totalMembers : r.member_count,
               color: getColor(getTemporality(colorRef.date)),
+              race_type: normalizeType(colorRef.race_type || r.race_type),
+              urgency: URGENCY[getTemporality(colorRef.date)],
               temporality: getTemporality(colorRef.date),
               is_multi: g.isMulti,
               edition_count: g.editions.length,
@@ -592,23 +782,60 @@ declare const maplibregl: any;
           };
         }),
     };
+    fx.assignRevealOrder(geojson.features);
+    return geojson;
   }
 
-  function fitBounds(races: any[]) {
+  // duration : durée du vol en ms (0 = saut direct ; absent = animation par défaut).
+  // asIfShown : cadrer pour le panneau affiché, même s'il est encore masqué.
+  function fitBounds(races: any[], duration?: number, asIfShown = false) {
+    // MapLibre lit `"duration" in options` : une clé à undefined donnerait NaN.
+    const anim = duration === undefined ? {} : { duration, essential: true };
     const valid = races.filter((r: any) => r.lat != null && r.lng != null);
     if (valid.length === 0) return;
     if (valid.length === 1) {
-      map.flyTo({ center: [valid[0].lng, valid[0].lat], zoom: 10 });
+      map.flyTo({ center: [valid[0].lng, valid[0].lat], zoom: 10, offset: centerOffset(), pitch: 0, bearing: 0, ...anim });
       return;
     }
     const bounds = new maplibregl.LngLatBounds();
     valid.forEach((r: any) => bounds.extend([r.lng, r.lat]));
-    // Adapt padding for mobile (sidebar at bottom) vs desktop (sidebar on left)
-    const isMobile = window.innerWidth <= 768;
-    const padding = isMobile
-      ? { top: 40, bottom: 40, left: 40, right: 40 }
-      : { top: 60, bottom: 60, left: 420, right: 60 };
-    map.fitBounds(bounds, { padding, maxZoom: 12 });
+    map.fitBounds(bounds, { padding: viewPadding(asIfShown), maxZoom: 12, pitch: 0, bearing: 0, ...anim });
+  }
+
+  // Décalage du centre vers la partie visible, pour viser un point. On évite
+  // l'option `padding` des vols : MapLibre la garde sur la carte et l'ajoute
+  // ensuite aux marges de chaque fitBounds.
+  function centerOffset(): [number, number] {
+    const p = viewPadding();
+    return [(p.left - p.right) / 2, (p.top - p.bottom) / 2];
+  }
+
+  // Marges de la partie de carte que l'interface ne cache pas : le panneau à
+  // gauche sur ordinateur ; sur mobile, la légende en haut et le panneau du bas,
+  // qui recouvre la moitié de l'écran. Les cadrages visent ce qui reste visible.
+  function viewPadding(asIfShown = false) {
+    if (window.innerWidth > 768) {
+      const hidden = (immersive && !asIfShown) || document.getElementById("sidebar")!.classList.contains("collapsed");
+      return { top: 60, bottom: 60, left: hidden ? 60 : 420, right: 60 };
+    }
+    const legend = document.getElementById("legend");
+    // Les marqueurs sont ancrés par le bas : on laisse la hauteur d'une icône.
+    const top = (legend ? legend.getBoundingClientRect().bottom : 10) + 36;
+    const bottom = Math.max(16, window.innerHeight - sheetTop(asIfShown) + 16);
+    // Garder au moins 120 px de carte, même panneau déplié.
+    const excess = Math.max(0, top + bottom + 120 - window.innerHeight);
+    return { top, bottom: bottom - excess, left: 24, right: 24 };
+  }
+
+  // Bord haut du panneau mobile une fois arrivé (pas pendant sa transition).
+  function sheetTop(asIfShown = false) {
+    const sidebar = document.getElementById("sidebar")!;
+    const h = sidebar.offsetHeight;
+    const snaps = (window as any).__sidebarSnap;
+    if (asIfShown && immersive && snaps) return sidebar.offsetTop + snaps().half;
+    const inline = /translateY\((-?[\d.]+)px\)/.exec(sidebar.style.transform);
+    const shift = inline ? parseFloat(inline[1]) : sidebar.classList.contains("collapsed") ? h - 70 : h * 0.45;
+    return sidebar.offsetTop + shift;
   }
 
   // --- Rendering ---
@@ -626,6 +853,7 @@ declare const maplibregl: any;
   }
 
   function renderAll() {
+    if (season.playing()) season.stop(); // un filtre touché interrompt la saison
     if (detailMode) return;
     const dateFrom = (document.getElementById("date-from") as HTMLInputElement).value;
     const dateTo = (document.getElementById("date-to") as HTMLInputElement).value;
@@ -674,7 +902,9 @@ declare const maplibregl: any;
     // Update map source
     const source = map.getSource("races");
     if (source) {
-      source.setData(buildGeoJSON(filteredGroups));
+      const geojson = buildGeoJSON(filteredGroups);
+      source.setData(geojson);
+      fx.updateArcs(map, geojson.features);
     }
 
     renderList(filteredGroups);
@@ -885,7 +1115,8 @@ declare const maplibregl: any;
       }, { passive: true });
 
       // Initialize at half
-      setTimeout(() => snapTo(getSnapPositions().half), 100);
+      // (Pas pendant l'intro plein écran : le panneau reviendra à sa fin.)
+      setTimeout(() => { if (!immersive) snapTo(getSnapPositions().half); }, 100);
     }
 
     // Quick filter buttons
@@ -1026,6 +1257,7 @@ declare const maplibregl: any;
       return;
     }
 
+    season.stop();
     detailMode = true;
 
     const dateFormatted = race.date
@@ -1109,12 +1341,7 @@ declare const maplibregl: any;
     }
     if (filterToggle) filterToggle.style.display = "none";
 
-    // Zoom map to race
-    if (race.lat != null && race.lng != null) {
-      map.flyTo({ center: [race.lng, race.lat], zoom: 13, duration: 800 });
-    }
-
-    // Mobile: snap to half
+    // Mobile: snap to half (avant le vol, qui cadre au-dessus du panneau)
     if (window.innerWidth <= 768) {
       const sidebar = document.getElementById("sidebar")!;
       sidebar.classList.remove("collapsed");
@@ -1122,6 +1349,11 @@ declare const maplibregl: any;
         const snaps = (window as any).__sidebarSnap();
         sidebar.style.transform = `translateY(${snaps.half}px)`;
       }
+    }
+
+    // Zoom map to race
+    if (race.lat != null && race.lng != null) {
+      map.flyTo({ center: [race.lng, race.lat], zoom: 13, duration: 800, offset: centerOffset(), pitch: 0, bearing: 0 });
     }
   }
 
