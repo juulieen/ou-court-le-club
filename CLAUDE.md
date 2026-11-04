@@ -41,6 +41,11 @@ frontend/                -- Astro static frontend project
     layouts/Base.astro   -- main site shell layout
     pages/index.astro    -- landing page structure & legal modals
     scripts/app.ts       # core TypeScript client logic (MapLibre GL, filters, bottom sheet)
+    scripts/mapfx.ts     # map effects: globe intro, club→race arcs, reveal cascade,
+                         #   lighter basemap, season-film layers (feature-state)
+    scripts/markers.ts   # canvas-drawn race icons (trail/route/autre) and cluster icons
+    scripts/season.ts    # « Rejouer la saison » film (Sept → Aug seasons)
+    scripts/tour.ts      # « Découvrir la carte » guided tour
     styles/global.css    # vanilla CSS stylesheet for all screen modes
 ```
 
@@ -329,7 +334,62 @@ tout était accroché à `map.on("load")` et le site entier restait vide. Sans c
 le style retombe sur `demotiles.maplibre.org` pour rester testable en local.
 
 ### Legend
-Map overlay (not in sidebar) — positioned bottom-left on desktop, top-left on mobile. Semi-transparent background with backdrop blur.
+Map overlay (not in sidebar) — positioned bottom-left on desktop, top-left on mobile. Semi-transparent background with backdrop blur. Colours = date (cette semaine / ce mois / à venir / passées), shapes = type (Trail / Route).
+
+### Marqueurs
+Icônes dessinées sur canvas une fois, puis `map.addImage` (`markers.ts`) :
+`mk-{trail|route|autre}-{couleur}`, la forme dit le type, la couleur la date.
+Les regroupements (`mk-cluster-{trail|route|mixed}-{couleur}`) superposent deux
+formes, avec le nombre de courses dans une pastille étirable (`mk-pill-*`,
+`icon-text-fit`). Les `clusterProperties` (`n_trail`, `n_route`,
+`max_urgency`) choisissent la forme et la couleur. Le fond outdoor est allégé
+par `calmBasemap()` : les couches de détail (sentiers, courbes, villages, POI)
+voient leur zoom minimal relevé (`DETAIL_MINZOOM` dans `mapfx.ts`).
+
+### Intro, arcs, cascade
+- Intro à la première visite seulement (`localStorage` `rev86-intro-seen` ;
+  `?intro` la force ; jamais sur un lien `#race/…` ni avec « réduire les
+  animations »). Globe (projection interpolée globe → mercator entre les zooms
+  2 et 4 : en globe, le fond outdoor se dessine trop lentement), vol vers les
+  courses, puis cascade. Plein écran pendant le globe et le vol
+  (`setImmersive`) ; le panneau revient à l'atterrissage, et le vol est
+  déjà cadré pour lui (`fitBounds(…, asIfShown)`).
+- Arcs club → courses à venir (source `arcs`, `line-gradient`) qui poussent
+  pendant la cascade ; un éclat les parcourt 3 fois puis la carte redevient
+  immobile (redessiner en continu faisait saccader le fond outdoor). Le halo
+  du club est un marqueur HTML animé en CSS, pour la même raison.
+- Cascade : `reveal_at` (rang de distance au club) piloté par des expressions
+  `setPaintProperty`. **Ne convient qu'à caméra fixe** : changer à chaque image
+  une propriété data-driven fait recharger les tuiles de la source.
+- `fadeDuration: 0` sur la carte : avec un fondu, les symboles restaient
+  invisibles tant que la caméra bougeait.
+
+### Cadrage (viewPadding / centerOffset)
+`viewPadding()` donne les marges de la carte réellement visible : le panneau à
+gauche sur ordinateur ; sur mobile, la légende en haut et le panneau du bas
+(position cible lue dans son `transform`). `fitBounds` l'utilise. Pour viser
+un point (`flyTo`, `easeTo`), on passe `offset: centerOffset()` et jamais
+`padding` : MapLibre garde ce `padding` sur la carte et l'ajoute ensuite aux
+marges de chaque `fitBounds`.
+
+### Rejouer la saison (`season.ts`)
+Bouton « Saison 26-27 » sous le zoom. Saisons au calendrier scolaire
+(septembre → août, désignées par leur année de départ), saison en cours par
+défaut, « ‹ 25-26 » / bilan « Revoir la saison … » pour la précédente
+(saisons d'au moins 3 courses). Carte immobile, plein écran ; les courses du
+mois arrivent en grand (arc, onde, flash, nom dans le bandeau) puis, le mois
+fini (`focus_end`), deviennent de petits points. Tout se déduit de la position
+`tm` dans le film : pause, ×2 et barre de temps. Couches dédiées
+`season-dots/ring/flash/points` (source `season-fx`, sans regroupement)
+animées par **feature-state** ; les couches habituelles sont masquées pendant
+le film. À la fin, la carte normale revient avec le bilan. Un filtre ou
+l'ouverture d'une fiche interrompt le film.
+
+### Visite guidée (`tour.ts`)
+« Découvrir la carte » : légende, fiche de course, partage WhatsApp, filtres,
+agenda, film. Éclaire un élément à la fois (étapes sautées si l'élément n'est
+pas visible). Bouton « ? » sous les contrôles, bouton au bilan du film, et
+proposition unique après l'intro (`localStorage` `rev86-tour-seen`).
 
 ## Privacy & GDPR
 

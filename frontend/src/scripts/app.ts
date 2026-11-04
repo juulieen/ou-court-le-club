@@ -1,6 +1,6 @@
 // RunEvent86 — "Ou court le club ?" — MapLibre GL
 import * as fx from "./mapfx";
-import { addMarkerImages, iconName, normalizeType, TEXT_OFFSET } from "./markers";
+import { addMarkerImages, normalizeType, TEXT_OFFSET } from "./markers";
 import { setupSeason, type Season } from "./season";
 import { setupTour, type Tour } from "./tour";
 

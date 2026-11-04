@@ -99,8 +99,16 @@ function clusterShape(kind: ClusterKind) {
 
 // Pastille blanche étirable (icon-text-fit) pour le nombre de courses.
 function drawPill(ctx: CanvasRenderingContext2D, color: string) {
+  // Tracé à la main : Path2D.roundRect manque avant iOS 16 / Firefox 112, et
+  // l'exception empêcherait d'afficher toute course.
   const p = new Path2D();
-  p.roundRect(1.5, 1.5, 17, 14, 7);
+  const [x, y, w, h, r] = [1.5, 1.5, 17, 14, 7];
+  p.moveTo(x + r, y);
+  p.arcTo(x + w, y, x + w, y + h, r);
+  p.arcTo(x + w, y + h, x, y + h, r);
+  p.arcTo(x, y + h, x, y, r);
+  p.arcTo(x, y, x + w, y, r);
+  p.closePath();
   withShadow(ctx, () => {
     ctx.fillStyle = "#fff";
     ctx.fill(p);

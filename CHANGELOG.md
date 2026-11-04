@@ -27,6 +27,20 @@ Historique des évolutions notables. Format inspiré de
   que plus rien n'alimentait depuis le récap mensuel.
 
 ### Ajouté
+- **Carte : effet « wow »** (2026-11-04).
+  - Intro à la première visite : globe en plein écran, vol vers les courses,
+    puis cascade des marqueurs et des arcs partis du club.
+  - Marqueurs dessinés : la forme dit le type (sommet = trail, panneau =
+    route), la couleur dit la date ; les regroupements superposent les formes.
+  - Fond outdoor allégé : sentiers, courbes de niveau, villages et points
+    d'intérêt n'apparaissent qu'en zoomant.
+  - « Rejouer la saison » (septembre → août) : carte immobile, courses du mois
+    mises en avant puis réduites en points, pause / ×2 / barre de temps,
+    saison précédente, bilan.
+  - Visite guidée « Découvrir la carte » (bouton « ? », proposée une fois
+    après l'intro).
+- **Carte mobile : cadrage au-dessus du panneau du bas** : les courses ne sont
+  plus cachées dessous (vue d'ensemble, lien direct, clic sur un regroupement).
 - **Vue club : « ✕ pas un membre » en un clic** (2026-10-17). La fiche d'une
   course propose d'exclure un inscrit marqué « (?) » (et de le rétablir).
   Service `notify.py serve` (conteneur `runevent86-exclusions`, derrière
