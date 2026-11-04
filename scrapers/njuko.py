@@ -253,6 +253,7 @@ class NjukoScraper(BaseScraper):
         base = api_base or self.API_BASE
         url = f"{base}/registrations/{edition_id}"
         found: dict = {}
+        hidden = False  # matches counted but names withheld = private list
         for full_name in (self.known_members or []):
             parts = full_name.strip().split()
             if not parts:
@@ -266,11 +267,17 @@ class NjukoScraper(BaseScraper):
             try:
                 resp = requests.post(url, headers=self.SEARCH_HEADERS, json=body, timeout=15)
                 resp.raise_for_status()
-                results = resp.json().get("results", [])
+                data = resp.json()
+                results = data.get("results", [])
             except requests.RequestException:
                 continue
+            hidden = hidden or ((data.get("totalCount") or 0) > 0 and not results)
             for m in self._find_members(results, competitions):
                 found[m.name.lower()] = m
+        if hidden and not found:
+            # Marathon de la Côte d'Amour 2026 : « 147 MARTIN », 0 nom renvoyé.
+            # Rien à trouver ici : ajouter les membres à la main (config.yml).
+            print(f"  [njuko] Liste des inscrits masquée (edition {edition_id})")
         return list(found.values())
 
     def _find_members(self, registrations: list, competitions: dict | None = None) -> list[Member]:
@@ -335,6 +342,8 @@ _EVENT_LOCATIONS = {
     "trail de barbatre": "Barbâtre (85)",
     "veni vici": "Uzès (30)",
     "saintelyon": "Lyon (69)",
+    "lut by night": "Lyon (69)",  # Lyon Urban Trail by Night
+    "trail du ventoux": "Bédoin (84)",
     "epopee royale": "Blois (41)",
     "trail du loup blanc": "Guéret (23)",
     "trails du pignada": "Soustons (40)",

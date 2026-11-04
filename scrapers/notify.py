@@ -159,6 +159,18 @@ def _member_names(item: dict) -> list[str]:
     return names or (item.get("first_names") or [])
 
 
+def _display_member_name(name: str) -> str:
+    """« DUPONT Jean » → « Jean Dupont » : le format "NOM Prénom" des
+    inscriptions se lit mal dans un message. Les mots en majuscules forment le
+    nom de famille ; un nom sans partie en casse mixte est laissé tel quel."""
+    words = name.split()
+    last = [w for w in words if w.isupper()]
+    first = [w for w in words if not w.isupper()]
+    if not last or not first:
+        return name
+    return " ".join(first + [w.title() for w in last])
+
+
 def _display_race_name(name: str) -> str:
     """« LA MONTBRUNIGHT » → « La Montbrunight » ; les noms déjà en casse
     mixte sont laissés tels quels."""
@@ -183,7 +195,7 @@ def _digest_line(r: dict) -> str:
     name = _display_race_name(r.get("name") or "Course")
     location = r.get("location") or ""
     count = r.get("member_count", 0)
-    names = _member_names(r)[:_DIGEST_MAX_NAMES]
+    names = [_display_member_name(n) for n in _member_names(r)[:_DIGEST_MAX_NAMES]]
     if names:
         rest = count - len(names)
         who = ", ".join(names) + (f" +{rest}" if rest > 0 else "")

@@ -5,6 +5,20 @@ Historique des évolutions notables. Format inspiré de
 
 ## [Non publié]
 
+### Corrigé
+- **Récap mensuel : noms en « Prénom Nom »** (2026-11-03). Le récap de
+  novembre affichait « DUPONT Jean » : seule la casse des noms de course était
+  normalisée. `_display_member_name()` remet le prénom devant et le nom en
+  casse normale (« Jean Dupont »).
+- Njuko : lieux de la Radiance Mutuelle LUT By Night (Lyon) et du Trail du
+  Ventoux (Bédoin), absents du récap.
+- **Courses en double** (2026-11-03) : OnSinscrit sert « Sur la trace des
+  cagouilles » sous deux sous-domaines, la course s'affichait deux fois.
+  `_drop_duplicate_events()` fusionne les fiches de même plateforme, même date
+  et ≥ 2 membres identiques (archive comprise).
+- Njuko : log « Liste des inscrits masquée » quand l'organisateur cache les
+  noms (Marathon de la Côte d'Amour : à ajouter à la main dans `config.yml`).
+
 ### Supprimé
 - `klikego._search_by_names` (code mort : la recherche par nom de Klikego
   répond en 500 depuis longtemps).

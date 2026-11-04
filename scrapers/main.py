@@ -375,6 +375,38 @@ def load_archive() -> dict:
     return {}
 
 
+def _drop_duplicate_events(races: dict) -> list[str]:
+    """Retire les fiches en double d'un même événement, keyed by id.
+
+    OnSinscrit sert parfois un événement sous deux sous-domaines
+    (« trace-des-cagouilles-2026 » et « trace-de-cagouilles-2026 ») : deux
+    URL, deux ids, mêmes inscrits — la course s'affichait deux fois. Doublon =
+    même plateforme, même date et au moins 2 membres, tous identiques (avec un
+    seul membre, deux épreuves distinctes du même jour restent possibles). On
+    garde la fiche dont le lieu porte un numéro de département, puis le plus
+    petit id : un choix stable d'un run à l'autre, sinon la fiche retirée
+    reviendrait comme « nouvelle ». Renvoie les ids retirés."""
+    groups: dict[tuple, list[dict]] = {}
+    for race in races.values():
+        names = tuple(sorted(m.get("name", "") for m in race.get("members") or []))
+        if len(names) < 2 or not race.get("date"):
+            continue
+        key = (race.get("platform"), race["date"][:10], names)
+        groups.setdefault(key, []).append(race)
+    dropped = []
+    for dups in groups.values():
+        if len(dups) < 2:
+            continue
+        dups.sort(key=lambda r: (
+            not any(c.isdigit() for c in r.get("location") or ""),
+            r["id"],
+        ))
+        for race in dups[1:]:
+            dropped.append(race["id"])
+            del races[race["id"]]
+    return dropped
+
+
 def merge_archive(results: list[dict]) -> tuple[list[dict], list[dict]]:
     """Merge this run's races into the persistent archive.
 
@@ -395,6 +427,11 @@ def merge_archive(results: list[dict]) -> tuple[list[dict], list[dict]]:
         if rid not in known_ids:
             new_races.append(race)
         archive[rid] = race  # fresh data wins
+
+    dropped = _drop_duplicate_events(archive)
+    if dropped:
+        print(f"  Doublons retirés: {', '.join(sorted(dropped))}")
+    new_races = [r for r in new_races if r.get("id") in archive]
 
     # Past Njuko races drop out of discovery, so they never get the town from
     # njuko._EVENT_LOCATIONS: fill it here and re-place them (their
