@@ -344,6 +344,7 @@ _EVENT_LOCATIONS = {
     "saintelyon": "Lyon (69)",
     "lut by night": "Lyon (69)",  # Lyon Urban Trail by Night
     "trail du ventoux": "Bédoin (84)",
+    "grands trails d auvergne": "Aubusson-d'Auvergne (63)",
     "epopee royale": "Blois (41)",
     "trail du loup blanc": "Guéret (23)",
     "trails du pignada": "Soustons (40)",

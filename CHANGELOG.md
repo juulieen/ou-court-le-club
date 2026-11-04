@@ -11,7 +11,8 @@ Historique des évolutions notables. Format inspiré de
   normalisée. `_display_member_name()` remet le prénom devant et le nom en
   casse normale (« Jean Dupont »).
 - Njuko : lieux de la Radiance Mutuelle LUT By Night (Lyon) et du Trail du
-  Ventoux (Bédoin), absents du récap.
+  Ventoux (Bédoin), absents du récap, puis des Grands Trails d'Auvergne
+  (Aubusson-d'Auvergne).
 - **Courses en double** (2026-11-03) : OnSinscrit sert « Sur la trace des
   cagouilles » sous deux sous-domaines, la course s'affichait deux fois.
   `_drop_duplicate_events()` fusionne les fiches de même plateforme, même date
