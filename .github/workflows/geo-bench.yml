@@ -1,0 +1,88 @@
+# Banc d'essai de géolocalisation des courses (bench/geo), lancé sur un
+# serveur GitHub pour ne pas faire les recherches web depuis une IP perso.
+# Compare SearXNG (lancé dans le job) et DuckDuckGo, puis les méthodes avec
+# modèle gratuit OpenRouter. Ne touche ni au site ni aux caches du scraper.
+name: Banc géolocalisation
+
+on:
+  push:
+    branches: ["bench/geo"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      GEO_BENCH_DIR: ${{ runner.temp }}/bench
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      PLAYWRIGHT_DIR: ${{ runner.temp }}/pw
+      MODEL: nvidia/nemotron-3-ultra-550b-a55b:free
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - run: pip install -r requirements.txt
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Playwright (lecture des pages en JavaScript)
+        run: |
+          mkdir -p "$PLAYWRIGHT_DIR" && cd "$PLAYWRIGHT_DIR"
+          npm init -y >/dev/null && npm install playwright@1.64.1 >/dev/null
+
+      - name: SearXNG
+        run: |
+          docker run -d --name searxng -p 8080:8080 \
+            -v "$PWD/bench/geo/searxng:/etc/searxng" searxng/searxng
+          for i in $(seq 1 30); do
+            curl -sf "http://localhost:8080/search?q=test&format=json" >/dev/null && break
+            sleep 2
+          done
+          curl -s "http://localhost:8080/search?q=Crapahut+des+Bedouins&format=json" | head -c 600
+
+      - name: Jeu de données
+        run: mkdir -p "$GEO_BENCH_DIR" && cp bench/geo/dataset.json "$GEO_BENCH_DIR/"
+
+      - name: Qualité brute des moteurs
+        run: |
+          SEARCH_ENGINE=searxng python -m bench.geo.recall
+          SEARCH_ENGINE=ddg python -m bench.geo.recall
+
+      - name: Recherche + modèle, agent (SearXNG)
+        run: |
+          set -o pipefail
+          SEARCH_ENGINE=searxng python -u -m bench.geo.run --only B3 B4 --llm "$MODEL" 2>&1 | grep -v '^  !'
+
+      - name: Résumé
+        if: always()
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, os, pathlib
+          d = pathlib.Path(os.environ["GEO_BENCH_DIR"])
+          print("## Moteurs (commune présente dans les 8 premiers résultats)\n")
+          for k, v in json.loads((d / "recall.json").read_text()).items():
+              print(f"- **{k}** : {v['commune_trouvée']}/{v['courses']}, sans résultat : {v['aucun_résultat']}")
+          if (d / "results.json").exists():
+              print("\n## Méthodes\n\n| Méthode | Club justes/faux/sans | Autres justes/faux/sans |\n|---|---|---|")
+              for k, v in json.loads((d / "results.json").read_text()).items():
+                  s = v["summary"]
+                  f = lambda x: f"{x['juste']}/{x['faux']}/{x['sans']}" if x else ""
+                  print(f"| {k} | {f(s.get('club'))} | {f(s.get('disco'))} |")
+          PY
+
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: geo-bench
+          path: |
+            ${{ runner.temp }}/bench/results.json
+            ${{ runner.temp }}/bench/recall.json

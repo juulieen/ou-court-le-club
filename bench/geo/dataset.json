@@ -1,0 +1,6764 @@
+[
+ {
+  "name": "Trail des Châteaux de Chauvigny 2026",
+  "date": "2026-08-30",
+  "location": "Chauvigny (86)",
+  "platform": "klikego",
+  "url": "https://www.klikego.com/inscrits/trail-des-chateaux-2026/1415523726020-9",
+  "lat": 46.557583,
+  "lng": 0.669302,
+  "set": "club",
+  "truth": {
+   "lat": 46.557583,
+   "lng": 0.669302,
+   "city": "Chauvigny",
+   "dept": "86"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL DES GORGES DU CHAMBON ET DU MONTBRONNAIS 2026",
+  "date": "2026-09-20",
+  "location": "Montbron, 16",
+  "platform": "klikego",
+  "url": "https://www.klikego.com/inscrits/trail-des-gorges-du-chambon-et-du-montbronnais-2026/1703999493595-6",
+  "lat": 45.668521,
+  "lng": 0.504569,
+  "set": "club",
+  "truth": {
+   "lat": 45.668521,
+   "lng": 0.504569,
+   "city": "Montbron",
+   "dept": "16"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Ultra Trail de Pons 2026",
+  "date": "2026-09-20",
+  "location": "Pons, 17",
+  "platform": "klikego",
+  "url": "https://www.klikego.com/inscrits/ultra-trail-de-pons-2026/1676018194759-7",
+  "lat": 45.577836,
+  "lng": -0.559957,
+  "set": "club",
+  "truth": {
+   "lat": 45.577836,
+   "lng": -0.559957,
+   "city": "Pons",
+   "dept": "17"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "NEVEZTELL TRAIL 2026",
+  "date": "2026-10-18",
+  "location": "Nouvoitou, 35",
+  "platform": "klikego",
+  "url": "https://www.klikego.com/inscrits/neveztell-trail-2026/1350372166564-11",
+  "lat": 48.028706,
+  "lng": -1.549532,
+  "set": "club",
+  "truth": {
+   "lat": 48.028706,
+   "lng": -1.549532,
+   "city": "Nouvoitou",
+   "dept": "35"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Run in Séné Nature 2026",
+  "date": "2026-08-23",
+  "location": "Sene, 56",
+  "platform": "klikego",
+  "url": "https://www.klikego.com/inscrits/run-in-sene-nature-2026/1543709692306-8",
+  "lat": 47.624371,
+  "lng": -2.740046,
+  "set": "club",
+  "truth": {
+   "lat": 47.624371,
+   "lng": -2.740046,
+   "city": "Séné",
+   "dept": "56"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Corrida du clos des roches",
+  "date": "2026-07-03",
+  "location": "Roches-Prémarie-Andillé, 86",
+  "platform": "onsinscrit",
+  "url": "https://corrida-clos-roches-2026.onsinscrit.com/",
+  "lat": 46.483257,
+  "lng": 0.36541,
+  "set": "club",
+  "truth": {
+   "lat": 46.483257,
+   "lng": 0.36541,
+   "city": "Roches-Prémarie-Andillé",
+   "dept": "86"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées du Viaduc de l'Isle Jourdain",
+  "date": "2026-09-27",
+  "location": "L'Isle-Jourdain, 86",
+  "platform": "onsinscrit",
+  "url": "https://foulees-viaduc-isle-jourdain-2026.onsinscrit.com/",
+  "lat": 46.232654,
+  "lng": 0.690501,
+  "set": "club",
+  "truth": {
+   "lat": 46.232654,
+   "lng": 0.690501,
+   "city": "L'Isle-Jourdain",
+   "dept": "86"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LA VENI VICI 2026",
+  "date": "2026-11-07",
+  "location": "Uzès (30)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/lavenivici-2026",
+  "lat": 44.021276,
+  "lng": 4.415586,
+  "set": "club",
+  "truth": {
+   "lat": 44.021276,
+   "lng": 4.415586,
+   "city": "Uzès",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "COURSE DES ROSIÈRES",
+  "date": "2026-09-06",
+  "location": "La Mothe St Héray (79)",
+  "platform": "chronostart",
+  "url": "https://chrono-start.fr/Inscription/Course/listing/c/5442",
+  "lat": 46.353125,
+  "lng": -0.11267,
+  "set": "club",
+  "truth": {
+   "lat": 46.354753,
+   "lng": -0.113953,
+   "city": "La Mothe-Saint-Héray",
+   "dept": "79"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL LES CHEMINS DU ROY",
+  "date": "2026-07-05",
+  "location": "Sainte-Néomaye (79)",
+  "platform": "chronostart",
+  "url": "https://chrono-start.fr/Inscription/Course/listing/c/5228",
+  "lat": 46.359918,
+  "lng": -0.255087,
+  "set": "club",
+  "truth": {
+   "lat": 46.359918,
+   "lng": -0.255087,
+   "city": "Sainte-Néomaye",
+   "dept": "79"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LES FOULÉES DE CHASSIRON",
+  "date": "2026-08-23",
+  "location": "Saint Denis d’Oléron (17)",
+  "platform": "chronostart",
+  "url": "https://chrono-start.fr/Inscription/Course/listing/c/5187",
+  "lat": 46.020636,
+  "lng": -1.378349,
+  "set": "club",
+  "truth": {
+   "lat": 46.020636,
+   "lng": -1.378349,
+   "city": "Saint-Denis-d'Oléron",
+   "dept": "17"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Tour de Montreuil Juigné",
+  "date": "2026-05-01",
+  "location": "Montreuil Juigné",
+  "platform": "ipitos",
+  "url": "https://live.ipitos.com/tour_de_montreuil_juigne_2026/",
+  "lat": 47.539125,
+  "lng": -0.609289,
+  "set": "club",
+  "truth": {
+   "lat": 47.539125,
+   "lng": -0.609289,
+   "city": "Montreuil-Juigné",
+   "dept": "49"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "Semi-Marathon des Olonnes",
+  "date": "2026-05-24",
+  "location": "Les Sables d'Olonne",
+  "platform": "ipitos",
+  "url": "https://live.ipitos.com/semi-marathon_des_olonnes_2026/",
+  "lat": 46.524364,
+  "lng": -1.765848,
+  "set": "club",
+  "truth": {
+   "lat": 46.524364,
+   "lng": -1.765848,
+   "city": "Les Sables-d'Olonne",
+   "dept": "85"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "Tout Poitiers Court",
+  "date": "2026-04-10",
+  "location": "Poitiers",
+  "platform": "ipitos",
+  "url": "https://live.ipitos.com/tout_poitiers_court_2026/",
+  "lat": 46.586578,
+  "lng": 0.35668,
+  "set": "club",
+  "truth": {
+   "lat": 46.586578,
+   "lng": 0.35668,
+   "city": "Poitiers",
+   "dept": "86"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "Semi-Marathon du Massif Forestier",
+  "date": "2026-03-29",
+  "location": "Nuaillé",
+  "platform": "ipitos",
+  "url": "https://live.ipitos.com/semi-marathon_du_massif_forestier_2026/",
+  "lat": 47.090242,
+  "lng": -0.770837,
+  "set": "club",
+  "truth": {
+   "lat": 47.090242,
+   "lng": -0.770837,
+   "city": "Nuaillé",
+   "dept": "49"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "Marathon Poitiers Futuroscope",
+  "date": "2026-04-12",
+  "location": "Futuroscope",
+  "platform": "ipitos",
+  "url": "https://live.ipitos.com/marathon_poitiers_futuroscope_2026/",
+  "lat": 46.659743,
+  "lng": 0.364021,
+  "set": "club",
+  "truth": {
+   "lat": 46.586578,
+   "lng": 0.35668,
+   "city": "Poitiers",
+   "dept": "86"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "La Corrida de Magné",
+  "date": "2025-12-28",
+  "location": "Magné",
+  "platform": "ipitos",
+  "url": "https://live.ipitos.com/la_corrida_de_magne_2025/",
+  "lat": 46.31,
+  "lng": -0.55,
+  "set": "club",
+  "truth": {
+   "lat": 46.306788,
+   "lng": -0.554863,
+   "city": "Magné",
+   "dept": "79"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "Semi-Marathon de la Coulée Verte",
+  "date": "2025-10-19",
+  "location": "Niort",
+  "platform": "ipitos",
+  "url": "https://live.ipitos.com/semi-marathon_de_la_coulee_verte_2025/",
+  "lat": 45.192805,
+  "lng": 5.710598,
+  "set": "club",
+  "truth": {
+   "lat": 46.327232,
+   "lng": -0.466291,
+   "city": "Niort",
+   "dept": "79"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "Tout Poitiers Court",
+  "date": "2025-04-12",
+  "location": "Poitiers",
+  "platform": "ipitos",
+  "url": "https://live.ipitos.com/tout_poitiers_court_2025/",
+  "lat": 46.586578,
+  "lng": 0.35668,
+  "set": "club",
+  "truth": {
+   "lat": 46.586578,
+   "lng": 0.35668,
+   "city": "Poitiers",
+   "dept": "86"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "Trail des Pays de Monts",
+  "date": "2025-02-23",
+  "location": "St Jean de Monts",
+  "platform": "ipitos",
+  "url": "https://live.ipitos.com/trail_des_pays_de_monts_dim_2025/",
+  "lat": 49.107741,
+  "lng": 7.269464,
+  "set": "club",
+  "truth": {
+   "lat": 46.795953,
+   "lng": -2.050902,
+   "city": "Saint-Jean-de-Monts",
+   "dept": "85"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "Semi-Marathon de la Coulée Verte",
+  "date": "2024-10-20",
+  "location": "Niort",
+  "platform": "ipitos",
+  "url": "https://live.ipitos.com/semi-marathon_de_la_coulee_verte_2024/",
+  "lat": 46.327232,
+  "lng": -0.466291,
+  "set": "club",
+  "truth": {
+   "lat": 46.327232,
+   "lng": -0.466291,
+   "city": "Niort",
+   "dept": "79"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "MARATHON DU COGNAC",
+  "date": "2026-11-14",
+  "location": "Jarnac, Charente",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qVnwDnZtwayjXghPgGSFo-marathon-du-cognac",
+  "lat": 45.673095,
+  "lng": -0.212683,
+  "set": "club",
+  "truth": {
+   "lat": 45.690032,
+   "lng": -0.169722,
+   "city": "Jarnac",
+   "dept": "16"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "URBAN TRAIL DE POITIERS 2026",
+  "date": "2026-09-12",
+  "location": "Poitiers, 86 - Vienne",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qeU1sTJT3HjkuHLwDagZ5-urban-trail-de-poitiers-2026",
+  "lat": 46.586578,
+  "lng": 0.35668,
+  "set": "club",
+  "truth": {
+   "lat": 46.586578,
+   "lng": 0.35668,
+   "city": "Poitiers",
+   "dept": "86"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Foulées de Saint Martin La Pallu 2026",
+  "date": "2026-08-22",
+  "location": "Saint Martin La Pallu, Vienne",
+  "platform": "onsinscrit",
+  "url": "https://foulees-st-martin-la-pallu-2026.onsinscrit.com",
+  "lat": 46.738956,
+  "lng": 0.273261,
+  "set": "club",
+  "truth": {
+   "lat": 46.738956,
+   "lng": 0.273261,
+   "city": "Saint-Martin-la-Pallu",
+   "dept": "86"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "URBAN TRAIL THOUARSAIS",
+  "date": "2026-09-27",
+  "location": "Thouars (79)",
+  "platform": "chronostart",
+  "url": "https://chrono-start.fr/Inscription/Course/listing/c/5178",
+  "lat": 46.981613,
+  "lng": -0.233224,
+  "set": "club",
+  "truth": {
+   "lat": 46.981613,
+   "lng": -0.233224,
+   "city": "Thouars",
+   "dept": "79"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": " TRAIL DE LA BALOCHA 2026",
+  "date": "2026-09-27",
+  "location": "Angresse (40)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/-trail-de-la-balocha-20261780988131125",
+  "lat": 43.656906,
+  "lng": -1.364101,
+  "set": "club",
+  "truth": {
+   "lat": 43.656906,
+   "lng": -1.364101,
+   "city": "Angresse",
+   "dept": "40"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "SENTE DES MOINES 2025",
+  "date": "2025-10-12",
+  "location": "Gruchet-le-Valasse (76)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/sente-des-moines-2025",
+  "lat": 49.551491,
+  "lng": 0.492499,
+  "set": "club",
+  "truth": {
+   "lat": 49.551491,
+   "lng": 0.492499,
+   "city": "Gruchet-le-Valasse",
+   "dept": "76"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Abalone Marathon de Nantes 2024",
+  "date": "2024-04-20",
+  "location": "Nantes (44)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/abalone-marathon-de-nantes-20241689843497239",
+  "lat": 47.239367,
+  "lng": -1.555335,
+  "set": "club",
+  "truth": {
+   "lat": 47.239367,
+   "lng": -1.555335,
+   "city": "Nantes",
+   "dept": "44"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail du Loup Blanc 2026 - 20e anniversaire",
+  "date": "2026-12-12",
+  "location": "Guéret (23)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/trail-du-loup-blanc-2026---20e-anniversaire1783878606552",
+  "lat": 46.171794,
+  "lng": 1.874985,
+  "set": "club",
+  "truth": {
+   "lat": 46.171794,
+   "lng": 1.874985,
+   "city": "Guéret",
+   "dept": "23"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "COURSE DES FETES DE SEIGNOSSE 2026",
+  "date": "2026-08-23",
+  "location": "Seignosse (40)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/course-des-fetes-de-seignosse-20261782380836315",
+  "lat": 43.696835,
+  "lng": -1.382443,
+  "set": "club",
+  "truth": {
+   "lat": 43.696835,
+   "lng": -1.382443,
+   "city": "Seignosse",
+   "dept": "40"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "EPOPEE ROYALE 2026",
+  "date": "2026-11-21",
+  "location": "Blois (41)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/epopee-royale-2026",
+  "lat": 47.581406,
+  "lng": 1.316533,
+  "set": "club",
+  "truth": {
+   "lat": 47.581406,
+   "lng": 1.316533,
+   "city": "Blois",
+   "dept": "41"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Saumur Marathon de la Loire 2026",
+  "date": "2026-05-10",
+  "location": "Saumur (49)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/saumur-marathon-de-la-loire-2026",
+  "lat": 47.261814,
+  "lng": -0.082764,
+  "set": "club",
+  "truth": {
+   "lat": 47.261814,
+   "lng": -0.082764,
+   "city": "Saumur",
+   "dept": "49"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées Bonnimatoises",
+  "date": "2026-11-22",
+  "location": "Bonneuil-Matours, 86",
+  "platform": "onsinscrit",
+  "url": "https://foulees-bonnimatoises-2026.onsinscrit.com/",
+  "lat": 46.676186,
+  "lng": 0.576454,
+  "set": "club",
+  "truth": {
+   "lat": 46.676186,
+   "lng": 0.576454,
+   "city": "Bonneuil-Matours",
+   "dept": "86"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Compiègne en rose",
+  "date": "2026-10-04",
+  "location": "COMPIEGNE (60)",
+  "platform": "adeorun",
+  "url": "https://compiegne-en-rose.adeorun.com",
+  "lat": 49.405934,
+  "lng": 2.844366,
+  "set": "club",
+  "truth": {
+   "lat": 49.405934,
+   "lng": 2.844366,
+   "city": "Compiègne",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "MARATHON POITIERS-FUTUROSCOPE 2027",
+  "date": "2027-04-11",
+  "location": "Chasseneuil-du-Poitou (86)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/marathon-poitiers-futuroscope-2027",
+  "lat": 46.646982,
+  "lng": 0.361079,
+  "set": "club",
+  "truth": {
+   "lat": 46.646982,
+   "lng": 0.361079,
+   "city": "Chasseneuil-du-Poitou",
+   "dept": "86"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAILS DU PIGNADA 2026",
+  "date": "2026-09-20",
+  "location": "Soustons (40)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/trails-du-pignada-20261781706995928",
+  "lat": 43.753518,
+  "lng": -1.329929,
+  "set": "club",
+  "truth": {
+   "lat": 43.753518,
+   "lng": -1.329929,
+   "city": "Soustons",
+   "dept": "40"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Course des Melons",
+  "date": "2026-09-06",
+  "location": "Coulombiers, 86",
+  "platform": "onsinscrit",
+  "url": "https://course-des-melons-2026.onsinscrit.com/",
+  "lat": 46.492521,
+  "lng": 0.183116,
+  "set": "club",
+  "truth": {
+   "lat": 46.492521,
+   "lng": 0.183116,
+   "city": "Coulombiers",
+   "dept": "86"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Course des 3 Sentiers",
+  "date": "2026-10-25",
+  "location": "Montalivet, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8035-la-course-des-3-sentiers",
+  "lat": 45.361214,
+  "lng": -1.077682,
+  "set": "club",
+  "truth": {
+   "lat": 45.34446,
+   "lng": -1.089784,
+   "city": "Vendays-Montalivet",
+   "dept": "33"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "La CORRIDA ROSE",
+  "date": "2026-10-04",
+  "location": "LE TOUQUET PARIS PLAGE (62)",
+  "platform": "adeorun",
+  "url": "https://la-corrida-rose.adeorun.com",
+  "lat": 50.512202,
+  "lng": 1.603514,
+  "set": "club",
+  "truth": {
+   "lat": 50.512202,
+   "lng": 1.603514,
+   "city": "Le Touquet-Paris-Plage",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de Barbâtre 2026",
+  "date": "2026-11-15",
+  "location": "Barbâtre (85)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/trail-de-barbatre-20261786008346436",
+  "lat": 46.924864,
+  "lng": -2.167463,
+  "set": "club",
+  "truth": {
+   "lat": 46.924864,
+   "lng": -2.167463,
+   "city": "Barbâtre",
+   "dept": "85"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "MARATHON, 10 ET 20 KM DE TOURS - 2024",
+  "date": "2024-09-22",
+  "location": "Tours (37)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/marathon-10-20-km-tours-24",
+  "lat": 47.395476,
+  "lng": 0.695848,
+  "set": "club",
+  "truth": {
+   "lat": 47.395476,
+   "lng": 0.695848,
+   "city": "Tours",
+   "dept": "37"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Foulees Saint Julien 2026",
+  "date": "2026-11-08",
+  "location": "Saint Julien Lars, Vienne",
+  "platform": "onsinscrit",
+  "url": "https://foulees-saint-julien-2026.onsinscrit.com/accueil.php",
+  "lat": 46.56,
+  "lng": 0.49,
+  "set": "club",
+  "truth": {
+   "lat": 46.555083,
+   "lng": 0.489275,
+   "city": "Saint-Julien-l'Ars",
+   "dept": "86"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "ASICS SAINTÉLYON 2026",
+  "date": "2026-11-28",
+  "location": "Lyon (69)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/asics-saintelyon-2026",
+  "lat": 45.758,
+  "lng": 4.835,
+  "set": "club",
+  "truth": {
+   "lat": 45.758,
+   "lng": 4.835,
+   "city": "Lyon",
+   "dept": "69"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Semi-Marathon de la Coulée Verte",
+  "date": "2026-10-18",
+  "location": "Niort",
+  "platform": "ipitos",
+  "url": "https://live.ipitos.com/semi-marathon_de_la_coulee_verte_2026/",
+  "lat": 46.327232,
+  "lng": -0.466291,
+  "set": "club",
+  "truth": {
+   "lat": 46.327232,
+   "lng": -0.466291,
+   "city": "Niort",
+   "dept": "79"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "COURIR ET MARCHER CONTRE LA MALADIE",
+  "date": "2026-12-05",
+  "location": "Puilboreau (17)",
+  "platform": "chronostart",
+  "url": "https://chrono-start.fr/Inscription/Course/listing/c/5537",
+  "lat": 46.186054,
+  "lng": -1.115777,
+  "set": "club",
+  "truth": {
+   "lat": 46.186054,
+   "lng": -1.115777,
+   "city": "Puilboreau",
+   "dept": "17"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Sur la trace des cagouilles",
+  "date": "2026-11-01",
+  "location": "Nouaillé-Maupertuis, 86",
+  "platform": "onsinscrit",
+  "url": "https://trace-des-cagouilles-2026.onsinscrit.com/",
+  "lat": 46.50525,
+  "lng": 0.417174,
+  "set": "club",
+  "truth": {
+   "lat": 46.50525,
+   "lng": 0.417174,
+   "city": "Nouaillé-Maupertuis",
+   "dept": "86"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des Sangliers",
+  "date": "2026-12-06",
+  "location": "Smarves, 86",
+  "platform": "onsinscrit",
+  "url": "https://trail-des-sangliers-2026.onsinscrit.com/",
+  "lat": 46.517384,
+  "lng": 0.350473,
+  "set": "club",
+  "truth": {
+   "lat": 46.517384,
+   "lng": 0.350473,
+   "city": "Smarves",
+   "dept": "86"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Radiance Mutuelle LUT By Night 2026",
+  "date": "2026-11-07",
+  "location": "Lyon (69)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/radiance-mutuelle-lut-by-night-2026",
+  "lat": 45.758,
+  "lng": 4.835,
+  "set": "club",
+  "truth": {
+   "lat": 45.758,
+   "lng": 4.835,
+   "city": "Lyon",
+   "dept": "69"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "GRANDS TRAILS D'AUVERGNE 2026",
+  "date": "2026-10-09",
+  "location": "Aubusson-d'Auvergne (63)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/grands-trails-dauvergne-2026",
+  "lat": 45.750342,
+  "lng": 3.596568,
+  "set": "club",
+  "truth": {
+   "lat": 45.750342,
+   "lng": 3.596568,
+   "city": "Aubusson-d'Auvergne",
+   "dept": "63"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail du Ventoux 2027",
+  "date": "2027-03-20",
+  "location": "Bédoin (84)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/trail-du-ventoux-20271786456525480",
+  "lat": 44.120195,
+  "lng": 5.233366,
+  "set": "club",
+  "truth": {
+   "lat": 44.120195,
+   "lng": 5.233366,
+   "city": "Bédoin",
+   "dept": "84"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "SENTE DES MOINES 2024",
+  "date": "2024-10-13",
+  "location": "Gruchet-le-Valasse (76)",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/sente-des-moines-2024",
+  "lat": 49.551491,
+  "lng": 0.492499,
+  "set": "club",
+  "truth": {
+   "lat": 49.551491,
+   "lng": 0.492499,
+   "city": "Gruchet-le-Valasse",
+   "dept": "76"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail d'Éguzon 2026",
+  "date": "2026-11-15",
+  "location": "Éguzon-Chantôme (36)",
+  "platform": "manual",
+  "url": "",
+  "lat": 46.430783,
+  "lng": 1.569596,
+  "set": "club",
+  "truth": {
+   "lat": 46.430783,
+   "lng": 1.569596,
+   "city": "Éguzon-Chantôme",
+   "dept": "36"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Marathon de la Côte d'Amour 2026",
+  "date": "2026-11-08",
+  "location": "Éguzon-Chantôme (36)",
+  "platform": "manual",
+  "url": "",
+  "lat": 46.430783,
+  "lng": 1.569596,
+  "set": "club",
+  "truth": {
+   "lat": 47.288754,
+   "lng": -2.363461,
+   "city": "La Baule-Escoublac",
+   "dept": "44"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "La Grési’courant 2026",
+  "date": "2026-05-31",
+  "location": "",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/la-gresicourant-2026",
+  "lat": 43.773465,
+  "lng": 4.329449,
+  "set": "club",
+  "truth": {
+   "lat": 45.220528,
+   "lng": 5.864794,
+   "city": "Le Versoud",
+   "dept": "38"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "10KM Unicef 2025",
+  "date": "2025-03-02",
+  "location": "",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/10km-unicef-2024",
+  "lat": 18.0983664,
+  "lng": -15.955568,
+  "set": "club",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "Crapahut des Bédouins 2026",
+  "date": "2026-11-29",
+  "location": "",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/crapahut-des-bedouins-2026",
+  "lat": 46.809549,
+  "lng": 4.433793,
+  "set": "club",
+  "truth": {
+   "lat": 45.220528,
+   "lng": 5.864794,
+   "city": "Le Versoud",
+   "dept": "38"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "SEMI, 5 ET 10KM DE PONT AUDEMER 2026",
+  "date": "2026-11-08",
+  "location": "",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/semi-5-et-10km-de-pont-audemer-2026",
+  "lat": null,
+  "lng": null,
+  "set": "club",
+  "truth": {
+   "lat": 49.348034,
+   "lng": 0.526847,
+   "city": "Pont-Audemer",
+   "dept": "27"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "Harmonie Mutuelle Toulouse Métropole Run Experience 2026",
+  "date": "2026-11-01",
+  "location": "",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/harmonie-mutuelle-toulouse-metropole-run-experience-2026",
+  "lat": null,
+  "lng": null,
+  "set": "club",
+  "truth": {
+   "lat": 43.604082,
+   "lng": 1.433805,
+   "city": "Toulouse",
+   "dept": "31"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "BIKE AND FOURME FESTIVAL 2026",
+  "date": "2026-07-11",
+  "location": "",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/altichrono_baff_2026",
+  "lat": null,
+  "lng": null,
+  "set": "club",
+  "truth": {
+   "lat": 45.706945,
+   "lng": 3.849618,
+   "city": "Chalmazel-Jeansagnière",
+   "dept": "42"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "RUN MARSEILLE-CASSIS - 2026",
+  "date": "2026-10-17",
+  "location": "",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/run-marseille-cassis---20261789566143316",
+  "lat": 48.751358,
+  "lng": 7.779875,
+  "set": "club",
+  "truth": {
+   "lat": 43.282,
+   "lng": 5.405,
+   "city": "Marseille",
+   "dept": "13"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "Course et Marche Nature Saint Bruno 2026",
+  "date": "2026-10-04",
+  "location": "",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/course-et-marche-nature-saint-bruno-2026",
+  "lat": null,
+  "lng": null,
+  "set": "club",
+  "truth": {
+   "lat": 46.131281,
+   "lng": 6.337986,
+   "city": "Contamine-sur-Arve",
+   "dept": "74"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "DINGO TRAIL DES FAMILLES 2026",
+  "date": "2026-06-21",
+  "location": "",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/dingotraildesfamilles2026",
+  "lat": 44.3098,
+  "lng": 5.109673,
+  "set": "club",
+  "truth": {
+   "lat": 45.918744,
+   "lng": 6.222547,
+   "city": "Dingy-Saint-Clair",
+   "dept": "74"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "MARATHON DE BORDEAUX AG2R LA MONDIALE",
+  "date": "2026-11-08",
+  "location": "",
+  "platform": "njuko",
+  "url": "https://in.timeto.com/marathon-de-bordeaux-ag2r-la-mondiale",
+  "lat": 43.887347,
+  "lng": -0.462326,
+  "set": "club",
+  "truth": {
+   "lat": 44.851939,
+   "lng": -0.587877,
+   "city": "Bordeaux",
+   "dept": "33"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "Courses de Chassieu 2026\t",
+  "date": "2026-04-19",
+  "location": "",
+  "platform": "njuko",
+  "url": "https://in.njuko.com/courses-de-chassieu",
+  "lat": 48.520439,
+  "lng": 0.539569,
+  "set": "club",
+  "truth": {
+   "lat": 45.73584,
+   "lng": 4.958712,
+   "city": "Chassieu",
+   "dept": "69"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "20/03/2027LES FOULEES VICHYSSOISES 2027Inscription",
+  "date": "",
+  "location": "",
+  "platform": "sportips",
+  "url": "https://sportips.fr/inscription/VICH27",
+  "lat": null,
+  "lng": null,
+  "set": "club",
+  "truth": {
+   "lat": 46.131168,
+   "lng": 3.428025,
+   "city": "Vichy",
+   "dept": "03"
+  },
+  "truth_src": "label"
+ },
+ {
+  "name": "Marathon de Salon de Provence",
+  "date": "2027-10-10",
+  "location": "Salon-de-Provence, Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qfZMSdRHPhctnN9JhqnoK-marathon-de-salon-de-provence",
+  "lat": 43.642512,
+  "lng": 5.09087,
+  "set": "club",
+  "truth": {
+   "lat": 43.6377,
+   "lng": 5.062036,
+   "city": "Salon-de-Provence",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Marathon de Salon de Provence",
+  "date": "2027-10-10",
+  "location": "Salon-de-Provence, Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qfZMSdRHPhctnN9JhqnoK-marathon-de-salon-de-provence",
+  "set": "disco",
+  "truth": {
+   "lat": 43.6377,
+   "lng": 5.062036,
+   "city": "Salon-de-Provence",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Infinity trail Île d'Aix 2027",
+  "date": "2027-10-08",
+  "location": "Ile d'Aix, 17 - Charente-Maritime",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qq4abQprJHXY5zbSzdW5G-infinity-trail-ile-d-aix-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 46.020406,
+   "lng": -1.167686,
+   "city": "Île-d'Aix",
+   "dept": "17"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La 1ère Néandertal du Pont d'Arc ",
+  "date": "2027-09-25",
+  "location": "Vallon-Pont-d'Arc, 07 - Ardèche",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qPd69JbUguinGoJnJXR5K-la-1ere-neandertal-du-pont-d-arc",
+  "set": "disco",
+  "truth": {
+   "lat": 44.4042,
+   "lng": 4.389194,
+   "city": "Vallon-Pont-d'Arc",
+   "dept": "07"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL DES VENDANGES DE TEYRAN (34)",
+  "date": "2027-09-19",
+  "location": "Teyran, Hérault",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qoc6ScV1JLz57PFKYK4mJ-trail-des-vendanges-de-teyran-34",
+  "set": "disco",
+  "truth": {
+   "lat": 43.682693,
+   "lng": 3.93011,
+   "city": "Teyran",
+   "dept": "34"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Le Bélier Trail & Rando",
+  "date": "2027-09-17",
+  "location": "La Clusaz, Haute-Savoie",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqwke6oKnMHiUPgtYwZPx-le-belier-trail-rando",
+  "set": "disco",
+  "truth": {
+   "lat": 45.896718,
+   "lng": 6.441242,
+   "city": "La Clusaz",
+   "dept": "74"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Run For Planet Nantes ",
+  "date": "2027-09-12",
+  "location": "Nantes, Loire-Atlantique",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqhJHx27AzPMaJ1iJ5MS5-run-for-planet-nantes",
+  "set": "disco",
+  "truth": {
+   "lat": 47.239367,
+   "lng": -1.555335,
+   "city": "Nantes",
+   "dept": "44"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Run For Planet Toulouse ",
+  "date": "2027-09-05",
+  "location": "Tournefeuille, Haute-Garonne",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqqpwpnMvJ59K77puM24X-run-for-planet-toulouse",
+  "set": "disco",
+  "truth": {
+   "lat": 43.573424,
+   "lng": 1.33431,
+   "city": "Tournefeuille",
+   "dept": "31"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Challenge Orvin Louptière Trainel (COLT)",
+  "date": "2027-08-15",
+  "location": "Traînel, Aube",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qpiWJUHT7Q3iPKN3zMQLj-challenge-orvin-louptiere-trainel-colt",
+  "set": "disco",
+  "truth": {
+   "lat": 48.413406,
+   "lng": 3.4415,
+   "city": "Traînel",
+   "dept": "10"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "XRace Adventure - Alpes d’Huez",
+  "date": "2027-08-08",
+  "location": "Huez, 38 - Isère",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qibo47w5rJdPHfpgVhJLd-xrace-adventure-alpes-dhuez",
+  "set": "disco",
+  "truth": {
+   "lat": 45.08667,
+   "lng": 6.066699,
+   "city": "Huez",
+   "dept": "38"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Grand Trail des 2 roches",
+  "date": "2027-07-03",
+  "location": "Mâcon, 71 - Saône-et-Loire",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qodNnunE5MTKaETrQoXCV-grand-trail-des-2-roches",
+  "set": "disco",
+  "truth": {
+   "lat": 46.325859,
+   "lng": 4.810979,
+   "city": "Mâcon",
+   "dept": "71"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "AFTERWORK RUNNING 2027",
+  "date": "2027-06-27",
+  "location": "Valence, Drôme",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qnRj5eRYdxEEnoqNNXes2-afterwork-running-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 44.922579,
+   "lng": 4.921827,
+   "city": "Valence",
+   "dept": "26"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Infinity Trail Médoc 2027",
+  "date": "2027-06-25",
+  "location": "Civrac-en-Médoc, Gironde",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qq8A1XVDeCqM9HX19JahA-infinity-trail-medoc-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 45.343,
+   "lng": -0.89642,
+   "city": "Civrac-en-Médoc",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail du Col du Noyer ",
+  "date": "2027-06-19",
+  "location": "Laye, Hautes-Alpes",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qonq2jeUwEsDjQXJZCbhj-trail-du-col-du-noyer",
+  "set": "disco",
+  "truth": {
+   "lat": 44.644466,
+   "lng": 6.075922,
+   "city": "Laye",
+   "dept": "05"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "L’Alpe en Boucle - Les 24h du Signal - 2ème édition",
+  "date": "2027-06-19",
+  "location": "Huez, 38 - Isère",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qq43vAPMndKSnUCdoRWUA-lalpe-en-boucle-les-24h-du-signal-2eme-edition",
+  "set": "disco",
+  "truth": {
+   "lat": 45.08667,
+   "lng": 6.066699,
+   "city": "Huez",
+   "dept": "38"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LTB La Ty Bonheur",
+  "date": "2027-06-13",
+  "location": "Plougonvelin, Finistère",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qnLU3VQEzw4prWQjHPA5s-ltb-la-ty-bonheur",
+  "set": "disco",
+  "truth": {
+   "lat": 48.353677,
+   "lng": -4.732475,
+   "city": "Plougonvelin",
+   "dept": "29"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Run For Planet Paris #7",
+  "date": "2027-06-13",
+  "location": "Draveil, Essonne",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqNwb3PH61nDEAohwNm7e-run-for-planet-paris-7",
+  "set": "disco",
+  "truth": {
+   "lat": 48.677829,
+   "lng": 2.412138,
+   "city": "Draveil",
+   "dept": "91"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Meeting de marseille",
+  "date": "2027-06-09",
+  "location": "Marseille, Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qe8tVgH4bhCXCe6bDby3q-meeting-de-marseille",
+  "set": "disco",
+  "truth": {
+   "lat": 43.282,
+   "lng": 5.405,
+   "city": "Marseille",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Marathon  Des Gueules Noires 3 éme  ",
+  "date": "2027-06-06",
+  "location": "Wallers, Nord",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qhUMuAxjvcedW9VBqfu4K-marathon-des-gueules-noires-3-eme",
+  "set": "disco",
+  "truth": {
+   "lat": 50.367796,
+   "lng": 3.3955,
+   "city": "Wallers",
+   "dept": "59"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "",
+  "date": "2027-06-06",
+  "location": "Vallon-Pont-d'Arc, Ardèche",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qiGpMG7DchjBwjV2EdboQ-",
+  "set": "disco",
+  "truth": {
+   "lat": 44.4042,
+   "lng": 4.389194,
+   "city": "Vallon-Pont-d'Arc",
+   "dept": "07"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Transju'Trails ",
+  "date": "2027-06-05",
+  "location": "Les Rousses, Jura",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qpjjBgFqtYF2T4xiLS6Tu-la-transju-trails",
+  "set": "disco",
+  "truth": {
+   "lat": 46.479249,
+   "lng": 6.067869,
+   "city": "Les Rousses",
+   "dept": "39"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Semi-Marathon des Lavandes",
+  "date": "2027-06-05",
+  "location": "Valensole, Alpes-de-Haute-Provence",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qrBVsMNqerpe9HAAye7AS-semi-marathon-des-lavandes",
+  "set": "disco",
+  "truth": {
+   "lat": 43.8345,
+   "lng": 5.943815,
+   "city": "Valensole",
+   "dept": "04"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de la Vigie ",
+  "date": "2027-05-30",
+  "location": "Levens, Alpes-Maritimes",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qjnpiEZ8L5pdmzi4KnGuD-trail-de-la-vigie",
+  "set": "disco",
+  "truth": {
+   "lat": 43.844554,
+   "lng": 7.230627,
+   "city": "Levens",
+   "dept": "06"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "XRace Adventure",
+  "date": "2027-05-28",
+  "location": "Bédoin, 84 - Vaucluse",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qhYo9aJVVcE2zBunJtrtf-xrace-adventure",
+  "set": "disco",
+  "truth": {
+   "lat": 44.120195,
+   "lng": 5.233366,
+   "city": "Bédoin",
+   "dept": "84"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LA BRESSOL'LINE 2027",
+  "date": "2027-05-23",
+  "location": "Bressolles, Ain",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qrQ6gS2TaxC9aS6ePwF4X-la-bressol-line-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 45.864623,
+   "lng": 5.09754,
+   "city": "Bressolles",
+   "dept": "01"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Sacrées 24H",
+  "date": "2027-05-22",
+  "location": "Villers-Franqueux, Marne",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qrBxLyS3hL5LEYiRYT5zz-les-sacrees-24h",
+  "set": "disco",
+  "truth": {
+   "lat": 49.327654,
+   "lng": 3.943181,
+   "city": "Villers-Franqueux",
+   "dept": "51"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Urban Trail d'Etoile",
+  "date": "2027-05-16",
+  "location": "Étoile-sur-Rhône, Drôme",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qq4QfZgqwPzGZmHunHfbZ-urban-trail-d-etoile",
+  "set": "disco",
+  "truth": {
+   "lat": 44.833924,
+   "lng": 4.885112,
+   "city": "Étoile-sur-Rhône",
+   "dept": "26"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Boucle Festival 2027",
+  "date": "2027-05-15",
+  "location": "Soisy-sous-Montmorency, Val-d'Oise",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qgCmVQuV1W9Y2XPGPEQ7N-la-boucle-festival-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 48.988538,
+   "lng": 2.301698,
+   "city": "Soisy-sous-Montmorency",
+   "dept": "95"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LE TRAIL DES MONTS D'ARDÈCHE 2027 ",
+  "date": "2027-05-15",
+  "location": "Saint-Agrève, 07 - Ardèche",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qohAnxUpPfS8y3oo1KuVb-le-trail-des-monts-d-ardeche-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 44.998053,
+   "lng": 4.408332,
+   "city": "Saint-Agrève",
+   "dept": "07"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Grappes Provençales",
+  "date": "2027-05-15",
+  "location": "Rousset, 13 - Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qp1JkEZNSbS5Pg15rwZcA-les-grappes-provencales",
+  "set": "disco",
+  "truth": {
+   "lat": 43.481809,
+   "lng": 5.620074,
+   "city": "Rousset",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Le Marathon de la Loire ",
+  "date": "2027-05-15",
+  "location": "Saumur, 49 - Maine-et-Loire",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qkGBzwvH4tNcrJJQUL4HW-le-marathon-de-la-loire",
+  "set": "disco",
+  "truth": {
+   "lat": 47.261814,
+   "lng": -0.082764,
+   "city": "Saumur",
+   "dept": "49"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Le Marathon de la Bière",
+  "date": "2027-05-14",
+  "location": "Montbrison, Loire",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qnRvNyH7XZMzhGQj41zs3-le-marathon-de-la-biere",
+  "set": "disco",
+  "truth": {
+   "lat": 45.604225,
+   "lng": 4.069547,
+   "city": "Montbrison",
+   "dept": "42"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Intégrale de Riquet",
+  "date": "2027-05-14",
+  "location": "Castres, 81 - Tarn",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qjhLHziVKNF245cYQvVkt-integrale-de-riquet",
+  "set": "disco",
+  "truth": {
+   "lat": 43.609392,
+   "lng": 2.245482,
+   "city": "Castres",
+   "dept": "81"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les 3H à Pied & 6H Vélo du Pas-de-Calais 2027 – Croix-en-Ternois",
+  "date": "2027-05-07",
+  "location": "Croix-en-Ternois, Pas-de-Calais",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qpjrUc9azwhqwJvB3ZXwV-les-3h-a-pied-6h-velo-du-pas-de-calais-2027-croix-en-ternois",
+  "set": "disco",
+  "truth": {
+   "lat": 50.382613,
+   "lng": 2.279108,
+   "city": "Croix-en-Ternois",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "EKIDEN DE ROISSY PAYS DE FRANCE",
+  "date": "2027-04-25",
+  "location": "Roissy-en-France, Val-d'Oise",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qYxt15rBtMU6iMcHzubkq-ekiden-de-roissy-pays-de-france",
+  "set": "disco",
+  "truth": {
+   "lat": 48.998904,
+   "lng": 2.511155,
+   "city": "Roissy-en-France",
+   "dept": "95"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Raye Saint Vincinoise 2027",
+  "date": "2027-04-25",
+  "location": "Saint-Vincent-la-Commanderie, Drôme",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qo9YeqpT1bvf6xAZ1aDHW-raye-saint-vincinoise-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 44.93987,
+   "lng": 5.11751,
+   "city": "Saint-Vincent-la-Commanderie",
+   "dept": "26"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Saint Jean de Védas Trail 2027",
+  "date": "2027-04-25",
+  "location": "Saint-Jean-de-Védas, Hérault",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qowESkGK9yqK4HiAAPXZf-saint-jean-de-vedas-trail-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 43.574701,
+   "lng": 3.832007,
+   "city": "Saint-Jean-de-Védas",
+   "dept": "34"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail du Grès",
+  "date": "2027-04-25",
+  "location": "Saint-Étienne-du-Grès, Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qq8nrzLoa2fTfqVr7uqvr-trail-du-gres",
+  "set": "disco",
+  "truth": {
+   "lat": 43.794361,
+   "lng": 4.73256,
+   "city": "Saint-Étienne-du-Grès",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Backyard Ultra barjots 2027",
+  "date": "2027-04-24",
+  "location": "Châtonnay, Isère",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqJeYwMq5W88gERXgUzpE-backyard-ultra-barjots-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 45.481956,
+   "lng": 5.225546,
+   "city": "Châtonnay",
+   "dept": "38"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Infinity Trail Hossegor 2027",
+  "date": "2027-04-23",
+  "location": "Soorts Hossegor, 40 - Landes",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qi3o6jF2wWLLWggcxovfj-infinity-trail-hossegor-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 43.667516,
+   "lng": -1.413179,
+   "city": "Soorts-Hossegor",
+   "dept": "40"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "MUD RUN",
+  "date": "2027-04-17",
+  "location": "Montgon, Ardennes",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qoEP9HnHSbD4gvDCgMXkq-mud-run",
+  "set": "disco",
+  "truth": {
+   "lat": 49.504561,
+   "lng": 4.714851,
+   "city": "Montgon",
+   "dept": "08"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL DES FOSSES",
+  "date": "2027-04-11",
+  "location": "Fournès, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qoTsKhnW5hyuLcpJvmiCt-trail-des-fosses",
+  "set": "disco",
+  "truth": {
+   "lat": 43.928308,
+   "lng": 4.600581,
+   "city": "Fournès",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL SAINT ROCH MONTOLIEU",
+  "date": "2027-04-11",
+  "location": "Montolieu, Aude",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qq8NUnhv2SFAmXxy9AzGX-trail-saint-roch-montolieu",
+  "set": "disco",
+  "truth": {
+   "lat": 43.311995,
+   "lng": 2.220246,
+   "city": "Montolieu",
+   "dept": "11"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Aux õrigines",
+  "date": "2027-04-10",
+  "location": "Sernhac, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qkfy54izWSCnSTHewCz5a-aux-origines",
+  "set": "disco",
+  "truth": {
+   "lat": 43.914278,
+   "lng": 4.558431,
+   "city": "Sernhac",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Le TRAIL Côtellois",
+  "date": "2027-04-10",
+  "location": "POUILLE LES COTEAUX, 44 - Loire-Atlantique",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qincPnZpgETf5DcqbBR8W-le-trail-cotellois",
+  "set": "disco",
+  "truth": {
+   "lat": 47.461491,
+   "lng": -1.180068,
+   "city": "Pouillé-les-Côteaux",
+   "dept": "44"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de la Morassienne",
+  "date": "2027-04-04",
+  "location": "Moras-en-Valloire, 26 - Drôme",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qkm4eFJkR6gWRLfKzmuA4-trail-de-la-morassienne",
+  "set": "disco",
+  "truth": {
+   "lat": 45.293696,
+   "lng": 4.990425,
+   "city": "Moras-en-Valloire",
+   "dept": "26"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Run For Planet - Lyon ",
+  "date": "2027-04-04",
+  "location": "Marcy-l'Étoile, Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qq8uDFGVMvrfP7gWmimpe-run-for-planet-lyon",
+  "set": "disco",
+  "truth": {
+   "lat": 45.783483,
+   "lng": 4.712176,
+   "city": "Marcy-l'Étoile",
+   "dept": "69"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "BIER RUN",
+  "date": "2027-04-03",
+  "location": "Douvrin, Pas-de-Calais",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qig5DPsfC2BQ2ksyVnxYL-bier-run",
+  "set": "disco",
+  "truth": {
+   "lat": 50.514004,
+   "lng": 2.824373,
+   "city": "Douvrin",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL D'ORSAN",
+  "date": "2027-03-21",
+  "location": "Orsan, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qnkhcxFodfU6rCRKra3T2-trail-d-orsan",
+  "set": "disco",
+  "truth": {
+   "lat": 44.135049,
+   "lng": 4.664873,
+   "city": "Orsan",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Marathon des Vins de la Côte Chalonnaise",
+  "date": "2027-03-20",
+  "location": "Givry, Saône-et-Loire",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qhZxwbYEyrGA21wews7yf-marathon-des-vins-de-la-cote-chalonnaise",
+  "set": "disco",
+  "truth": {
+   "lat": 46.777801,
+   "lng": 4.743764,
+   "city": "Givry",
+   "dept": "71"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LA TRANS'RÉUNION ",
+  "date": "2027-03-14",
+  "location": "Saint-Philippe - Saint Denis, RE-Réunion",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qbkCXeZFZiadLbstoEA7M-la-trans-reunion",
+  "set": "disco",
+  "truth": {
+   "lat": -21.356871,
+   "lng": 55.747304,
+   "city": "Saint-Philippe",
+   "dept": "974"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail Bleu ",
+  "date": "2027-03-14",
+  "location": "L'Étang-la-Ville, Yvelines",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qiXGPVH8UvQqocJ5BodA3-trail-bleu",
+  "set": "disco",
+  "truth": {
+   "lat": 48.868213,
+   "lng": 2.066286,
+   "city": "L'Étang-la-Ville",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Amica'Trail",
+  "date": "2027-03-14",
+  "location": "Pont-Saint-Pierre, Eure",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqv6JYdNELkFDSCTbRvaE-amica-trail",
+  "set": "disco",
+  "truth": {
+   "lat": 49.332711,
+   "lng": 1.280828,
+   "city": "Pont-Saint-Pierre",
+   "dept": "27"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Courir pour Toit ",
+  "date": "2027-03-13",
+  "location": "Paris, Paris",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqrL1bX8bsrAhqVco8TJ2-courir-pour-toit",
+  "set": "disco",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "FOULEES POITIERS GALERIE BEAULIEU",
+  "date": "2027-03-13",
+  "location": "Poitiers, 86 - Vienne",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qrLDyg45kL9FhHhBub57F-foulees-poitiers-galerie-beaulieu",
+  "set": "disco",
+  "truth": {
+   "lat": 46.586578,
+   "lng": 0.35668,
+   "city": "Poitiers",
+   "dept": "86"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Nocturne de Nîmes",
+  "date": "2027-03-12",
+  "location": "Nîmes, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qe5poLEpVWsXesTQQuKso-la-nocturne-de-nimes",
+  "set": "disco",
+  "truth": {
+   "lat": 43.814652,
+   "lng": 4.356289,
+   "city": "Nîmes",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail Lo San Farcio ",
+  "date": "2027-03-07",
+  "location": "Saint-Félicien, Ardèche",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qgqjU1D5C5Uzxut9Q5n1S-trail-lo-san-farcio",
+  "set": "disco",
+  "truth": {
+   "lat": 45.078896,
+   "lng": 4.606354,
+   "city": "Saint-Félicien",
+   "dept": "07"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LES FOULEES MANTAISES 2027",
+  "date": "2027-03-07",
+  "location": "Mantes-la-Jolie, Yvelines",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qpFd5KVxztDpnfPnpuBRg-les-foulees-mantaises-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 48.994782,
+   "lng": 1.699745,
+   "city": "Mantes-la-Jolie",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LES FOULEES MANTAISES 2027",
+  "date": "2027-03-07",
+  "location": "Mantes-la-Jolie, 78 - Yvelines",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qpFeXyHQkzmG6RiFGGEKU-les-foulees-mantaises-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 48.994782,
+   "lng": 1.699745,
+   "city": "Mantes-la-Jolie",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Chemins de Sainte Rosalie",
+  "date": "2027-03-07",
+  "location": "La Fare-les-Oliviers, Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqTqYciU3URKCnpcnR5NR-les-chemins-de-sainte-rosalie",
+  "set": "disco",
+  "truth": {
+   "lat": 43.546119,
+   "lng": 5.201485,
+   "city": "La Fare-les-Oliviers",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "MARSeille BLEU",
+  "date": "2027-03-07",
+  "location": "Marseille, Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqsRadbAYk6LT6ZicTd1t-marseille-bleu",
+  "set": "disco",
+  "truth": {
+   "lat": 43.282,
+   "lng": 5.405,
+   "city": "Marseille",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de Peille 2027 - Alpes Maritimes",
+  "date": "2027-03-06",
+  "location": "Peille, Alpes-Maritimes",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qnzRYDrTdTcmSf26eM6Ts-trail-de-peille-2027-alpes-maritimes",
+  "set": "disco",
+  "truth": {
+   "lat": 43.790357,
+   "lng": 7.401286,
+   "city": "Peille",
+   "dept": "06"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Le Mararthon Des Saveurs",
+  "date": "2027-03-06",
+  "location": "Riorges, Loire",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qnpraR2bjbb2pgbnb4EHX-le-mararthon-des-saveurs",
+  "set": "disco",
+  "truth": {
+   "lat": 46.041508,
+   "lng": 4.04171,
+   "city": "Riorges",
+   "dept": "42"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LUC OF COURSE 2027",
+  "date": "2027-02-14",
+  "location": "Luc-sur-Mer, Calvados",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qo4Sx7NqKff61Qs65CFxQ-luc-of-course-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 49.308517,
+   "lng": -0.355659,
+   "city": "Luc-sur-Mer",
+   "dept": "14"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "KIMBIA KENYA ",
+  "date": "2027-02-07",
+  "location": "Salon-de-Provence, Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qYKSBTqe5GwTZbtBRPMJs-kimbia-kenya",
+  "set": "disco",
+  "truth": {
+   "lat": 43.6377,
+   "lng": 5.062036,
+   "city": "Salon-de-Provence",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "5 KM ET 10 KM DE BEL AIR SALONAIS 2027",
+  "date": "2027-02-07",
+  "location": "Salon-de-Provence, Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qhFMz6HY31VWw6AdiiBUw-5-km-et-10-km-de-bel-air-salonais-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 43.6377,
+   "lng": 5.062036,
+   "city": "Salon-de-Provence",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail d’Eze  2027 - Alpes Maritimes",
+  "date": "2027-02-07",
+  "location": "Èze, Alpes-Maritimes",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qnMPtthEz5G5gitSHTChr-trail-deze-2027-alpes-maritimes",
+  "set": "disco",
+  "truth": {
+   "lat": 43.727456,
+   "lng": 7.362204,
+   "city": "Èze",
+   "dept": "06"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "BIKE AND RUN DU CRV",
+  "date": "2027-02-07",
+  "location": "La Tour-de-Salvagny, Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qpf5ytYs7czjgNDnsE4rm-bike-and-run-du-crv",
+  "set": "disco",
+  "truth": {
+   "lat": 45.811057,
+   "lng": 4.711179,
+   "city": "La Tour-de-Salvagny",
+   "dept": "69"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LES FOULEES MOISSONNAISES 2027",
+  "date": "2027-02-07",
+  "location": "Moisson, Yvelines",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qpy7ni9JEXDXB4Ks8e7EC-les-foulees-moissonnaises-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 49.070877,
+   "lng": 1.674785,
+   "city": "Moisson",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "L'Ultra des Gueules Noires",
+  "date": "2027-02-07",
+  "location": "Velaux, Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qmTJDv4V6WSvRwsyTAPyA-l-ultra-des-gueules-noires",
+  "set": "disco",
+  "truth": {
+   "lat": 43.523666,
+   "lng": 5.253602,
+   "city": "Velaux",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL DE COUTACH",
+  "date": "2027-01-31",
+  "location": "Quissac, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qkfZfJoixR36oQLFNkTSF-trail-de-coutach",
+  "set": "disco",
+  "truth": {
+   "lat": 43.908632,
+   "lng": 3.997413,
+   "city": "Quissac",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de la Galinette 2027",
+  "date": "2027-01-31",
+  "location": "Cadolive, 13 - Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qnLWxqecPn4dW7w4MN1Uu-trail-de-la-galinette-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 43.39901,
+   "lng": 5.544615,
+   "city": "Cadolive",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Dragonale Givrée",
+  "date": "2027-01-31",
+  "location": "Praz-sur-Arly, Haute-Savoie",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qoUJEsgqHp2jcRVMnaHHs-dragonale-givree",
+  "set": "disco",
+  "truth": {
+   "lat": 45.834748,
+   "lng": 6.568615,
+   "city": "Praz-sur-Arly",
+   "dept": "74"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Bike & Run - Bourbon-Lancy 2027",
+  "date": "2027-01-17",
+  "location": "Bourbon-Lancy, Saône-et-Loire",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qmsNi7QhX9DHmm9f14Bm3-bike-run-bourbon-lancy-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 46.624797,
+   "lng": 3.758687,
+   "city": "Bourbon-Lancy",
+   "dept": "71"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL DU DAUPHINÉ 2027",
+  "date": "2027-01-17",
+  "location": "Beauregard-Baret, Drôme",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qoYzcTVLPH476ZyoDKnP1-trail-du-dauphine-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 45.015824,
+   "lng": 5.152354,
+   "city": "Beauregard-Baret",
+   "dept": "26"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL DES ÉTANGS 2027",
+  "date": "2027-01-17",
+  "location": "Cergy, Val-d'Oise",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqHWNh1ecxrRESW1aiwR1-trail-des-etangs-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 49.04227,
+   "lng": 2.045547,
+   "city": "Cergy",
+   "dept": "95"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Virada de Falicon",
+  "date": "2027-01-17",
+  "location": "Falicon, Alpes-Maritimes",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqwQWUMKunWodHKcHody3-virada-de-falicon",
+  "set": "disco",
+  "truth": {
+   "lat": 43.753453,
+   "lng": 7.266047,
+   "city": "Falicon",
+   "dept": "06"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Le Bélier Blanc",
+  "date": "2027-01-15",
+  "location": "La Clusaz, Haute-Savoie",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqwjRWi2igscbVDHyQBxt-le-belier-blanc",
+  "set": "disco",
+  "truth": {
+   "lat": 45.896718,
+   "lng": 6.441242,
+   "city": "La Clusaz",
+   "dept": "74"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL DE BEAUMONT 2027",
+  "date": "2027-01-10",
+  "location": "Beaumont-sur-Oise, 95 - Val-d'Oise",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qi7BpMb3FSk97KYysQNWG-trail-de-beaumont-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 49.141727,
+   "lng": 2.291947,
+   "city": "Beaumont-sur-Oise",
+   "dept": "95"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL DU CALVAIRE",
+  "date": "2027-01-10",
+  "location": "Aramon, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qpyxziRhMnEqnSYrLXYNx-trail-du-calvaire",
+  "set": "disco",
+  "truth": {
+   "lat": 43.902284,
+   "lng": 4.685615,
+   "city": "Aramon",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "URBAN TRAIL MONTPELLIER 2027 ",
+  "date": "2027-01-09",
+  "location": "Montpellier, Hérault",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qmJGFEM69PtMYmaGdir3a-urban-trail-montpellier-2027",
+  "set": "disco",
+  "truth": {
+   "lat": 43.610476,
+   "lng": 3.87048,
+   "city": "Montpellier",
+   "dept": "34"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "COURSE DES 3 COLLINES",
+  "date": "2027-01-03",
+  "location": "Saint-Gervasy, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qnqVgc9Zch9NtGtpBVx7S-course-des-3-collines",
+  "set": "disco",
+  "truth": {
+   "lat": 43.883084,
+   "lng": 4.466758,
+   "city": "Saint-Gervasy",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "PROJET TRAIL ASSISTANCE",
+  "date": "2026-12-31",
+  "location": "Salon-de-Provence, Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qaKDM3844dTHB4F3bZPLH-projet-trail-assistance",
+  "set": "disco",
+  "truth": {
+   "lat": 43.6377,
+   "lng": 5.062036,
+   "city": "Salon-de-Provence",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "COURSE PÉDESTRE DE ST VENANT",
+  "date": "2026-12-27",
+  "location": "Saint-Venant, Pas-de-Calais",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqhpaEi8xbVvGEoJav6UA-course-pedestre-de-st-venant",
+  "set": "disco",
+  "truth": {
+   "lat": 50.620797,
+   "lng": 2.524064,
+   "city": "Saint-Venant",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10KM DE LA DURANCE",
+  "date": "2026-12-20",
+  "location": "Avignon, Vaucluse",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qhYzgMtX9BtfLA9w5Qarn-10km-de-la-durance",
+  "set": "disco",
+  "truth": {
+   "lat": 43.936345,
+   "lng": 4.848861,
+   "city": "Avignon",
+   "dept": "84"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "CITY TRAIL IMPERIAL",
+  "date": "2026-12-20",
+  "location": "Ajaccio, Corse-du-Sud",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qnWZJYLdjJELwvib5xR6A-city-trail-imperial",
+  "set": "disco",
+  "truth": {
+   "lat": 41.93368,
+   "lng": 8.715325,
+   "city": "Ajaccio",
+   "dept": "2A"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées de Noël by Crédit Mutuel",
+  "date": "2026-12-19",
+  "location": "La Talaudière, 42 - Loire",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qVgkJMmyijR29aGD6Cbh4-les-foulees-de-noel-by-credit-mutuel",
+  "set": "disco",
+  "truth": {
+   "lat": 45.477646,
+   "lng": 4.429392,
+   "city": "La Talaudière",
+   "dept": "42"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LE TRAIL DU FACTEUR 2026",
+  "date": "2026-12-19",
+  "location": "Hauterives, Drôme",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qo9BijVbdkDbP17rsqxmg-le-trail-du-facteur-2026",
+  "set": "disco",
+  "truth": {
+   "lat": 45.255148,
+   "lng": 5.035217,
+   "city": "Hauterives",
+   "dept": "26"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LA RONDE DES PERES NOEL",
+  "date": "2026-12-19",
+  "location": "Uzès, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qocAKFUyJ9iKzc5mRcKWA-la-ronde-des-peres-noel",
+  "set": "disco",
+  "truth": {
+   "lat": 44.021276,
+   "lng": 4.415586,
+   "city": "Uzès",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Hivernatrail",
+  "date": "2026-12-13",
+  "location": "Saint-Côme-et-Maruéjols, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qSC64BYFGZoUcUuEaDMFf-hivernatrail",
+  "set": "disco",
+  "truth": {
+   "lat": 43.82596,
+   "lng": 4.198062,
+   "city": "Saint-Côme-et-Maruéjols",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross Amnesty - Courir pour les Droits Humains",
+  "date": "2026-12-13",
+  "location": "Valbonne, Alpes-Maritimes",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qdvfhsaUzHrkvh3BbWDH4-cross-amnesty-courir-pour-les-droits-humains",
+  "set": "disco",
+  "truth": {
+   "lat": 43.627339,
+   "lng": 7.016557,
+   "city": "Valbonne",
+   "dept": "06"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "L'Hivernale des Cross Duathlon Les Abrets en Dauphiné",
+  "date": "2026-12-13",
+  "location": "Les Abrets en Dauphiné, Isère",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qkpdjwPGLZMJjc6HGSadd-l-hivernale-des-cross-duathlon-les-abrets-en-dauphine",
+  "set": "disco",
+  "truth": {
+   "lat": 45.53234,
+   "lng": 5.583668,
+   "city": "Les Abrets en Dauphiné",
+   "dept": "38"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Spassighjata Bunifazinca 2026",
+  "date": "2026-12-12",
+  "location": "Bonifacio, Corse-du-Sud",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qcCu78h6AeYXWohME5bmr-spassighjata-bunifazinca-2026",
+  "set": "disco",
+  "truth": {
+   "lat": 41.378115,
+   "lng": 9.211359,
+   "city": "Bonifacio",
+   "dept": "2A"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "URBAN RELAIS BORGO",
+  "date": "2026-12-12",
+  "location": "Borgo, Haute-Corse",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qfaWGEsyTLLUywD3NtAf2-urban-relais-borgo",
+  "set": "disco",
+  "truth": {
+   "lat": 42.576135,
+   "lng": 9.46573,
+   "city": "Borgo",
+   "dept": "2B"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "GENEPTRAIL 3ème édition",
+  "date": "2026-12-12",
+  "location": "Huez, Isère",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qn1x2krq17A9NcKncWVwB-geneptrail-3eme-edition",
+  "set": "disco",
+  "truth": {
+   "lat": 45.08667,
+   "lng": 6.066699,
+   "city": "Huez",
+   "dept": "38"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "CITY TRAIL DE PROPRIANO",
+  "date": "2026-12-12",
+  "location": "Propriano, Corse-du-Sud",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qrLi194LmGtcq1v1B4aC6-city-trail-de-propriano",
+  "set": "disco",
+  "truth": {
+   "lat": 41.671527,
+   "lng": 8.906255,
+   "city": "Propriano",
+   "dept": "2A"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Le Dernier survivant Poulx BACKYARD",
+  "date": "2026-12-11",
+  "location": "Poulx, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qXq5rX7dMFD2nTFUnAB1F-le-dernier-survivant-poulx-backyard",
+  "set": "disco",
+  "truth": {
+   "lat": 43.908698,
+   "lng": 4.41847,
+   "city": "Poulx",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LE TRAIL DES ARPENTS 2026",
+  "date": "2026-12-06",
+  "location": "Le Perray-en-Yvelines, 78 - Yvelines",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qfKMr9BmW2bjBdWisapZ6-le-trail-des-arpents-2026",
+  "set": "disco",
+  "truth": {
+   "lat": 48.693019,
+   "lng": 1.845735,
+   "city": "Le Perray-en-Yvelines",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "L'Embuscade de Lubey",
+  "date": "2026-12-06",
+  "location": "Lubey, 54 - Meurthe-et-Moselle",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qmsmXhLkVj9PEVDYMXXsa-l-embuscade-de-lubey",
+  "set": "disco",
+  "truth": {
+   "lat": 49.245434,
+   "lng": 5.854524,
+   "city": "Lubey",
+   "dept": "54"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "EKIDEN DE LA CRAU ",
+  "date": "2026-12-06",
+  "location": "Saint-Martin-de-Crau, 13 - Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qnFxSsGmUAjLCwV2qpZ5Z-ekiden-de-la-crau",
+  "set": "disco",
+  "truth": {
+   "lat": 43.63715,
+   "lng": 4.84769,
+   "city": "Saint-Martin-de-Crau",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "RUN & BIKE MILLY LA FORET 2026",
+  "date": "2026-12-06",
+  "location": "Milly-la-Forêt, Essonne",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqmLv5JuKZgjT91QP1SRZ-run-bike-milly-la-foret-2026",
+  "set": "disco",
+  "truth": {
+   "lat": 48.401704,
+   "lng": 2.458279,
+   "city": "Milly-la-Forêt",
+   "dept": "91"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Course sur route de Juvignac",
+  "date": "2026-12-05",
+  "location": "Juvignac, Hérault",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qqCow4M9kCHhEMZhFchE4-course-sur-route-de-juvignac",
+  "set": "disco",
+  "truth": {
+   "lat": 43.620712,
+   "lng": 3.801257,
+   "city": "Juvignac",
+   "dept": "34"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "L'hivernale de Bellerive",
+  "date": "2026-12-04",
+  "location": "Bellerive-sur-Allier, Allier",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qpG96KRGbkqaVH2SHfmuH-l-hivernale-de-bellerive",
+  "set": "disco",
+  "truth": {
+   "lat": 46.119968,
+   "lng": 3.405526,
+   "city": "Bellerive-sur-Allier",
+   "dept": "03"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "ALTA ROCCA TRAIL - U SPIDALI",
+  "date": "2026-11-29",
+  "location": "Porto-Vecchio, Corse-du-Sud",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qXzSmJjL5efFTU8yqbEAt-alta-rocca-trail-u-spidali",
+  "set": "disco",
+  "truth": {
+   "lat": 41.582755,
+   "lng": 9.263941,
+   "city": "Porto-Vecchio",
+   "dept": "2A"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "JURASSIC TRAIL",
+  "date": "2026-11-29",
+  "location": "Saint-Siffret, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qZSbqnwSbMw4kyWZn9kNL-jurassic-trail",
+  "set": "disco",
+  "truth": {
+   "lat": 44.015543,
+   "lng": 4.464347,
+   "city": "Saint-Siffret",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Le Trail du Soleil Levens",
+  "date": "2026-11-29",
+  "location": "Levens, 06 - Alpes-Maritimes",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qjFE7DoBfW5m4UWdE4qUk-le-trail-du-soleil-levens",
+  "set": "disco",
+  "truth": {
+   "lat": 43.844554,
+   "lng": 7.230627,
+   "city": "Levens",
+   "dept": "06"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "FLAMB'O RUN 2026",
+  "date": "2026-11-28",
+  "location": "Montvendre, Drôme",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qbf6UMYVvmDWFsNsxvyvj-flamb-o-run-2026",
+  "set": "disco",
+  "truth": {
+   "lat": 44.86975,
+   "lng": 5.004699,
+   "city": "Montvendre",
+   "dept": "26"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Foulée Saint-Marcellinoise ",
+  "date": "2026-11-28",
+  "location": "Saint-Lô, Manche",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qoZuvJrLY9oWmhXtZSjqN-la-foulee-saint-marcellinoise",
+  "set": "disco",
+  "truth": {
+   "lat": 49.113843,
+   "lng": -1.080182,
+   "city": "Saint-Lô",
+   "dept": "50"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TELETHON SKF SEMBLANCAY  RUN & BIKE MARCHE TRAIL VTT",
+  "date": "2026-11-28",
+  "location": "Semblançay, Indre-et-Loire",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qrEzXHLafesMwPebPSLEj-telethon-skf-semblancay-run-bike-marche-trail-vtt",
+  "set": "disco",
+  "truth": {
+   "lat": 47.496596,
+   "lng": 0.566628,
+   "city": "Semblançay",
+   "dept": "37"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail urbain de Loriol sur Drôme",
+  "date": "2026-11-27",
+  "location": "Loriol-sur-Drôme, Drôme",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qmUNxNmyQvRHVHDh7pEKt-trail-urbain-de-loriol-sur-drome",
+  "set": "disco",
+  "truth": {
+   "lat": 44.745685,
+   "lng": 4.807747,
+   "city": "Loriol-sur-Drôme",
+   "dept": "26"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LE SEMI D'ISTRES",
+  "date": "2026-11-22",
+  "location": "Istres, Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qSk7bfU7XFh2K8DdGC9ix-le-semi-d-istres",
+  "set": "disco",
+  "truth": {
+   "lat": 43.532139,
+   "lng": 4.957849,
+   "city": "Istres",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL DE BELLE FEUILLE",
+  "date": "2026-11-22",
+  "location": "Vénéjan, 30 - Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qUyiDfamHfRjevG2mrDct-trail-de-belle-feuille",
+  "set": "disco",
+  "truth": {
+   "lat": 44.198714,
+   "lng": 4.658243,
+   "city": "Vénéjan",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Corrida savoyarde",
+  "date": "2026-11-22",
+  "location": "Chambéry, Savoie",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qm25kLrit4pTkJU5zWwoh-corrida-savoyarde",
+  "set": "disco",
+  "truth": {
+   "lat": 45.583223,
+   "lng": 5.909299,
+   "city": "Chambéry",
+   "dept": "73"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL DES COTEAUX",
+  "date": "2026-11-21",
+  "location": "Montbard, Côte-d'Or",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qdWYRb8R5nHaLTTUrWXi6-trail-des-coteaux",
+  "set": "disco",
+  "truth": {
+   "lat": 47.638944,
+   "lng": 4.335193,
+   "city": "Montbard",
+   "dept": "21"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LA SAGA DE LA NOIX 2026",
+  "date": "2026-11-21",
+  "location": "Vinay, 38 - Isère",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qmDQ4jZc9Jiy1qKVvvLrP-la-saga-de-la-noix-2026",
+  "set": "disco",
+  "truth": {
+   "lat": 45.213652,
+   "lng": 5.412737,
+   "city": "Vinay",
+   "dept": "38"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "BioTrail",
+  "date": "2026-11-15",
+  "location": "BIOT, 06 - Alpes-Maritimes",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qZkFCgEL8iFYUbGja19e5-biotrail",
+  "set": "disco",
+  "truth": {
+   "lat": 43.627821,
+   "lng": 7.081617,
+   "city": "Biot",
+   "dept": "06"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LES COURSES DES LIONS DE L'ESPOIR 2026",
+  "date": "2026-11-15",
+  "location": "Sceaux, Hauts-de-Seine",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qdthdWGgkHgfnHvNTGDkY-les-courses-des-lions-de-l-espoir-2026",
+  "set": "disco",
+  "truth": {
+   "lat": 48.777193,
+   "lng": 2.296146,
+   "city": "Sceaux",
+   "dept": "92"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de Saint-André de Roquelongue 2026",
+  "date": "2026-11-15",
+  "location": "Saint-André-de-Roquelongue, Aude",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qftC2KshcTj2TgdB9csZG-trail-de-saint-andre-de-roquelongue-2026",
+  "set": "disco",
+  "truth": {
+   "lat": 43.109613,
+   "lng": 2.832598,
+   "city": "Saint-André-de-Roquelongue",
+   "dept": "11"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL Malassis TOUR 2026",
+  "date": "2026-11-15",
+  "location": "Mantes-la-Jolie, 78 - Yvelines",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qhQeuM4BE3MN48mN4K8vN-trail-malassis-tour-2026",
+  "set": "disco",
+  "truth": {
+   "lat": 48.994782,
+   "lng": 1.699745,
+   "city": "Mantes-la-Jolie",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Course pédestre du Bailli de Suffren",
+  "date": "2026-11-15",
+  "location": "Saint-Cannat, 13 - Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qiXJmaZy8JU5gfBcjyc5q-course-pedestre-du-bailli-de-suffren",
+  "set": "disco",
+  "truth": {
+   "lat": 43.619446,
+   "lng": 5.308564,
+   "city": "Saint-Cannat",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "EcoRun Montferrier sur Lez",
+  "date": "2026-11-15",
+  "location": "Montferrier-sur-Lez, 34 - Hérault",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qk7wNQ3xaZWtZiEv4as1V-ecorun-montferrier-sur-lez",
+  "set": "disco",
+  "truth": {
+   "lat": 43.666999,
+   "lng": 3.857232,
+   "city": "Montferrier-sur-Lez",
+   "dept": "34"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LE SANGLIER DU GRIFFE",
+  "date": "2026-11-15",
+  "location": "Clarensac, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qme2p2LPwoAzUeMEYydwD-le-sanglier-du-griffe",
+  "set": "disco",
+  "truth": {
+   "lat": 43.823177,
+   "lng": 4.223246,
+   "city": "Clarensac",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Ronde des Belvédères",
+  "date": "2026-11-15",
+  "location": "Freyming-Merlebach, Moselle",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qmo67XwE9Tb9MuU88snwm-la-ronde-des-belvederes",
+  "set": "disco",
+  "truth": {
+   "lat": 49.151577,
+   "lng": 6.802633,
+   "city": "Freyming-Merlebach",
+   "dept": "57"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "CROSS DE LA BUTTE VERTE 2026",
+  "date": "2026-11-15",
+  "location": "Mantes-la-Jolie, 78 - Yvelines",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qo4TJJV7qaLGDthTzg86k-cross-de-la-butte-verte-2026",
+  "set": "disco",
+  "truth": {
+   "lat": 48.994782,
+   "lng": 1.699745,
+   "city": "Mantes-la-Jolie",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "ROYAT TRAIL TOUR",
+  "date": "2026-11-15",
+  "location": "Royat, Puy-de-Dôme",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qehMtygy6ng7HfqyDBp6X-royat-trail-tour",
+  "set": "disco",
+  "truth": {
+   "lat": 45.758891,
+   "lng": 3.045271,
+   "city": "Royat",
+   "dept": "63"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "ENDOrun Paris",
+  "date": "2026-11-15",
+  "location": "Paris, Paris",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qmnM6kuHv81HGLcusTewz-endorun-paris",
+  "set": "disco",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "MARATHON DU COGNAC",
+  "date": "2026-11-14",
+  "location": "Jarnac, Charente",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qVnwDnZtwayjXghPgGSFo-marathon-du-cognac",
+  "set": "disco",
+  "truth": {
+   "lat": 45.690032,
+   "lng": -0.169722,
+   "city": "Jarnac",
+   "dept": "16"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "LES FOULÉES BITERROISES ",
+  "date": "2026-11-14",
+  "location": "Béziers, 34 - Hérault",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qehLpaposyGPvnrREfUs4-les-foulees-biterroises",
+  "set": "disco",
+  "truth": {
+   "lat": 43.343264,
+   "lng": 3.233465,
+   "city": "Béziers",
+   "dept": "34"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Nocturne du Lièvre et la Tortue",
+  "date": "2026-11-14",
+  "location": "Maisse, Essonne",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qh2GXpBKB23QsEeMdi6M3-la-nocturne-du-lievre-et-la-tortue",
+  "set": "disco",
+  "truth": {
+   "lat": 48.396059,
+   "lng": 2.386745,
+   "city": "Maisse",
+   "dept": "91"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Nocturne du Lièvre et la Tortue",
+  "date": "2026-11-14",
+  "location": "Maisse, Essonne",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qgnaDqRWTVkyqM4AcWgEU-la-nocturne-du-lievre-et-la-tortue",
+  "set": "disco",
+  "truth": {
+   "lat": 48.396059,
+   "lng": 2.386745,
+   "city": "Maisse",
+   "dept": "91"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Bike and Run de Perpignan la Catalane",
+  "date": "2026-11-11",
+  "location": "Perpignan, 66 - Pyrénées-Orientales",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qfFwbQEAZEqonwtWTmFep-bike-and-run-de-perpignan-la-catalane",
+  "set": "disco",
+  "truth": {
+   "lat": 42.701507,
+   "lng": 2.902811,
+   "city": "Perpignan",
+   "dept": "66"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Courir à Peaugres ",
+  "date": "2026-11-11",
+  "location": "Peaugres, Ardèche",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qn24Uft7cUA8SFYnpcPtS-courir-a-peaugres",
+  "set": "disco",
+  "truth": {
+   "lat": 45.284379,
+   "lng": 4.73153,
+   "city": "Peaugres",
+   "dept": "07"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross de Motz - 2ème édition",
+  "date": "2026-11-08",
+  "location": "Motz, Savoie",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qSGA2QGtWXn94z1BvkZQ3-cross-de-motz-2eme-edition",
+  "set": "disco",
+  "truth": {
+   "lat": 45.915871,
+   "lng": 5.839518,
+   "city": "Motz",
+   "dept": "73"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "COURSE CONTRE LE DIABETE 2026",
+  "date": "2026-11-08",
+  "location": "Neuville-sur-Oise, 95 - Val-d'Oise",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qVd1ZaV6iMmC6mFUWeZQR-course-contre-le-diabete-2026",
+  "set": "disco",
+  "truth": {
+   "lat": 49.01529,
+   "lng": 2.066174,
+   "city": "Neuville-sur-Oise",
+   "dept": "95"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Marseille Outdoor expériences",
+  "date": "2026-11-08",
+  "location": "Marseille, Bouches-du-Rhône",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qY5swgm7Hg31WWXhLFGtQ-marseille-outdoor-experiences",
+  "set": "disco",
+  "truth": {
+   "lat": 43.282,
+   "lng": 5.405,
+   "city": "Marseille",
+   "dept": "13"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Course-Saint-Cheffoise",
+  "date": "2026-11-08",
+  "location": "Saint-Chef, Isère",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qdfp6PwLPLHo4XhJrPpfo-course-saint-cheffoise",
+  "set": "disco",
+  "truth": {
+   "lat": 45.63837,
+   "lng": 5.359685,
+   "city": "Saint-Chef",
+   "dept": "38"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "STREPI TRAIL 2026",
+  "date": "2026-11-08",
+  "location": "Étréchy, 91 - Essonne",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qghAN3wk9XwKNsb4CvYKn-strepi-trail-2026",
+  "set": "disco",
+  "truth": {
+   "lat": 48.49003,
+   "lng": 2.182131,
+   "city": "Étréchy",
+   "dept": "91"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées d'Alès",
+  "date": "2026-11-08",
+  "location": "Alès, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qmTTEdQwskd8bkxBPpdQH-les-foulees-d-ales",
+  "set": "disco",
+  "truth": {
+   "lat": 44.125356,
+   "lng": 4.089242,
+   "city": "Alès",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Espri' Trail des Badins Châteldon ",
+  "date": "2026-11-08",
+  "location": "Châteldon, Puy-de-Dôme",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qmsYTW7Sc87sszJegxf2N-espri-trail-des-badins-chateldon",
+  "set": "disco",
+  "truth": {
+   "lat": 45.973775,
+   "lng": 3.557924,
+   "city": "Châteldon",
+   "dept": "63"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "ENDOrun Coeur de Bretagne",
+  "date": "2026-11-08",
+  "location": "Le Faouët, Morbihan",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qr6eyEFuxaafnWiwphXGq-endorun-coeur-de-bretagne",
+  "set": "disco",
+  "truth": {
+   "lat": 48.043995,
+   "lng": -3.512004,
+   "city": "Le Faouët",
+   "dept": "56"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail du Lac de Villerest",
+  "date": "2026-11-07",
+  "location": "Villerest, Loire",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qaDtAGEJE6zRJqaRjr6Sp-trail-du-lac-de-villerest",
+  "set": "disco",
+  "truth": {
+   "lat": 46.002621,
+   "lng": 4.031811,
+   "city": "Villerest",
+   "dept": "42"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Montilly Sports Nature Festival",
+  "date": "2026-11-07",
+  "location": "Montilly sur Noireau, 61 - Orne",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qai3GAox1ShKQWFi4miGF-montilly-sports-nature-festival",
+  "set": "disco",
+  "truth": {
+   "lat": 48.812465,
+   "lng": -0.572598,
+   "city": "Montilly-sur-Noireau",
+   "dept": "61"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "2ème Open Régional Occitanie de Fast Hiking",
+  "date": "2026-11-07",
+  "location": "Sorède, Pyrénées-Orientales",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qgqhxjLvLSFmskrrkUFGG-2eme-open-regional-occitanie-de-fast-hiking",
+  "set": "disco",
+  "truth": {
+   "lat": 42.52719,
+   "lng": 2.965586,
+   "city": "Sorède",
+   "dept": "66"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Veni Vici",
+  "date": "2026-11-07",
+  "location": "Vers-Pont-du-Gard, Gard",
+  "platform": "sportsnconnect",
+  "url": "https://new.sportsnconnect.com/fr/client/events/4qmPZNo8zS9x9ej7Px3AHu-la-veni-vici",
+  "set": "disco",
+  "truth": {
+   "lat": 43.965037,
+   "lng": 4.520373,
+   "city": "Vers-Pont-du-Gard",
+   "dept": "30"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Duo Trail Sapeurs-Pompiers de Thiers",
+  "date": "2026-11-06",
+  "location": "THIERS (63)",
+  "platform": "adeorun",
+  "url": "https://duo-trail-sp-thiers.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 45.864809,
+   "lng": 3.540017,
+   "city": "Thiers",
+   "dept": "63"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de la Montagne Maudite-Nocturne",
+  "date": "2026-11-07",
+  "location": "LAGNY (60)",
+  "platform": "adeorun",
+  "url": "https://trail-de-la-montagne-maudite-nocturne.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.611182,
+   "lng": 2.91493,
+   "city": "Lagny",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Sur les chemins de l'Impératrice",
+  "date": "2026-11-07",
+  "location": "Compiègne (60)",
+  "platform": "adeorun",
+  "url": "https://cheminsdelimperatrice.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.405934,
+   "lng": 2.844366,
+   "city": "Compiègne",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les FOULEES-TRAILS de NOYELLES-GODAULT",
+  "date": "2026-11-08",
+  "location": "NOYELLES GODAULT (62)",
+  "platform": "adeorun",
+  "url": "https://les-foulees-trails-de-noyelles-godault.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.421676,
+   "lng": 2.990806,
+   "city": "Noyelles-Godault",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les FOULEES OUTRELOISES",
+  "date": "2026-11-08",
+  "location": "OUTREAU (62)",
+  "platform": "adeorun",
+  "url": "https://les-foulees-outreloises.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.700487,
+   "lng": 1.590091,
+   "city": "Outreau",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "PLESSIS'RUN",
+  "date": "2026-11-08",
+  "location": "LE PLESSIS BELLEVILLE (60)",
+  "platform": "adeorun",
+  "url": "https://plessisrun.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.097435,
+   "lng": 2.755469,
+   "city": "Le Plessis-Belleville",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La course de l'Ours",
+  "date": "2026-11-08",
+  "location": "TREGUIER (22)",
+  "platform": "adeorun",
+  "url": "https://lacoursedelours.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 48.785088,
+   "lng": -3.232938,
+   "city": "Tréguier",
+   "dept": "22"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross de Chantilly",
+  "date": "2026-11-08",
+  "location": "CHANTILLY (60)",
+  "platform": "adeorun",
+  "url": "https://cross-de-chantilly.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.188222,
+   "lng": 2.461897,
+   "city": "Chantilly",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "EKIDEN du 11 Novembre",
+  "date": "2026-11-11",
+  "location": "NOYON (60)",
+  "platform": "adeorun",
+  "url": "https://ekiden-du-11-novembre.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.584458,
+   "lng": 3.003812,
+   "city": "Noyon",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "CROSS de la BICHE",
+  "date": "2026-11-11",
+  "location": "SAMER (62)",
+  "platform": "adeorun",
+  "url": "https://cross-de-la-biche.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.635311,
+   "lng": 1.756388,
+   "city": "Samer",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Dans les pas de Clément",
+  "date": "2026-11-14",
+  "location": "CAVAN (22)",
+  "platform": "adeorun",
+  "url": "https://dans-les-pas-de-clement.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 48.675071,
+   "lng": -3.356839,
+   "city": "Cavan",
+   "dept": "22"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail nocturne de la Montagne de GURY",
+  "date": "2026-11-14",
+  "location": "GURY (60)",
+  "platform": "adeorun",
+  "url": "https://trail-montagne-paradis.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.568742,
+   "lng": 2.798197,
+   "city": "Gury",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Moustache Impériale",
+  "date": "2026-11-15",
+  "location": "COMPIEGNE (60)",
+  "platform": "adeorun",
+  "url": "https://lamoustacheimperiale.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.405934,
+   "lng": 2.844366,
+   "city": "Compiègne",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail Cross du Fort des Dunes de Flandre",
+  "date": "2026-11-15",
+  "location": "Leffrinckoucke (59)",
+  "platform": "adeorun",
+  "url": "https://le-trail-cross-du-fort-des-dunes-de-flandre.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 51.044669,
+   "lng": 2.447247,
+   "city": "Leffrinckoucke",
+   "dept": "59"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Montmacq'ximum",
+  "date": "2026-11-15",
+  "location": "MONTMACQ (60)",
+  "platform": "adeorun",
+  "url": "https://montmacqximum.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.483095,
+   "lng": 2.905247,
+   "city": "Montmacq",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La FOULEE VETIEGLISOISE",
+  "date": "2026-11-15",
+  "location": "VIEILLE EGLISE (62)",
+  "platform": "adeorun",
+  "url": "https://les-foulees-vetieglisoises.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.935704,
+   "lng": 2.07509,
+   "city": "Vieille-Église",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées de Blacourt",
+  "date": "2026-11-15",
+  "location": "BLACOURT (60)",
+  "platform": "adeorun",
+  "url": "https://les-foulees-de-blacourt.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.461054,
+   "lng": 1.858838,
+   "city": "Blacourt",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de la Pont'Oise",
+  "date": "2026-11-21",
+  "location": "PONT STE MAXENCE (60)",
+  "platform": "adeorun",
+  "url": "https://trail-de-la-pontoise.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.309303,
+   "lng": 2.60379,
+   "city": "Pont-Sainte-Maxence",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL des MINGEUX de MAGUETTES",
+  "date": "2026-11-22",
+  "location": "GIVENCHY EN GOHELLE (62)",
+  "platform": "adeorun",
+  "url": "https://trail-des-mingeux-de-maguettes.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.394499,
+   "lng": 2.775847,
+   "city": "Givenchy-en-Gohelle",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les FOULEES de la SAINTE-CATHERINE",
+  "date": "2026-11-22",
+  "location": "MENNEVILLE (62)",
+  "platform": "adeorun",
+  "url": "https://les-foulees-de-la-sainte-catherine.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.676751,
+   "lng": 1.860387,
+   "city": "Menneville",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de Senlis",
+  "date": "2026-11-28",
+  "location": "Senlis (60)",
+  "platform": "adeorun",
+  "url": "https://trail-de-senlis.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.207336,
+   "lng": 2.587679,
+   "city": "Senlis",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Nocturne - Trail ou VTT",
+  "date": "2026-11-28",
+  "location": "LAGUEPIE (82)",
+  "platform": "adeorun",
+  "url": "https://la-nocturne-laguepie.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 44.148408,
+   "lng": 1.966603,
+   "city": "Laguépie",
+   "dept": "82"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Compiègne en bleu",
+  "date": "2026-11-29",
+  "location": "COMPIEGNE (60)",
+  "platform": "adeorun",
+  "url": "https://compiegne-en-bleu.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.405934,
+   "lng": 2.844366,
+   "city": "Compiègne",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "20 Bornes d'Andrésy",
+  "date": "2026-11-29",
+  "location": "ANDRESY (78)",
+  "platform": "adeorun",
+  "url": "https://20-bornes-dandresy.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 48.976635,
+   "lng": 2.055981,
+   "city": "Andrésy",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La corrida d'Origny Sainte Benoîte",
+  "date": "2026-12-04",
+  "location": "ORIGNY STE BENOITE (02)",
+  "platform": "adeorun",
+  "url": "https://la-corrida-dorigny-sainte-benoite-copie.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.83539,
+   "lng": 3.4997,
+   "city": "Origny-Sainte-Benoite",
+   "dept": "02"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross de Massy",
+  "date": "2026-12-06",
+  "location": "MASSY (91)",
+  "platform": "adeorun",
+  "url": "https://cross-de-massy.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 48.728133,
+   "lng": 2.269556,
+   "city": "Massy",
+   "dept": "91"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Le CROSS de SAINT-NICOLAS",
+  "date": "2026-12-06",
+  "location": "WIMILLE (62)",
+  "platform": "adeorun",
+  "url": "https://le-cross-de-saint-nicolas.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.758617,
+   "lng": 1.637614,
+   "city": "Wimille",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les foulées du Père Noël",
+  "date": "2026-12-06",
+  "location": "DUNKERQUE (59)",
+  "platform": "adeorun",
+  "url": "https://fouleesduperenoel.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 51.028256,
+   "lng": 2.346525,
+   "city": "Dunkerque",
+   "dept": "59"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Téléthon Ville De Compiègne",
+  "date": "2026-12-06",
+  "location": "COMPIEGNE (60)",
+  "platform": "adeorun",
+  "url": "https://telethon-ville-de-compiegne.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.405934,
+   "lng": 2.844366,
+   "city": "Compiègne",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "URBAN TRAIL DE LA SAINT NICOLAS - UTSN",
+  "date": "2026-12-06",
+  "location": "CAMBRAI (59)",
+  "platform": "adeorun",
+  "url": "https://urban-trail-de-la-saint-nicolas.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.172628,
+   "lng": 3.240712,
+   "city": "Cambrai",
+   "dept": "59"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Cantilienne",
+  "date": "2026-12-12",
+  "location": "CHANTILLY (60)",
+  "platform": "adeorun",
+  "url": "https://la-cantilienne.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.188222,
+   "lng": 2.461897,
+   "city": "Chantilly",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL NOCTURNE de NOEL",
+  "date": "2026-12-12",
+  "location": "BONNINGUES LES CALAIS (62)",
+  "platform": "adeorun",
+  "url": "https://trail-nocturne-de-noel.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.89265,
+   "lng": 1.772088,
+   "city": "Bonningues-lès-Calais",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Corrida de Tillé",
+  "date": "2026-12-13",
+  "location": "TILLE (60)",
+  "platform": "adeorun",
+  "url": "https://corrida-de-tille.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.463427,
+   "lng": 2.117175,
+   "city": "Tillé",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Course ou Marche des Pères Noël",
+  "date": "2026-12-13",
+  "location": "COMPIEGNE (60)",
+  "platform": "adeorun",
+  "url": "https://course-ou-marche-des-peres-noel.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.405934,
+   "lng": 2.844366,
+   "city": "Compiègne",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La 1418 Noctrail",
+  "date": "2026-12-19",
+  "location": "NOYON (60)",
+  "platform": "adeorun",
+  "url": "https://la-1418-noctrail-2026.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.584458,
+   "lng": 3.003812,
+   "city": "Noyon",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La VEROTIERE",
+  "date": "2026-12-19",
+  "location": "BERCK (62)",
+  "platform": "adeorun",
+  "url": "https://la-verotiere.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.411178,
+   "lng": 1.58198,
+   "city": "Berck",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Le Cross des Titans",
+  "date": "2026-12-20",
+  "location": "VENETTE (60)",
+  "platform": "adeorun",
+  "url": "https://le-cross-des-titans.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.413983,
+   "lng": 2.792952,
+   "city": "Venette",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Corrida de la Saint-Sylvestre",
+  "date": "2026-12-31",
+  "location": "FREVENT (62)",
+  "platform": "adeorun",
+  "url": "https://corrida-de-la-st-sylvestre.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.274454,
+   "lng": 2.287814,
+   "city": "Frévent",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Yerres Trail By Night",
+  "date": "2027-01-15",
+  "location": "YERRES (91)",
+  "platform": "adeorun",
+  "url": "https://yerres-trail-by-night.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 48.710884,
+   "lng": 2.491344,
+   "city": "Yerres",
+   "dept": "91"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail du Château de Pierrefonds",
+  "date": "2027-01-24",
+  "location": "PIERREFONDS (60)",
+  "platform": "adeorun",
+  "url": "https://trail-pierrefonds.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.343878,
+   "lng": 2.972556,
+   "city": "Pierrefonds",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des lucioles",
+  "date": "2027-01-30",
+  "location": "AIZY JOUY (02)",
+  "platform": "adeorun",
+  "url": "https://trail-des-lucioles.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.438039,
+   "lng": 3.512025,
+   "city": "Aizy-Jouy",
+   "dept": "02"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Maxicross de Bouffemont",
+  "date": "2027-01-30",
+  "location": "BOUFFEMONT (95)",
+  "platform": "adeorun",
+  "url": "https://maxicross-bouffemont.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.04331,
+   "lng": 2.307584,
+   "city": "Bouffémont",
+   "dept": "95"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "6 MILES de PONT-de-BRIQUES",
+  "date": "2027-02-07",
+  "location": "ST ETIENNE AU MONT (62)",
+  "platform": "adeorun",
+  "url": "https://6-miles-de-pont-de-briques.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.669813,
+   "lng": 1.609355,
+   "city": "Saint-Étienne-au-Mont",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées en boucle",
+  "date": "2027-02-20",
+  "location": "PONTPOINT (60)",
+  "platform": "adeorun",
+  "url": "https://fouleesenboucle.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.30407,
+   "lng": 2.649484,
+   "city": "Pontpoint",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10 km de Morcourt - Label Bronze (Régional)",
+  "date": "2027-02-28",
+  "location": "MORCOURT (02)",
+  "platform": "adeorun",
+  "url": "https://10-km-de-morcourt.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.872424,
+   "lng": 3.320402,
+   "city": "Morcourt",
+   "dept": "02"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des Gladiateurs",
+  "date": "2027-03-06",
+  "location": "CLAIROIX (60)",
+  "platform": "adeorun",
+  "url": "https://trail-des-gladiateurs.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.4392,
+   "lng": 2.847004,
+   "city": "Clairoix",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées Nocturnes de la St-Patrick",
+  "date": "2027-03-13",
+  "location": "CLAIRMARAIS (62)",
+  "platform": "adeorun",
+  "url": "https://lesfouleesnocturnes.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.777238,
+   "lng": 2.341471,
+   "city": "Clairmarais",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Semi-Marathon de Saint-Witz",
+  "date": "2027-03-20",
+  "location": "ST WITZ (95)",
+  "platform": "adeorun",
+  "url": "https://semi-marathon-de-saint-witz.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.089847,
+   "lng": 2.554326,
+   "city": "Saint-Witz",
+   "dept": "95"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des Aigles",
+  "date": "2027-03-21",
+  "location": "GOUVIEUX (60)",
+  "platform": "adeorun",
+  "url": "https://trail-des-aigles.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.187346,
+   "lng": 2.418556,
+   "city": "Gouvieux",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "MARATHON CALAIS XXL",
+  "date": "2027-03-21",
+  "location": "CALAIS (62)",
+  "platform": "adeorun",
+  "url": "https://marathon-calais-xxl.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.951564,
+   "lng": 1.866112,
+   "city": "Calais",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL EVASION en PAYS de LUMBRES",
+  "date": "2027-03-21",
+  "location": "SENINGHEM (62)",
+  "platform": "adeorun",
+  "url": "https://trail-evasion-de-seninghem.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.702475,
+   "lng": 2.034315,
+   "city": "Seninghem",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "2T2M - Trail Tour du Massif Montmorencéen",
+  "date": "2027-03-27",
+  "location": "MONTLIGNON (95)",
+  "platform": "adeorun",
+  "url": "https://2t2m.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.013451,
+   "lng": 2.284914,
+   "city": "Montlignon",
+   "dept": "95"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées Impériales",
+  "date": "2027-03-28",
+  "location": "COMPIEGNE (60)",
+  "platform": "adeorun",
+  "url": "https://foulees-imperiales.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.405934,
+   "lng": 2.844366,
+   "city": "Compiègne",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les foulées Plaine Vallée",
+  "date": "2027-03-30",
+  "location": "MONTLIGNON (95)",
+  "platform": "adeorun",
+  "url": "https://les-foulees-de-plaine-vallee.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.013451,
+   "lng": 2.284914,
+   "city": "Montlignon",
+   "dept": "95"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL des EPEUTNAERTS",
+  "date": "2027-04-03",
+  "location": "MORINGHEM (62)",
+  "platform": "adeorun",
+  "url": "https://trail-des-epeutnaerts.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.762528,
+   "lng": 2.126799,
+   "city": "Moringhem",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des Coteaux de Guerville",
+  "date": "2027-04-03",
+  "location": "GUERVILLE (78)",
+  "platform": "adeorun",
+  "url": "https://trail-des-coteaux-de-guerville.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 48.958544,
+   "lng": 1.745397,
+   "city": "Guerville",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de la Ligne Rouge",
+  "date": "2027-04-11",
+  "location": "THIESCOURT (60)",
+  "platform": "adeorun",
+  "url": "https://trail-ligne-rouge.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.56074,
+   "lng": 2.869718,
+   "city": "Thiescourt",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Course Nature Blacourt",
+  "date": "2027-04-25",
+  "location": "BLACOURT (60)",
+  "platform": "adeorun",
+  "url": "https://course-nature-blacourt.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.461054,
+   "lng": 1.858838,
+   "city": "Blacourt",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des pyramides noires",
+  "date": "2027-05-14",
+  "location": "OIGNIES (62)",
+  "platform": "adeorun",
+  "url": "https://trail-des-pyramides-noires.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.464173,
+   "lng": 2.99474,
+   "city": "Oignies",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Course des Poilus - Les 24h de Bitry",
+  "date": "2027-05-15",
+  "location": "BITRY (60)",
+  "platform": "adeorun",
+  "url": "https://la-course-des-poilus-24h-de-bitry.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.41307,
+   "lng": 3.07656,
+   "city": "Bitry",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "The FOREST CLOCK on FIRE",
+  "date": "2027-05-15",
+  "location": "HESDIN-LA-FORET (62)",
+  "platform": "adeorun",
+  "url": "https://the-forest-clock-on-fire.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 50.373009,
+   "lng": 2.032024,
+   "city": "Hesdin-la-Forêt",
+   "dept": "62"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des Bières Sacrées",
+  "date": "2027-05-30",
+  "location": "LARBROYE (60)",
+  "platform": "adeorun",
+  "url": "https://trail-des-bieres-sacrees.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.572969,
+   "lng": 2.961372,
+   "city": "Larbroye",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "ARC EKIDEN 60",
+  "date": "2027-06-20",
+  "location": "VENETTE (60)",
+  "platform": "adeorun",
+  "url": "https://arc-ekiden-60.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.413983,
+   "lng": 2.792952,
+   "city": "Venette",
+   "dept": "60"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "TRAIL DU POILU",
+  "date": "2027-11-14",
+  "location": "DOM LE MESNIL (08)",
+  "platform": "adeorun",
+  "url": "https://trail-du-poilu.adeorun.com",
+  "set": "disco",
+  "truth": {
+   "lat": 49.689429,
+   "lng": 4.8139,
+   "city": "Dom-le-Mesnil",
+   "dept": "08"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross FFSU Bordeaux Université",
+  "date": "2026-11-05",
+  "location": "Bordeaux, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8668-cross-ffsu-bordeaux-universite",
+  "set": "disco",
+  "truth": {
+   "lat": 44.851939,
+   "lng": -0.587877,
+   "city": "Bordeaux",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Gère Ta Boucle",
+  "date": "2026-11-06",
+  "location": "Chailles, 41",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8362-gere-ta-boucle",
+  "set": "disco",
+  "truth": {
+   "lat": 47.536711,
+   "lng": 1.307567,
+   "city": "Chailles",
+   "dept": "41"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Finale Départ. des Sapeurs-Pompiers de Seine et Marne",
+  "date": "2026-11-07",
+  "location": "Bois-le-Roi, 77",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8573-finale-depart-des-sapeurs-pompiers-de-seine-et-marne",
+  "set": "disco",
+  "truth": {
+   "lat": 48.472944,
+   "lng": 2.692431,
+   "city": "Bois-le-Roi",
+   "dept": "77"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées Gorcéennes contre le Cancer",
+  "date": "2026-11-08",
+  "location": "Gorcy, 54",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8257-les-foulees-gorceennes-contre-le-cancer",
+  "set": "disco",
+  "truth": {
+   "lat": 49.538395,
+   "lng": 5.67926,
+   "city": "Gorcy",
+   "dept": "54"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "MovembRun",
+  "date": "2026-11-08",
+  "location": "La Chaussée-Saint-Victor, 41",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8358-movembrun",
+  "set": "disco",
+  "truth": {
+   "lat": 47.609933,
+   "lng": 1.357355,
+   "city": "La Chaussée-Saint-Victor",
+   "dept": "41"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Semi-Marathon de Dreux Agglo",
+  "date": "2026-11-08",
+  "location": "Dreux, 28",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8445-semi-marathon-de-dreux-agglo",
+  "set": "disco",
+  "truth": {
+   "lat": 48.745749,
+   "lng": 1.36554,
+   "city": "Dreux",
+   "dept": "28"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Fleuryssoise",
+  "date": "2026-11-08",
+  "location": "Fleury-les-Aubrais, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8476-la-fleuryssoise",
+  "set": "disco",
+  "truth": {
+   "lat": 47.933752,
+   "lng": 1.918736,
+   "city": "Fleury-les-Aubrais",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross du Val d'Essonne",
+  "date": "2026-11-08",
+  "location": "Mennecy, 91",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8535-cross-du-val-d-essonne",
+  "set": "disco",
+  "truth": {
+   "lat": 48.560075,
+   "lng": 2.435966,
+   "city": "Mennecy",
+   "dept": "91"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross national du 11 Novembre - Trails & Marche",
+  "date": "2026-11-11",
+  "location": "Chartres, 28",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8316-cross-national-du-11-novembre-trails-marche",
+  "set": "disco",
+  "truth": {
+   "lat": 48.446525,
+   "lng": 1.502286,
+   "city": "Chartres",
+   "dept": "28"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross Duathlon de Nemours",
+  "date": "2026-11-11",
+  "location": "Nemours, 77",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8530-cross-duathlon-de-nemours",
+  "set": "disco",
+  "truth": {
+   "lat": 48.266711,
+   "lng": 2.703049,
+   "city": "Nemours",
+   "dept": "77"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Courir Aux Allées",
+  "date": "2026-11-11",
+  "location": "Blois, 41",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8595-courir-aux-allees",
+  "set": "disco",
+  "truth": {
+   "lat": 47.581406,
+   "lng": 1.316533,
+   "city": "Blois",
+   "dept": "41"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Session Running de préparation Course des 3 ponts",
+  "date": "2026-11-11",
+  "location": "Orléans, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8660-session-running-de-preparation-course-des-3-ponts",
+  "set": "disco",
+  "truth": {
+   "lat": 47.873569,
+   "lng": 1.911358,
+   "city": "Orléans",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Course des Restos du Coeur",
+  "date": "2026-11-13",
+  "location": "Talence, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8134-la-course-des-restos-du-coeur",
+  "set": "disco",
+  "truth": {
+   "lat": 44.806418,
+   "lng": -0.592018,
+   "city": "Talence",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Boucle Royale",
+  "date": "2026-11-13",
+  "location": "La Ferté Saint Aubin, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8521-la-boucle-royale",
+  "set": "disco",
+  "truth": {
+   "lat": 47.724028,
+   "lng": 1.921132,
+   "city": "La Ferté-Saint-Aubin",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La course de l'artichaut",
+  "date": "2026-11-14",
+  "location": "Macau, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8135-la-course-de-l-artichaut",
+  "set": "disco",
+  "truth": {
+   "lat": 44.99743,
+   "lng": -0.611365,
+   "city": "Macau",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "En baskets contre le diabète - Novo",
+  "date": "2026-11-14",
+  "location": "Chartres, 28",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8408-en-baskets-contre-le-diabete-novo",
+  "set": "disco",
+  "truth": {
+   "lat": 48.446525,
+   "lng": 1.502286,
+   "city": "Chartres",
+   "dept": "28"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail en Jalle",
+  "date": "2026-11-15",
+  "location": "Saint-Jean-d'Illac, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8137-trail-en-jalle",
+  "set": "disco",
+  "truth": {
+   "lat": 44.798589,
+   "lng": -0.791792,
+   "city": "Saint-Jean-d'Illac",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées du Dragon",
+  "date": "2026-11-15",
+  "location": "La Chapelle-Saint-Mesmin, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8342-les-foulees-du-dragon",
+  "set": "disco",
+  "truth": {
+   "lat": 47.889553,
+   "lng": 1.834869,
+   "city": "La Chapelle-Saint-Mesmin",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Vétathlon du Téléthon des pompiers de la Teste",
+  "date": "2026-11-15",
+  "location": "La Teste-de-Buch, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8571-vetathlon-du-telethon-des-pompiers-de-la-teste",
+  "set": "disco",
+  "truth": {
+   "lat": 44.616272,
+   "lng": -1.157052,
+   "city": "La Teste-de-Buch",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail d'Ecquevilly",
+  "date": "2026-11-15",
+  "location": "Ecquevilly, 78",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8579-trail-d-ecquevilly",
+  "set": "disco",
+  "truth": {
+   "lat": 48.957239,
+   "lng": 1.924735,
+   "city": "Ecquevilly",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross de l'Epinoche",
+  "date": "2026-11-15",
+  "location": "Montesson, 78",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8580-cross-de-l-epinoche",
+  "set": "disco",
+  "truth": {
+   "lat": 48.920302,
+   "lng": 2.133126,
+   "city": "Montesson",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Conférence cardiologique : mort subite du sportif",
+  "date": "2026-11-18",
+  "location": "Les Bordes, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8399-conference-cardiologique-mort-subite-du-sportif",
+  "set": "disco",
+  "truth": {
+   "lat": 47.806152,
+   "lng": 2.415323,
+   "city": "Les Bordes",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Session Running de préparation Course des 3 ponts",
+  "date": "2026-11-18",
+  "location": "Orléans, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8661-session-running-de-preparation-course-des-3-ponts",
+  "set": "disco",
+  "truth": {
+   "lat": 47.873569,
+   "lng": 1.911358,
+   "city": "Orléans",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail du Canal Louis XIV",
+  "date": "2026-11-21",
+  "location": "Berchères-Saint-Germain, 28",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8486-trail-du-canal-louis-xiv",
+  "set": "disco",
+  "truth": {
+   "lat": 48.536748,
+   "lng": 1.474373,
+   "city": "Berchères-Saint-Germain",
+   "dept": "28"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Course des 3 Ponts",
+  "date": "2026-11-21",
+  "location": "Orléans, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8537-la-course-des-3-ponts",
+  "set": "disco",
+  "truth": {
+   "lat": 47.873569,
+   "lng": 1.911358,
+   "city": "Orléans",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Tour du Lac du Val d'Auron",
+  "date": "2026-11-22",
+  "location": "Bourges, 18",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8363-tour-du-lac-du-val-d-auron",
+  "set": "disco",
+  "truth": {
+   "lat": 47.082882,
+   "lng": 2.402294,
+   "city": "Bourges",
+   "dept": "18"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Collines de Garches",
+  "date": "2026-11-22",
+  "location": "Garches, 92",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8478-les-collines-de-garches",
+  "set": "disco",
+  "truth": {
+   "lat": 48.847088,
+   "lng": 2.188292,
+   "city": "Garches",
+   "dept": "92"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "56e Cross Dép des SP de la Marne - Epernay Pays de Champagne",
+  "date": "2026-11-22",
+  "location": "Epernay, 51",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8576-56e-cross-dep-des-sp-de-la-marne-epernay-pays-de-champagne",
+  "set": "disco",
+  "truth": {
+   "lat": 49.040236,
+   "lng": 3.960527,
+   "city": "Épernay",
+   "dept": "51"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross Sud Ouest Gujan-Mestras",
+  "date": "2026-11-27",
+  "location": "Gujan-Mestras, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8482-cross-sud-ouest-gujan-mestras",
+  "set": "disco",
+  "truth": {
+   "lat": 44.618065,
+   "lng": -1.076924,
+   "city": "Gujan-Mestras",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross de Masse des Policiers des Yvelines",
+  "date": "2026-11-27",
+  "location": "Guyancourt, 78",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8677-cross-de-masse-des-policiers-des-yvelines",
+  "set": "disco",
+  "truth": {
+   "lat": 48.772152,
+   "lng": 2.070346,
+   "city": "Guyancourt",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Fééria Barisienne",
+  "date": "2026-11-28",
+  "location": "Bar-le-Duc, 55",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8258-la-feeria-barisienne",
+  "set": "disco",
+  "truth": {
+   "lat": 48.773944,
+   "lng": 5.165032,
+   "city": "Bar-le-Duc",
+   "dept": "55"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Entre Terre et Mer",
+  "date": "2026-11-28",
+  "location": "Gujan Mestras, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8481-entre-terre-et-mer",
+  "set": "disco",
+  "truth": {
+   "lat": 44.618065,
+   "lng": -1.076924,
+   "city": "Gujan-Mestras",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Kilomètre 0 - Course Inclusive",
+  "date": "2026-11-28",
+  "location": "Vincennes, 94",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8515-kilometre-0-course-inclusive",
+  "set": "disco",
+  "truth": {
+   "lat": 48.847279,
+   "lng": 2.437785,
+   "city": "Vincennes",
+   "dept": "94"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Mirabal",
+  "date": "2026-11-29",
+  "location": "Champigny-sur-Marne, 94",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8192-la-mirabal",
+  "set": "disco",
+  "truth": {
+   "lat": 48.817209,
+   "lng": 2.521265,
+   "city": "Champigny-sur-Marne",
+   "dept": "94"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10km Paris 17",
+  "date": "2026-11-29",
+  "location": "Paris, 75",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8369-10km-paris-17",
+  "set": "disco",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Movember",
+  "date": "2026-11-29",
+  "location": "Ormes, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8395-movember",
+  "set": "disco",
+  "truth": {
+   "lat": 47.949744,
+   "lng": 1.813552,
+   "city": "Ormes",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de Saint Just",
+  "date": "2026-11-29",
+  "location": "Saint-Just, 18",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8586-trail-de-saint-just",
+  "set": "disco",
+  "truth": {
+   "lat": 46.986456,
+   "lng": 2.50587,
+   "city": "Saint-Just",
+   "dept": "18"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Urban Trail de Gien",
+  "date": "2026-11-29",
+  "location": "Gien, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8601-urban-trail-de-gien",
+  "set": "disco",
+  "truth": {
+   "lat": 47.709696,
+   "lng": 2.678216,
+   "city": "Gien",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La course des Moustaches",
+  "date": "2026-12-01",
+  "location": "Paris, 75",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8604-la-course-des-moustaches",
+  "set": "disco",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "30h de Gallardon - Téléthon",
+  "date": "2026-12-04",
+  "location": "Gallardon, 28",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8611-30h-de-gallardon-telethon",
+  "set": "disco",
+  "truth": {
+   "lat": 48.527844,
+   "lng": 1.686206,
+   "city": "Gallardon",
+   "dept": "28"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Givrés de la Sarabande",
+  "date": "2026-12-05",
+  "location": "Beaugency, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8351-les-givres-de-la-sarabande",
+  "set": "disco",
+  "truth": {
+   "lat": 47.781732,
+   "lng": 1.632386,
+   "city": "Beaugency",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Soli'Trail de Bouliac",
+  "date": "2026-12-05",
+  "location": "Bouliac, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8442-soli-trail-de-bouliac",
+  "set": "disco",
+  "truth": {
+   "lat": 44.81558,
+   "lng": -0.499538,
+   "city": "Bouliac",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Corrida Sancerroise",
+  "date": "2026-12-05",
+  "location": "Sancerre, 18",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8512-la-corrida-sancerroise",
+  "set": "disco",
+  "truth": {
+   "lat": 47.335051,
+   "lng": 2.827415,
+   "city": "Sancerre",
+   "dept": "18"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Tout Agen Court à Noël",
+  "date": "2026-12-05",
+  "location": "Agen, 47",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8528-tout-agen-court-a-noel",
+  "set": "disco",
+  "truth": {
+   "lat": 44.202304,
+   "lng": 0.631041,
+   "city": "Agen",
+   "dept": "47"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Berges de Conflans",
+  "date": "2026-12-05",
+  "location": "Conflans-Sainte-Honorine, 78",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8584-les-berges-de-conflans",
+  "set": "disco",
+  "truth": {
+   "lat": 49.000025,
+   "lng": 2.099679,
+   "city": "Conflans-Sainte-Honorine",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Course Téléthon des Pompiers de Saint Vincent de Tyrosse",
+  "date": "2026-12-05",
+  "location": "Saint-Vincent-de-Tyrosse, 40",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8624-course-telethon-des-pompiers-de-saint-vincent-de-tyrosse",
+  "set": "disco",
+  "truth": {
+   "lat": 43.659948,
+   "lng": -1.305453,
+   "city": "Saint-Vincent-de-Tyrosse",
+   "dept": "40"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Magis'Trail",
+  "date": "2026-12-06",
+  "location": "Luynes, 37",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8428-magis-trail",
+  "set": "disco",
+  "truth": {
+   "lat": 47.402716,
+   "lng": 0.543162,
+   "city": "Luynes",
+   "dept": "37"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail du Téléthon Mardié",
+  "date": "2026-12-06",
+  "location": "Mardié, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8435-trail-du-telethon-mardie",
+  "set": "disco",
+  "truth": {
+   "lat": 47.897416,
+   "lng": 2.068321,
+   "city": "Mardié",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Marathon de Châteauneuf-sur-Loire",
+  "date": "2026-12-06",
+  "location": "Châteauneuf-sur-Loire, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8489-marathon-de-chateauneuf-sur-loire",
+  "set": "disco",
+  "truth": {
+   "lat": 47.872743,
+   "lng": 2.223164,
+   "city": "Châteauneuf-sur-Loire",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10km d'Arcachon",
+  "date": "2026-12-06",
+  "location": "Arcachon, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8508-10km-d-arcachon",
+  "set": "disco",
+  "truth": {
+   "lat": 44.651462,
+   "lng": -1.173981,
+   "city": "Arcachon",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Je cours pour le Téléthon",
+  "date": "2026-12-06",
+  "location": "Libourne, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8561-je-cours-pour-le-telethon",
+  "set": "disco",
+  "truth": {
+   "lat": 44.920384,
+   "lng": -0.226836,
+   "city": "Libourne",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross de Châteaudun",
+  "date": "2026-12-06",
+  "location": "Châteaudun, 28",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8612-cross-de-chateaudun",
+  "set": "disco",
+  "truth": {
+   "lat": 48.074295,
+   "lng": 1.323986,
+   "city": "Châteaudun",
+   "dept": "28"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Triathlon Annette K.",
+  "date": "2026-12-06",
+  "location": "Paris, 75",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8669-triathlon-annette-k",
+  "set": "disco",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "24h Pour Matéo",
+  "date": "2026-12-07",
+  "location": "Chartres, 28",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8637-24h-pour-mateo",
+  "set": "disco",
+  "truth": {
+   "lat": 48.446525,
+   "lng": 1.502286,
+   "city": "Chartres",
+   "dept": "28"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Corrida d'Esvres",
+  "date": "2026-12-11",
+  "location": "Esvres, 37",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8582-la-corrida-d-esvres",
+  "set": "disco",
+  "truth": {
+   "lat": 47.289281,
+   "lng": 0.791433,
+   "city": "Esvres",
+   "dept": "37"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des Grenouilles",
+  "date": "2026-12-12",
+  "location": "Pezou, 41",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8324-trail-des-grenouilles",
+  "set": "disco",
+  "truth": {
+   "lat": 47.867429,
+   "lng": 1.1517,
+   "city": "Pezou",
+   "dept": "41"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Course des Pères Noël",
+  "date": "2026-12-12",
+  "location": "Cissac-Médoc, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8514-la-course-des-peres-noel",
+  "set": "disco",
+  "truth": {
+   "lat": 45.225203,
+   "lng": -0.84099,
+   "city": "Cissac-Médoc",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Grande Ourcq",
+  "date": "2026-12-12",
+  "location": "Armentières-en-Brie, 77",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8532-la-grande-ourcq",
+  "set": "disco",
+  "truth": {
+   "lat": 48.97724,
+   "lng": 3.016618,
+   "city": "Armentières-en-Brie",
+   "dept": "77"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Corrida des Dormeux",
+  "date": "2026-12-12",
+  "location": "Mehun-Sur-Yèvre, 18",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8616-corrida-des-dormeux",
+  "set": "disco",
+  "truth": {
+   "lat": 47.136109,
+   "lng": 2.228695,
+   "city": "Mehun-sur-Yèvre",
+   "dept": "18"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Courir pour le Plaisir",
+  "date": "2026-12-13",
+  "location": "Paris, 75",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8226-courir-pour-le-plaisir",
+  "set": "disco",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées Longuyonnaises",
+  "date": "2026-12-13",
+  "location": "Longuyon, 54",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8260-les-foulees-longuyonnaises",
+  "set": "disco",
+  "truth": {
+   "lat": 49.461942,
+   "lng": 5.59814,
+   "city": "Longuyon",
+   "dept": "54"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des Pères Noël",
+  "date": "2026-12-13",
+  "location": "Créon, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8333-trail-des-peres-noel",
+  "set": "disco",
+  "truth": {
+   "lat": 44.76719,
+   "lng": -0.34455,
+   "city": "Créon",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Run and Bike Souvenir John Hochart",
+  "date": "2026-12-13",
+  "location": "Saint-Pierre-lès-Nemours, 77",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8619-run-and-bike-souvenir-john-hochart",
+  "set": "disco",
+  "truth": {
+   "lat": 48.265252,
+   "lng": 2.675425,
+   "city": "Saint-Pierre-lès-Nemours",
+   "dept": "77"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross National du CA Béglais et de la ville de Bègles",
+  "date": "2026-12-13",
+  "location": "Bègles, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8626-cross-national-du-ca-beglais-et-de-la-ville-de-begles",
+  "set": "disco",
+  "truth": {
+   "lat": 44.802062,
+   "lng": -0.551187,
+   "city": "Bègles",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Course de Noël de Yerres",
+  "date": "2026-12-13",
+  "location": "Yerres, 91",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8636-la-course-de-noel-de-yerres",
+  "set": "disco",
+  "truth": {
+   "lat": 48.710884,
+   "lng": 2.491344,
+   "city": "Yerres",
+   "dept": "91"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Défi Sportif #AVECNOSPHENIX",
+  "date": "2026-12-17",
+  "location": "Paris, 75",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8581-defi-sportif-avecnosphenix",
+  "set": "disco",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Corrida de Rambouillet",
+  "date": "2026-12-19",
+  "location": "Rambouillet, 78",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/7929-la-corrida-de-rambouillet",
+  "set": "disco",
+  "truth": {
+   "lat": 48.641966,
+   "lng": 1.844673,
+   "city": "Rambouillet",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Corrida de Noël de Verdun",
+  "date": "2026-12-19",
+  "location": "Verdun, 55",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8261-corrida-de-noel-de-verdun",
+  "set": "disco",
+  "truth": {
+   "lat": 49.153914,
+   "lng": 5.365593,
+   "city": "Verdun",
+   "dept": "55"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Corrida de Noël de Mainvilliers",
+  "date": "2026-12-19",
+  "location": "Mainvilliers, 28",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8317-corrida-de-noel-de-mainvilliers",
+  "set": "disco",
+  "truth": {
+   "lat": 48.457907,
+   "lng": 1.456077,
+   "city": "Mainvilliers",
+   "dept": "28"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Courses et Rando de Noël",
+  "date": "2026-12-20",
+  "location": "Bazas, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8592-les-courses-et-rando-de-noel",
+  "set": "disco",
+  "truth": {
+   "lat": 44.437496,
+   "lng": -0.217433,
+   "city": "Bazas",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "HUOT Corrida de Saint-Mihiel",
+  "date": "2026-12-26",
+  "location": "Saint-Mihiel, 55",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8262-huot-corrida-de-saint-mihiel",
+  "set": "disco",
+  "truth": {
+   "lat": 48.891687,
+   "lng": 5.542342,
+   "city": "Saint-Mihiel",
+   "dept": "55"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Corrida de Houilles",
+  "date": "2026-12-27",
+  "location": "Houilles, 78",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8487-corrida-de-houilles",
+  "set": "disco",
+  "truth": {
+   "lat": 48.926572,
+   "lng": 2.186545,
+   "city": "Houilles",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Villenave Trail et Marche Nordique",
+  "date": "2027-01-09",
+  "location": "Villenave-d'Ornon, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8556-villenave-trail-et-marche-nordique",
+  "set": "disco",
+  "truth": {
+   "lat": 44.77508,
+   "lng": -0.55453,
+   "city": "Villenave-d'Ornon",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail Urbain de la Galette",
+  "date": "2027-01-16",
+  "location": "Mantes-la-Jolie, 78",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8483-trail-urbain-de-la-galette",
+  "set": "disco",
+  "truth": {
+   "lat": 48.994782,
+   "lng": 1.699745,
+   "city": "Mantes-la-Jolie",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Grand Coeur Nature",
+  "date": "2027-01-16",
+  "location": "Martillac, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8529-grand-coeur-nature",
+  "set": "disco",
+  "truth": {
+   "lat": 44.725144,
+   "lng": -0.554606,
+   "city": "Martillac",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Bac'Trail",
+  "date": "2027-01-17",
+  "location": "Saint-Ciers-sur-Gironde, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8562-bac-trail",
+  "set": "disco",
+  "truth": {
+   "lat": 45.291639,
+   "lng": -0.631137,
+   "city": "Saint-Ciers-sur-Gironde",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10km du 14ème",
+  "date": "2027-01-17",
+  "location": "Paris, 75",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8564-10km-du-14eme",
+  "set": "disco",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Rois du Feu",
+  "date": "2027-01-17",
+  "location": "Spincourt, 55",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8656-les-rois-du-feu",
+  "set": "disco",
+  "truth": {
+   "lat": 49.337087,
+   "lng": 5.708244,
+   "city": "Spincourt",
+   "dept": "55"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées Stenaisiennes",
+  "date": "2027-01-23",
+  "location": "Stenay, 55",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8259-les-foulees-stenaisiennes",
+  "set": "disco",
+  "truth": {
+   "lat": 49.495612,
+   "lng": 5.188354,
+   "city": "Stenay",
+   "dept": "55"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail Nocturne du Taillan",
+  "date": "2027-01-23",
+  "location": "Le Taillan-Médoc, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8625-trail-nocturne-du-taillan",
+  "set": "disco",
+  "truth": {
+   "lat": 44.914814,
+   "lng": -0.679029,
+   "city": "Le Taillan-Médoc",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées de Malakoff",
+  "date": "2027-01-30",
+  "location": "Malakoff, 92",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8609-les-foulees-de-malakoff",
+  "set": "disco",
+  "truth": {
+   "lat": 48.81742,
+   "lng": 2.294086,
+   "city": "Malakoff",
+   "dept": "92"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Cross-Country des Sapeurs-Pompiers de la zone sportive Francilienne – Centre Val de Loire",
+  "date": "2027-01-30",
+  "location": "Bourges, 18",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8614-cross-country-des-sapeurs-pompiers-de-la-zone-sportive-francilienne-centre-val-de-loire",
+  "set": "disco",
+  "truth": {
+   "lat": 47.082882,
+   "lng": 2.402294,
+   "city": "Bourges",
+   "dept": "18"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées de Vincennes",
+  "date": "2027-01-31",
+  "location": "Vincennes, 94",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8602-les-foulees-de-vincennes",
+  "set": "disco",
+  "truth": {
+   "lat": 48.847279,
+   "lng": 2.437785,
+   "city": "Vincennes",
+   "dept": "94"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Hivernal Camino Trail",
+  "date": "2027-02-06",
+  "location": "Lerm-et-Musset, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8597-hivernal-camino-trail",
+  "set": "disco",
+  "truth": {
+   "lat": 44.332347,
+   "lng": -0.152107,
+   "city": "Lerm-et-Musset",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Bike and Run du Parc de Loire",
+  "date": "2027-02-06",
+  "location": "Orléans, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8647-bike-and-run-du-parc-de-loire",
+  "set": "disco",
+  "truth": {
+   "lat": 47.873569,
+   "lng": 1.911358,
+   "city": "Orléans",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Foulées des Plaines",
+  "date": "2027-02-07",
+  "location": "Le Teich, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8484-foulees-des-plaines",
+  "set": "disco",
+  "truth": {
+   "lat": 44.622612,
+   "lng": -1.017533,
+   "city": "Le Teich",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10km de Bourges",
+  "date": "2027-02-07",
+  "location": "Bourges, 18",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8552-10km-de-bourges",
+  "set": "disco",
+  "truth": {
+   "lat": 47.082882,
+   "lng": 2.402294,
+   "city": "Bourges",
+   "dept": "18"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10km de Foëcy",
+  "date": "2027-02-14",
+  "location": "Foëcy, 18",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8635-10km-de-foecy",
+  "set": "disco",
+  "truth": {
+   "lat": 47.181013,
+   "lng": 2.15353,
+   "city": "Foëcy",
+   "dept": "18"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées Charentonnaises",
+  "date": "2027-02-21",
+  "location": "Charenton-le-Pont, 94",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8501-les-foulees-charentonnaises",
+  "set": "disco",
+  "truth": {
+   "lat": 48.823948,
+   "lng": 2.407129,
+   "city": "Charenton-le-Pont",
+   "dept": "94"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10km de Kinergy",
+  "date": "2027-02-21",
+  "location": "Orléans, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8598-10km-de-kinergy",
+  "set": "disco",
+  "truth": {
+   "lat": 47.873569,
+   "lng": 1.911358,
+   "city": "Orléans",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Pierrefittoise",
+  "date": "2027-02-28",
+  "location": "Pierrefitte sur Aire, 55",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8640-la-pierrefittoise",
+  "set": "disco",
+  "truth": {
+   "lat": 48.898927,
+   "lng": 5.332785,
+   "city": "Pierrefitte-sur-Aire",
+   "dept": "55"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Montagneuse by MVM",
+  "date": "2027-02-28",
+  "location": "Paucourt, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8658-la-montagneuse-by-mvm",
+  "set": "disco",
+  "truth": {
+   "lat": 48.036321,
+   "lng": 2.789282,
+   "city": "Paucourt",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Lacteco Trail",
+  "date": "2027-03-06",
+  "location": "Biscarrosse, 40",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8575-lacteco-trail",
+  "set": "disco",
+  "truth": {
+   "lat": 44.430297,
+   "lng": -1.187456,
+   "city": "Biscarrosse",
+   "dept": "40"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Bazas-Langon",
+  "date": "2027-03-07",
+  "location": "Langon, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8463-bazas-langon",
+  "set": "disco",
+  "truth": {
+   "lat": 44.535691,
+   "lng": -0.241774,
+   "city": "Langon",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10km Mérignac Beutre",
+  "date": "2027-03-07",
+  "location": "Mérignac, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8502-10km-merignac-beutre",
+  "set": "disco",
+  "truth": {
+   "lat": 44.83337,
+   "lng": -0.674682,
+   "city": "Mérignac",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10km de Neuilly sur Marne",
+  "date": "2027-03-07",
+  "location": "Neuilly-Sur-Marne, 93",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8558-10km-de-neuilly-sur-marne",
+  "set": "disco",
+  "truth": {
+   "lat": 48.864899,
+   "lng": 2.537373,
+   "city": "Neuilly-sur-Marne",
+   "dept": "93"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Semi Marathon des Lions",
+  "date": "2027-03-07",
+  "location": "Rueil-Malmaison, 92",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8568-semi-marathon-des-lions",
+  "set": "disco",
+  "truth": {
+   "lat": 48.874531,
+   "lng": 2.180455,
+   "city": "Rueil-Malmaison",
+   "dept": "92"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Muco'Trail du Pays de Nemours",
+  "date": "2027-03-07",
+  "location": "Bagneaux-sur-Loing, 77",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8577-muco-trail-du-pays-de-nemours",
+  "set": "disco",
+  "truth": {
+   "lat": 48.223584,
+   "lng": 2.7072,
+   "city": "Bagneaux-sur-Loing",
+   "dept": "77"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Entre Golf et Vignes",
+  "date": "2027-03-07",
+  "location": "Saint-Sulpice-et-Cameyrac, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8651-entre-golf-et-vignes",
+  "set": "disco",
+  "truth": {
+   "lat": 44.901959,
+   "lng": -0.379383,
+   "city": "Saint-Sulpice-et-Cameyrac",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail Urbain de Bassens",
+  "date": "2027-03-13",
+  "location": "Bassens, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8559-trail-urbain-de-bassens",
+  "set": "disco",
+  "truth": {
+   "lat": 44.906427,
+   "lng": -0.523927,
+   "city": "Bassens",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de l'Elan Capianais",
+  "date": "2027-03-14",
+  "location": "Capian, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8510-trail-de-l-elan-capianais",
+  "set": "disco",
+  "truth": {
+   "lat": 44.715891,
+   "lng": -0.325409,
+   "city": "Capian",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Semi Marathon de Chartres SITRANS",
+  "date": "2027-03-14",
+  "location": "Chartres, 28",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8583-semi-marathon-de-chartres-sitrans",
+  "set": "disco",
+  "truth": {
+   "lat": 48.446525,
+   "lng": 1.502286,
+   "city": "Chartres",
+   "dept": "28"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Semi Marathon de Montargis",
+  "date": "2027-03-14",
+  "location": "Montargis, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8607-semi-marathon-de-montargis",
+  "set": "disco",
+  "truth": {
+   "lat": 47.998342,
+   "lng": 2.735445,
+   "city": "Montargis",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Urban Trail de Sèvres",
+  "date": "2027-03-14",
+  "location": "Sèvres, 92",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8630-urban-trail-de-sevres",
+  "set": "disco",
+  "truth": {
+   "lat": 48.819588,
+   "lng": 2.212003,
+   "city": "Sèvres",
+   "dept": "92"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Backyard77",
+  "date": "2027-03-19",
+  "location": "Jablines, 77",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8525-backyard77",
+  "set": "disco",
+  "truth": {
+   "lat": 48.917804,
+   "lng": 2.761289,
+   "city": "Jablines",
+   "dept": "77"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des Galopins",
+  "date": "2027-03-20",
+  "location": "Soulac-sur-Mer, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8557-trail-des-galopins",
+  "set": "disco",
+  "truth": {
+   "lat": 45.497638,
+   "lng": -1.116894,
+   "city": "Soulac-sur-Mer",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Urban Trail - Nocturne de Meung-Sur-Loire",
+  "date": "2027-03-20",
+  "location": "Meung-Sur-Loire, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8591-urban-trail-nocturne-de-meung-sur-loire",
+  "set": "disco",
+  "truth": {
+   "lat": 47.836679,
+   "lng": 1.690177,
+   "city": "Meung-sur-Loire",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Raid de l'ANSA",
+  "date": "2027-03-20",
+  "location": "Nemours, 77",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8615-raid-de-l-ansa",
+  "set": "disco",
+  "truth": {
+   "lat": 48.266711,
+   "lng": 2.703049,
+   "city": "Nemours",
+   "dept": "77"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des Tranchées",
+  "date": "2027-03-21",
+  "location": "Verdun, 55",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8543-trail-des-tranchees",
+  "set": "disco",
+  "truth": {
+   "lat": 49.153914,
+   "lng": 5.365593,
+   "city": "Verdun",
+   "dept": "55"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Foulée d'Aubergenville",
+  "date": "2027-03-21",
+  "location": "Aubergenville, 78",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8567-la-foulee-d-aubergenville",
+  "set": "disco",
+  "truth": {
+   "lat": 48.959359,
+   "lng": 1.851264,
+   "city": "Aubergenville",
+   "dept": "78"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "L'Audengeoise",
+  "date": "2027-03-21",
+  "location": "Audenge, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8608-l-audengeoise",
+  "set": "disco",
+  "truth": {
+   "lat": 44.6981,
+   "lng": -0.96155,
+   "city": "Audenge",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Semi Marathon de Center Parcs des Hauts de Bruyères",
+  "date": "2027-03-21",
+  "location": "Chaumont-sur-Tharonne, 41",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8629-semi-marathon-de-center-parcs-des-hauts-de-bruyeres",
+  "set": "disco",
+  "truth": {
+   "lat": 47.617831,
+   "lng": 1.914415,
+   "city": "Chaumont-sur-Tharonne",
+   "dept": "41"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Semi-Marathon de Châteauroux",
+  "date": "2027-03-21",
+  "location": "Châteauroux, 36",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8654-semi-marathon-de-chateauroux",
+  "set": "disco",
+  "truth": {
+   "lat": 46.804353,
+   "lng": 1.692994,
+   "city": "Châteauroux",
+   "dept": "36"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Semi-Marathon de Joinville",
+  "date": "2027-03-21",
+  "location": "Joinville-le-Pont, 94",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8657-semi-marathon-de-joinville",
+  "set": "disco",
+  "truth": {
+   "lat": 48.820327,
+   "lng": 2.471927,
+   "city": "Joinville-le-Pont",
+   "dept": "94"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10km de Saint-Médard-en-Jalles",
+  "date": "2027-03-21",
+  "location": "Saint-Médard-en-Jalles, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8667-10km-de-saint-medard-en-jalles",
+  "set": "disco",
+  "truth": {
+   "lat": 44.891628,
+   "lng": -0.761713,
+   "city": "Saint-Médard-en-Jalles",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Meldoise",
+  "date": "2027-03-21",
+  "location": "Meaux, 77",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8671-la-meldoise",
+  "set": "disco",
+  "truth": {
+   "lat": 48.959417,
+   "lng": 2.900232,
+   "city": "Meaux",
+   "dept": "77"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Défi 24H Back-Yard JSP Marcoussis",
+  "date": "2027-03-27",
+  "location": "Marcoussis, 91",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8593-defi-24h-back-yard-jsp-marcoussis",
+  "set": "disco",
+  "truth": {
+   "lat": 48.647928,
+   "lng": 2.218524,
+   "city": "Marcoussis",
+   "dept": "91"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "A Bou(t) de souffle pour Tiziana",
+  "date": "2027-03-28",
+  "location": "Bou, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8666-a-bou-t-de-souffle-pour-tiziana",
+  "set": "disco",
+  "truth": {
+   "lat": 47.871183,
+   "lng": 2.047786,
+   "city": "Bou",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Corrida de Saint-Bruno",
+  "date": "2027-04-03",
+  "location": "Bordeaux, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8152-corrida-de-saint-bruno",
+  "set": "disco",
+  "truth": {
+   "lat": 44.851939,
+   "lng": -0.587877,
+   "city": "Bordeaux",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Backyard Jablines",
+  "date": "2027-04-03",
+  "location": "Jablines, 77",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8439-backyard-jablines",
+  "set": "disco",
+  "truth": {
+   "lat": 48.917804,
+   "lng": 2.761289,
+   "city": "Jablines",
+   "dept": "77"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Marathon de Cheverny et Trail du Pays des Chateaux",
+  "date": "2027-04-03",
+  "location": "Cheverny, 41",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8460-marathon-de-cheverny-et-trail-du-pays-des-chateaux",
+  "set": "disco",
+  "truth": {
+   "lat": 47.491603,
+   "lng": 1.450532,
+   "city": "Cheverny",
+   "dept": "41"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Fête les vins km de Saint-Emilion",
+  "date": "2027-04-04",
+  "location": "Saint-Emilion, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8453-fete-les-vins-km-de-saint-emilion",
+  "set": "disco",
+  "truth": {
+   "lat": 44.897921,
+   "lng": -0.173846,
+   "city": "Saint-Émilion",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Nemourienne",
+  "date": "2027-04-04",
+  "location": "Nemours, 77",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8509-la-nemourienne",
+  "set": "disco",
+  "truth": {
+   "lat": 48.266711,
+   "lng": 2.703049,
+   "city": "Nemours",
+   "dept": "77"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de Chamerolles et Rabajou",
+  "date": "2027-04-04",
+  "location": "Chilleurs-aux-Bois, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8522-trail-de-chamerolles-et-rabajou",
+  "set": "disco",
+  "truth": {
+   "lat": 48.067263,
+   "lng": 2.145362,
+   "city": "Chilleurs-aux-Bois",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10km Décathlon des Sapeurs Pompiers de Bordeaux-Bruges",
+  "date": "2027-04-04",
+  "location": "Bruges, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8600-10km-decathlon-des-sapeurs-pompiers-de-bordeaux-bruges",
+  "set": "disco",
+  "truth": {
+   "lat": 44.881406,
+   "lng": -0.60324,
+   "city": "Bruges",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Laillyloise",
+  "date": "2027-04-04",
+  "location": "Lailly-en-Val, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8620-la-laillyloise",
+  "set": "disco",
+  "truth": {
+   "lat": 47.767872,
+   "lng": 1.686002,
+   "city": "Lailly-en-Val",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des Salamandres",
+  "date": "2027-04-04",
+  "location": "Léogeats, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8628-trail-des-salamandres",
+  "set": "disco",
+  "truth": {
+   "lat": 44.511108,
+   "lng": -0.356205,
+   "city": "Léogeats",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de l'Eau Bourde",
+  "date": "2027-04-04",
+  "location": "Canéjan, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8653-trail-de-l-eau-bourde",
+  "set": "disco",
+  "truth": {
+   "lat": 44.760587,
+   "lng": -0.654768,
+   "city": "Canéjan",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Foulées Saint Selvaises",
+  "date": "2027-04-04",
+  "location": "Saint-Selve, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8664-foulees-saint-selvaises",
+  "set": "disco",
+  "truth": {
+   "lat": 44.665384,
+   "lng": -0.476116,
+   "city": "Saint-Selve",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "L'Orignollaise",
+  "date": "2027-04-11",
+  "location": "Orignolles, 17",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8365-l-orignollaise",
+  "set": "disco",
+  "truth": {
+   "lat": 45.224706,
+   "lng": -0.233256,
+   "city": "Orignolles",
+   "dept": "17"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Chati'Trail",
+  "date": "2027-04-11",
+  "location": "Chatillon-sur-Loire, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8566-chati-trail",
+  "set": "disco",
+  "truth": {
+   "lat": 47.571226,
+   "lng": 2.743192,
+   "city": "Châtillon-sur-Loire",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des Vallées Vertes",
+  "date": "2027-04-11",
+  "location": "Saint-Outrille, 18",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8590-trail-des-vallees-vertes",
+  "set": "disco",
+  "truth": {
+   "lat": 47.142793,
+   "lng": 1.823357,
+   "city": "Saint-Outrille",
+   "dept": "18"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Boucles d'Anglade",
+  "date": "2027-04-11",
+  "location": "Izon, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8621-les-boucles-d-anglade",
+  "set": "disco",
+  "truth": {
+   "lat": 44.915883,
+   "lng": -0.3568,
+   "city": "Izon",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de la Grand Pierre",
+  "date": "2027-04-11",
+  "location": "Marolles, 41",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8632-trail-de-la-grand-pierre",
+  "set": "disco",
+  "truth": {
+   "lat": 47.651508,
+   "lng": 1.312308,
+   "city": "Marolles",
+   "dept": "41"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées d'Orléans",
+  "date": "2027-04-11",
+  "location": "Orléans, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8634-les-foulees-d-orleans",
+  "set": "disco",
+  "truth": {
+   "lat": 47.873569,
+   "lng": 1.911358,
+   "city": "Orléans",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Ronde Verte du Pian",
+  "date": "2027-04-24",
+  "location": "Le Pian Médoc, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8633-la-ronde-verte-du-pian",
+  "set": "disco",
+  "truth": {
+   "lat": 44.955839,
+   "lng": -0.669792,
+   "city": "Le Pian-Médoc",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Lespar run",
+  "date": "2027-04-25",
+  "location": "Lesparre-Médoc, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8421-la-lespar-run",
+  "set": "disco",
+  "truth": {
+   "lat": 45.293097,
+   "lng": -0.925815,
+   "city": "Lesparre-Médoc",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Course des Lions",
+  "date": "2027-04-25",
+  "location": "Néac, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8655-la-course-des-lions",
+  "set": "disco",
+  "truth": {
+   "lat": 44.942541,
+   "lng": -0.182824,
+   "city": "Néac",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées de l'Arche",
+  "date": "2027-05-01",
+  "location": "Tours, 37",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8670-les-foulees-de-l-arche",
+  "set": "disco",
+  "truth": {
+   "lat": 47.395476,
+   "lng": 0.695848,
+   "city": "Tours",
+   "dept": "37"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Foulées Solognotes",
+  "date": "2027-05-01",
+  "location": "Vienne-en-Val, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8672-foulees-solognotes",
+  "set": "disco",
+  "truth": {
+   "lat": 47.794147,
+   "lng": 2.133368,
+   "city": "Vienne-en-Val",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Semi Marathon de Libourne",
+  "date": "2027-05-08",
+  "location": "Libourne, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8454-semi-marathon-de-libourne",
+  "set": "disco",
+  "truth": {
+   "lat": 44.920384,
+   "lng": -0.226836,
+   "city": "Libourne",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Triathlon de l'AME",
+  "date": "2027-05-09",
+  "location": "Cepoy, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8606-triathlon-de-l-ame",
+  "set": "disco",
+  "truth": {
+   "lat": 48.049687,
+   "lng": 2.742668,
+   "city": "Cepoy",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Marathon des Vins de Blaye",
+  "date": "2027-05-15",
+  "location": "Blaye, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8470-marathon-des-vins-de-blaye",
+  "set": "disco",
+  "truth": {
+   "lat": 45.12845,
+   "lng": -0.654745,
+   "city": "Blaye",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Moulis Trail",
+  "date": "2027-05-15",
+  "location": "Moulis-en-Médoc, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8516-moulis-trail",
+  "set": "disco",
+  "truth": {
+   "lat": 45.054318,
+   "lng": -0.785766,
+   "city": "Moulis-en-Médoc",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10km Paris 15",
+  "date": "2027-05-16",
+  "location": "Paris, 75",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8519-10km-paris-15",
+  "set": "disco",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Courses solidaires Bleuet de France",
+  "date": "2027-05-16",
+  "location": "Paris, 75",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8678-courses-solidaires-bleuet-de-france",
+  "set": "disco",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Triathlon du Parc de Loire",
+  "date": "2027-05-22",
+  "location": "Orléans, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8648-triathlon-du-parc-de-loire",
+  "set": "disco",
+  "truth": {
+   "lat": 47.873569,
+   "lng": 1.911358,
+   "city": "Orléans",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des Terres du Haut Berry",
+  "date": "2027-05-22",
+  "location": "Menetou-Salon, 18",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8652-trail-des-terres-du-haut-berry",
+  "set": "disco",
+  "truth": {
+   "lat": 47.247562,
+   "lng": 2.482357,
+   "city": "Menetou-Salon",
+   "dept": "18"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Défi Fou",
+  "date": "2027-05-22",
+  "location": "Sampigny, 55",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8673-defi-fou",
+  "set": "disco",
+  "truth": {
+   "lat": 48.824671,
+   "lng": 5.508333,
+   "city": "Sampigny",
+   "dept": "55"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail le Pouce",
+  "date": "2027-05-23",
+  "location": "Paris, 75",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8436-trail-le-pouce",
+  "set": "disco",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Foulée Verte de Clamart",
+  "date": "2027-05-23",
+  "location": "Clamart, 92",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8560-foulee-verte-de-clamart",
+  "set": "disco",
+  "truth": {
+   "lat": 48.796102,
+   "lng": 2.25475,
+   "city": "Clamart",
+   "dept": "92"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les 10 Bornes Huisselloises",
+  "date": "2027-05-23",
+  "location": "Huisseau-sur-Cosson, 41",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8627-les-10-bornes-huisselloises",
+  "set": "disco",
+  "truth": {
+   "lat": 47.593266,
+   "lng": 1.447096,
+   "city": "Huisseau-sur-Cosson",
+   "dept": "41"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail des Châteaux by Harmonie Mutuelle",
+  "date": "2027-05-29",
+  "location": "Saint-Cyr-en-Val, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8649-trail-des-chateaux-by-harmonie-mutuelle",
+  "set": "disco",
+  "truth": {
+   "lat": 47.810828,
+   "lng": 1.955437,
+   "city": "Saint-Cyr-en-Val",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Gradi-Dingue",
+  "date": "2027-05-30",
+  "location": "Gradignan, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8638-la-gradi-dingue",
+  "set": "disco",
+  "truth": {
+   "lat": 44.769956,
+   "lng": -0.61636,
+   "city": "Gradignan",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Foulée du Haillan",
+  "date": "2027-06-06",
+  "location": "Le Haillan, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8555-la-foulee-du-haillan",
+  "set": "disco",
+  "truth": {
+   "lat": 44.86943,
+   "lng": -0.690404,
+   "city": "Le Haillan",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "City Run Picqué",
+  "date": "2027-06-06",
+  "location": "Villenave-d'Ornon, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8631-city-run-picque",
+  "set": "disco",
+  "truth": {
+   "lat": 44.77508,
+   "lng": -0.55453,
+   "city": "Villenave-d'Ornon",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail de Sancerre",
+  "date": "2027-06-12",
+  "location": "Sancerre, 18",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8676-trail-de-sancerre",
+  "set": "disco",
+  "truth": {
+   "lat": 47.335051,
+   "lng": 2.827415,
+   "city": "Sancerre",
+   "dept": "18"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Foulée des Sacres by Mc Donald s",
+  "date": "2027-06-13",
+  "location": "Reims, 51",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8623-la-foulee-des-sacres-by-mc-donald-s",
+  "set": "disco",
+  "truth": {
+   "lat": 49.250948,
+   "lng": 4.055595,
+   "city": "Reims",
+   "dept": "51"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées du 12ème",
+  "date": "2027-06-13",
+  "location": "Paris, 75",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8639-les-foulees-du-12eme",
+  "set": "disco",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10km et Semi Marathon des Jalles",
+  "date": "2027-06-13",
+  "location": "Bruges, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8646-10km-et-semi-marathon-des-jalles",
+  "set": "disco",
+  "truth": {
+   "lat": 44.881406,
+   "lng": -0.60324,
+   "city": "Bruges",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées du Gois",
+  "date": "2027-06-26",
+  "location": "Beauvoir-sur-Mer, 85",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8492-les-foulees-du-gois",
+  "set": "disco",
+  "truth": {
+   "lat": 46.915759,
+   "lng": -2.066095,
+   "city": "Beauvoir-sur-Mer",
+   "dept": "85"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "10km du Bassin",
+  "date": "2027-06-27",
+  "location": "Gujan Mestras, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8662-10km-du-bassin",
+  "set": "disco",
+  "truth": {
+   "lat": 44.618065,
+   "lng": -1.076924,
+   "city": "Gujan-Mestras",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Peujardaise",
+  "date": "2027-06-27",
+  "location": "Peujard, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8663-la-peujardaise",
+  "set": "disco",
+  "truth": {
+   "lat": 45.047276,
+   "lng": -0.431222,
+   "city": "Peujard",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les Foulées des Fêtes",
+  "date": "2027-08-05",
+  "location": "Gujan-Mestras, 33",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8472-les-foulees-des-fetes",
+  "set": "disco",
+  "truth": {
+   "lat": 44.618065,
+   "lng": -1.076924,
+   "city": "Gujan-Mestras",
+   "dept": "33"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Feriascapade de Dax",
+  "date": "2027-08-11",
+  "location": "Dax, 40",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8549-la-feriascapade-de-dax",
+  "set": "disco",
+  "truth": {
+   "lat": 43.700723,
+   "lng": -1.06016,
+   "city": "Dax",
+   "dept": "40"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Trail Semi Urbain Jonzacais",
+  "date": "2027-08-22",
+  "location": "Jonzac, 17",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8534-trail-semi-urbain-jonzacais",
+  "set": "disco",
+  "truth": {
+   "lat": 45.444416,
+   "lng": -0.427413,
+   "city": "Jonzac",
+   "dept": "17"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Les 24h du Fer à Cheval",
+  "date": "2027-09-11",
+  "location": "Saint-Cloud, 92",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8622-les-24h-du-fer-a-cheval",
+  "set": "disco",
+  "truth": {
+   "lat": 48.850588,
+   "lng": 2.211247,
+   "city": "Saint-Cloud",
+   "dept": "92"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "La Course du Souffle de Paris",
+  "date": "2027-09-26",
+  "location": "Paris, 75",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8618-la-course-du-souffle-de-paris",
+  "set": "disco",
+  "truth": {
+   "lat": 48.859,
+   "lng": 2.347,
+   "city": "Paris",
+   "dept": "75"
+  },
+  "truth_src": "platform"
+ },
+ {
+  "name": "Biathlon sur Herbe by Harmonie Mutuelle",
+  "date": "2027-10-02",
+  "location": "Saint-Cyr-en-Val, 45",
+  "platform": "protiming",
+  "url": "https://www.protiming.fr/events/8650-biathlon-sur-herbe-by-harmonie-mutuelle",
+  "set": "disco",
+  "truth": {
+   "lat": 47.810828,
+   "lng": 1.955437,
+   "city": "Saint-Cyr-en-Val",
+   "dept": "45"
+  },
+  "truth_src": "platform"
+ }
+]

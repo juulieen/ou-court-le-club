@@ -1,0 +1,11 @@
+# SearXNG pour le banc d'essai : sortie JSON, sans limiteur (usage local au job).
+use_default_settings: true
+server:
+  secret_key: "banc-essai-geo-pas-un-secret"
+  limiter: false
+  image_proxy: false
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json
