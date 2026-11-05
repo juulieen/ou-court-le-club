@@ -17,12 +17,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 330
     env:
-      GEO_BENCH_DIR: ${{ runner.temp }}/bench
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      PLAYWRIGHT_DIR: ${{ runner.temp }}/pw
       MODEL: nvidia/nemotron-3-ultra-550b-a55b:free
     steps:
       - uses: actions/checkout@v5
+
+      # Le contexte `runner` n'existe pas au niveau du job : on passe par GITHUB_ENV.
+      - name: Dossiers de travail
+        run: |
+          echo "GEO_BENCH_DIR=$RUNNER_TEMP/bench" >> "$GITHUB_ENV"
+          echo "PLAYWRIGHT_DIR=$RUNNER_TEMP/pw" >> "$GITHUB_ENV"
 
       - uses: actions/setup-python@v6
         with:
