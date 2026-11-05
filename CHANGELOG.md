@@ -6,6 +6,12 @@ Historique des évolutions notables. Format inspiré de
 ## [Non publié]
 
 ### Corrigé
+- **Carte : cadrage initial** (2026-11-05). Une course passée à La Réunion
+  faisait dézoomer la carte jusqu'à l'océan Indien. Le cadrage suit
+  maintenant les courses affichées et ignore celles à plus de 1500 km du gros
+  des courses.
+- Géocodage : Foulées Saint Julien à Saint-Julien-l'Ars (Vienne), et non à
+  Josselin (Morbihan). OnSinscrit écrit « Saint Julien Lars ».
 - **Récap mensuel : noms en « Prénom Nom »** (2026-11-03). Le récap de
   novembre affichait « DUPONT Jean » : seule la casse des noms de course était
   normalisée. `_display_member_name()` remet le prénom devant et le nom en

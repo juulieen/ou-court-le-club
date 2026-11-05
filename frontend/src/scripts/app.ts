@@ -126,7 +126,7 @@ declare const maplibregl: any;
     fx.markIntroSeen();
     if (wasFlying) {
       map.stop(); // déclenche moveend, donc la cascade
-      fitBounds(allRaces, 0);
+      fitBounds(shownRaces(), 0);
     }
   }
 
@@ -168,7 +168,7 @@ declare const maplibregl: any;
       map.once("moveend", start);
       setTimeout(start, intro ? 9000 : 1500); // filet si moveend ne vient pas
       // Le panneau revient à l'atterrissage (skipIntro) : on cadre déjà pour lui.
-      fitBounds(allRaces, introState === "flying" ? 5500 : 0, true);
+      fitBounds(shownRaces(), introState === "flying" ? 5500 : 0, true);
     };
     // Laisse le globe tourner au moins 1,5 s : sinon l'intro passe inaperçue.
     if (intro) setTimeout(fly, Math.max(0, introStart + 1500 - performance.now()));
@@ -349,7 +349,7 @@ declare const maplibregl: any;
             races: () => allRaces,
             toGeoJSON: (races) => buildGeoJSON(groupEditions(races)),
             restore: renderAll,
-            reframe: () => fitBounds(renderedGroups.map((g: any) => g.latest), 900),
+            reframe: () => fitBounds(shownRaces(), 900),
             padding: viewPadding,
             immersive: setImmersive,
             onTour: () => tour.start(),
@@ -791,7 +791,7 @@ declare const maplibregl: any;
   function fitBounds(races: any[], duration?: number, asIfShown = false) {
     // MapLibre lit `"duration" in options` : une clé à undefined donnerait NaN.
     const anim = duration === undefined ? {} : { duration, essential: true };
-    const valid = races.filter((r: any) => r.lat != null && r.lng != null);
+    const valid = withoutOutliers(races.filter((r: any) => r.lat != null && r.lng != null));
     if (valid.length === 0) return;
     if (valid.length === 1) {
       map.flyTo({ center: [valid[0].lng, valid[0].lat], zoom: 10, offset: centerOffset(), pitch: 0, bearing: 0, ...anim });
@@ -800,6 +800,27 @@ declare const maplibregl: any;
     const bounds = new maplibregl.LngLatBounds();
     valid.forEach((r: any) => bounds.extend([r.lng, r.lat]));
     map.fitBounds(bounds, { padding: viewPadding(asIfShown), maxZoom: 12, pitch: 0, bearing: 0, ...anim });
+  }
+
+  // Écarte les courses lointaines (outre-mer, étranger) : une seule course à
+  // La Réunion faisait dézoomer la carte jusqu'à l'océan Indien. On garde les
+  // courses à moins de 1500 km de la médiane, si c'est au moins la moitié.
+  function withoutOutliers(races: any[]) {
+    if (races.length < 3) return races;
+    const median = (xs: number[]) => xs.slice().sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+    const lat0 = median(races.map((r: any) => r.lat));
+    const lng0 = median(races.map((r: any) => r.lng));
+    const km = (r: any) => {
+      const dx = (r.lng - lng0) * Math.cos((lat0 * Math.PI) / 180);
+      return Math.hypot(dx, r.lat - lat0) * 111;
+    };
+    const near = races.filter((r: any) => km(r) < 1500);
+    return near.length >= races.length / 2 ? near : races;
+  }
+
+  // Courses affichées (filtre en cours), à défaut toutes : c'est ce qu'on cadre.
+  function shownRaces() {
+    return renderedGroups.length ? renderedGroups.map((g: any) => g.latest) : allRaces;
   }
 
   // Décalage du centre vers la partie visible, pour viser un point. On évite
@@ -1368,7 +1389,7 @@ declare const maplibregl: any;
     if (filterToggle) filterToggle.style.display = "";
 
     renderAll();
-    fitBounds(allRaces);
+    fitBounds(shownRaces());
   }
 
   function updateLastUpdated(ts: string) {

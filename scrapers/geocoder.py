@@ -129,6 +129,11 @@ OVERRIDES: dict[str, tuple[float, float] | None] = {
     "asml-marathon-eindhoven-20231682333544914": (51.44, 5.47),
     # Abalone Marathon de Nantes 2026 — Nantes, not Rennes
     "abalone marathon de nantes 2026": (47.24, -1.56),
+    # Foulées Saint Julien — Saint-Julien-l'Ars (Vienne). OnSinscrit writes
+    # "Saint Julien Lars" without the apostrophe; BAN then picks the hamlet
+    # "La Mare Saint-Julien" in Josselin (Morbihan).
+    "saint julien lars, vienne": (46.56, 0.49),
+    "saint julien lars": (46.56, 0.49),
 }
 
 
