@@ -10,6 +10,10 @@ Historique des évolutions notables. Format inspiré de
   chargement, plus seulement à la première visite (2026-11-05).
 
 ### Corrigé
+- Sportips : nom et date lus séparément sur la page d'accueil. Le nom
+  contenait la date et « Inscription » (« 20/03/2027LES FOULEES VICHYSSOISES
+  2027Inscription ») et la course n'avait pas de date, donc pas de lieu
+  trouvable (2026-11-06). Archive réparée au run suivant.
 - **Géocodage strict** (2026-11-06). Le lieu donné par la plateforme doit
   désigner une commune existante, du même nom, dans le département annoncé ;
   sinon pas de point plutôt qu'un point faux. 12 courses de l'archive étaient

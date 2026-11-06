@@ -289,12 +289,21 @@ def discover_races() -> list[dict]:
             continue
         seen.add(code)
 
-        name = link.get_text(strip=True) or code
+        # A row is three cells: date, name, the word « Inscription ». The link
+        # text glued them together (« 20/03/2027LES FOULEES … 2027Inscription »),
+        # a name no web search could place.
+        name_el = link.select_one(".bold")
+        date_el = link.select_one(".content-module-date-home")
+        name = (name_el.get_text(" ", strip=True) if name_el else "") or code
+        date = ""
+        m = re.search(r"(\d{2})/(\d{2})/(\d{4})", date_el.get_text() if date_el else "")
+        if m:
+            date = f"{m.group(3)}-{m.group(2)}-{m.group(1)}"
         races.append({
             "platform": "sportips",
             "url": f"{BASE_URL}/inscription/{code}",
             "name": name,
-            "date": "",
+            "date": date,
             "location": "",
             "source": "sportips-discovery",
         })

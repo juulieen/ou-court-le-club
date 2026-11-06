@@ -365,6 +365,13 @@ def merge_archive(results: list[dict]) -> tuple[list[dict], list[dict]]:
     # njuko._EVENT_LOCATIONS: fill it here. Then re-place every archived race:
     # a geocoder fix must reach past races too (cached, so nearly free).
     for race in archive.values():
+        # Sportips names were read with the row's date and « Inscription »
+        # glued on (fixed Nov 2026). Past races are no longer discovered, so
+        # repair their archived copy here.
+        m = re.match(r"(\d{2})/(\d{2})/(\d{4})(.+?)Inscription$", race.get("name", ""))
+        if race.get("platform") == "sportips" and m:
+            race["name"] = m.group(4).strip()
+            race["date"] = race.get("date") or f"{m.group(3)}-{m.group(2)}-{m.group(1)}"
         # The table also beats a town found by web search (location_auto).
         if race.get("platform") == "njuko" and (
             not race.get("location") or race.get("location_auto")
