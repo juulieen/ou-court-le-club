@@ -11,8 +11,10 @@ scrapers/
   main.py               -- orchestrator: discover -> scrape -> geocode -> JSON
   base.py               -- BaseScraper ABC, Member/RaceResult dataclasses,
                            matches_club(), matches_known_member(), normalize_text()
-  geocoder.py            -- BAN API (primary) + Nominatim (fallback) geocoding
-                           with persistent JSON cache (data/geocache.json)
+  geocoder.py            -- strict geocoding: location -> existing commune (BAN),
+                           Nominatim for hamlets/abroad, cache data/geocache.json
+  locate.py              -- town of races without location (Njuko): Exa search +
+                           free OpenRouter model, cache data/lieux_auto.json
   klikego.py             -- Klikego platform scraper
   njuko.py               -- Njuko platform scraper
   onsinscrit.py          -- OnSinscrit platform scraper
@@ -32,6 +34,7 @@ data/
   races.json             -- final private output JSON (full member names)
   scrape_cache.json      -- per-URL scrape cache with TTL
   geocache.json          -- persistent geocoding cache
+  lieux_auto.json        -- towns found by web search, per event (locate.py)
   njuko_slugs.json       -- persistent Njuko slug cache
 docs/
   data/races.json        -- intermediate public version with first names only (gitignored)
@@ -132,7 +135,7 @@ settings:
 2. **Cache check** -- `scrape_cache.json` stores `{url: {last_scraped, member_count, data}}`. Races with no members are skipped for 48h (`CACHE_TTL_EMPTY`); races with members are re-checked every 6h (`CACHE_TTL_WITH_MEMBERS`). Cached data does NOT include lat/lng (geocoding is always redone from geocache). The `location` coming from discovery **overwrites** the cached one, so a fresh run repairs entries written by a buggy parser instead of waiting out the TTL; platforms whose scraper derives a better location (IPITOS reads the town from the `.clax` header) return `""` from discovery and are left untouched.
 3. **Scraping** -- Up to 6 concurrent threads (`ThreadPoolExecutor`, `MAX_WORKERS = 6`). Each scraper fetches the registration list and filters for club members using dual matching: `matches_club()` (regex on club name) and `matches_known_member()` (known member name matching).
 4. **Enrichment** -- Each race is enriched with `race_type` (trail/route/autre) and `distances` extracted from bib fields and platform-specific structured data (e.g., Chronometrage `tourism_category.type`).
-5. **Geocoding** -- Locations are geocoded via BAN API (`api-adresse.data.gouv.fr`, free, no API key, fast) as primary geocoder. Nominatim fallback for international addresses. Manual `OVERRIDES` dict in `geocoder.py` corrects known BAN errors (e.g., "Marathon" matching "Rue de Marathon"). For races without a location field, `_extract_location_from_name()` strips event-type prefixes/suffixes to extract a geocodable city name.
+5. **Geocoding** -- `geocode_race()` recomputes every race's coordinates each run, archive included. A platform location goes through the strict geocoder (see Geocoding Gotchas). A race without one gets an `OVERRIDES` entry for its name, else a town found by `locate.py` (flagged `location_auto: true`, shown « lieu trouvé automatiquement » on the map). **The race name is never geocoded** (BAN matched names to streets). No answer = no point on the map, and the run warns (`::warning title=Courses non placées::`).
 6. **Output** -- Two versions: `data/races.json` (full, with member names, gitignored) and `docs/data/races.json` (first names only for opted-in members, gitignored, deployed via GitHub Actions Pages artifact — never committed to Git). Only members in `config.yml`'s `display_optin` list have their first name shown; duplicate first names are disambiguated with last name initial (e.g., "Romain F.", "Romain R."). Typically ~70 races with members found.
 
 ## Cache Files (in `data/`)
@@ -140,7 +143,8 @@ settings:
 | File | Purpose |
 |---|---|
 | `scrape_cache.json` | Avoids re-scraping unchanged events. Keyed by URL. TTL: 48h (no members) / 6h (has members). Stores full race data for cached results with members. |
-| `geocache.json` | Persistent geocoding cache. Keyed by lowercase location string. Values: `{lat, lng}` or `null` (failed lookup). |
+| `geocache.json` | Persistent geocoding cache. Keyed by `strict1|` + lowercase location string (prefix bumped when the rules change). Values: `{lat, lng}` or `null` (no commune). Network errors are not cached. |
+| `lieux_auto.json` | Towns found by web search (`locate.py`). Keyed by normalized race name without year (next edition is free). `{location: "Commune (dd)" \| null, tried}`; failures retried after 30 days. `{results, tried}` = search paid, model not answered yet: the next run asks again without searching. Own CI cache (`lieux-auto-*`), saved even when the run fails. |
 | `njuko_slugs.json` | Persistent Njuko event slug cache. Seeded from Common Crawl CDX index (every run) with Wayback Machine CDX as fallback; grows over time. Format: `{slugs: ["slug1", ...]}`. |
 | `races.json` | Final output: `{last_updated, races: [...]}`. Each race has `id, name, date, location, platform, url, lat, lng, members[], member_count`. |
 
@@ -208,7 +212,7 @@ The full pipeline takes several minutes due to the number of platforms and rate 
   `<PropCourses><C crs="10 Km">` (→ `distances`). `_parse_meta()` reads them and
   they take priority over what discovery guessed.
 - **HelloAsso** participants are private by design; no scraper possible. `helloasso.py` has a `discover_races()` function but participants must be added manually in `config.yml`.
-- **Njuko has no address in its public API** (no `address`, venue or geo field on `/edition/url/{slug}`). The town comes from `_EVENT_LOCATIONS` in `njuko.py` (normalized name fragment, without year → "Ville (dép.)"); unknown events are geocoded from their name, often wrongly, and the run warns about races with members and no location (`::warning title=Courses sans lieu::`) — add them to the table. **Njuko dates are local midnight in UTC** (`startDate: 2026-11-07T23:00Z` = 8 Nov): `_edition_date()` converts to Europe/Paris and keeps the edition day if a competition starts that day (multi-day events: Poitiers-Futuroscope = Sunday marathon, not the Friday 10 km), else the earliest competition day — never slice the first 10 characters. Past races: `repair-archive --all --platform njuko` (CI: `gh workflow run scrape.yml -f repair_archive=true -f repair_platform=njuko`).
+- **Njuko has no address in its public API** (no `address`, venue or geo field on `/edition/url/{slug}`). The town comes from `_EVENT_LOCATIONS` in `njuko.py` (normalized name fragment, without year → "Ville (dép.)"); unknown events get their town from a web search (`locate.py`, see Geocoding Gotchas); if it finds nothing, the race stays off the map and the run warns (`::warning title=Courses non placées::`) — add it to the table. **Njuko dates are local midnight in UTC** (`startDate: 2026-11-07T23:00Z` = 8 Nov): `_edition_date()` converts to Europe/Paris and keeps the edition day if a competition starts that day (multi-day events: Poitiers-Futuroscope = Sunday marathon, not the Friday 10 km), else the earliest competition day — never slice the first 10 characters. Past races: `repair-archive --all --platform njuko` (CI: `gh workflow run scrape.yml -f repair_archive=true -f repair_platform=njuko`).
 - **Njuko private participant lists** -- some editions (Marathon de la Côte d'Amour 2026) reject bulk search (403) and answer name searches with a `totalCount` but an empty `results` list: the organiser hid the names. Members are undetectable there (log: `Liste des inscrits masquée`) and must be added manually in `config.yml`.
 - **OnSinscrit duplicate subdomains** -- one event can be served under two subdomains (`trace-des-cagouilles-2026` / `trace-de-cagouilles-2026`). `_drop_duplicate_events()` in `main.py` merges races with the same platform, date and ≥ 2 identical members, keeping the one whose location has a department number.
 - **Njuko** discovery depends on a persistent slug cache (`njuko_slugs.json`), seeded every run from the Common Crawl CDX index (`index.commoncrawl.org`, latest 2 crawls, free, no key) — covering `in.njuko.com`, `www.njuko.net` and the white-label registration hosts (`in.register-utmb.world`, `in.sporkrono-inscriptions.fr`, `in.sports107.com`, `in.timeto.com`; cache entries prefixed `domain/slug`, validated against each platform's own `front-api.*`). Wayback Machine CDX remains as a fallback when the cache is nearly empty (< 50 slugs). Club-relevant slugs can be added to `_SEED_SLUGS` in `njuko.py`. UTMB also has its own discovery (French events only).
@@ -218,7 +222,7 @@ The full pipeline takes several minutes due to the number of platforms and rate 
 - **Chrono-Start** requires `cloudscraper` to bypass Cloudflare protection; may break if Cloudflare changes detection.
 - **Klikego** name-based POST search is broken (server returns 500 errors). Club search via "ville" field works but members who don't fill the club field are missed unless in `known_members`.
 - **Invisible members** -- Members who neither fill the club field correctly NOR appear in the `known_members` list in `config.yml` are completely invisible to the system.
-- **Geocoding** -- BAN API sometimes matches race names to street names (e.g., "Marathon" → "Rue de Marathon"). Manual `OVERRIDES` dict in `geocoder.py` corrects known errors. Nominatim fallback uses free tier with 1 req/sec rate limit.
+- **Geocoding** -- a location the strict geocoder cannot tie to a commune leaves the race off the map (warned). Fix it with `OVERRIDES` in `geocoder.py`. A town found by web search can be wrong on point-to-point races (placed at the start) or homonyms (bench: 2 / 146).
 - **No incremental updates** -- each run re-discovers all events nationally. The scrape cache mitigates this but discovery itself still runs every time.
 - **Date handling** -- Klikego dates assume the current year (no year in the source data), which may be incorrect near year boundaries.
 - **OnSinscrit** -- Discovery extracts subdomain slugs from flyer image filenames (`/images/affiches/{slug}.jpg`). Events without a flyer image (~4 out of ~60) fall back to the `onsinscr.it` short slug which may not match the actual subdomain (missing year suffix). These events will fail to scrape.
@@ -280,9 +284,9 @@ To add a new white-label: add domain to `_API_BASES`, `_extract_slug()`, and opt
 
 ## Geocoding Gotchas
 
-- **BAN API matches race names to street names** (e.g., "marathon" → "Rue de Marathon" in Rennes). Use `OVERRIDES` dict in `geocoder.py` for manual corrections.
-- **Geocoding pipeline:** OVERRIDES > geocache > BAN API > Nominatim. OVERRIDES are in code and always win.
-- **Race name extraction:** `_extract_location_from_name()` in `main.py` strips event-type prefixes/suffixes to extract city names.
+- **Strict geocoder** (`geocode()`): OVERRIDES > geocache > town part of the location (before `,` `(` ` - `, postcode removed) must be a BAN commune (`type=municipality`) with the same name in the announced department (`parse_dept`: `(86)`, `, 86`, postcode, or a department name **after a separator** — « Chalonnes sur Loire » is not in the Loire); else BAN's best commune of that department if score ≥ 0.6; without a department, only a name unique in France. Then Nominatim (`featureType=settlement`): in France the place must have that exact name and be in the department (Boyardville, merged communes like Saint-Georges-des-Gardes), or be unique; abroad, its first result. Before (Nov 2026) the first BAN hit of any type won: streets and hamlets of the same name elsewhere (Grenoble near Paris, Landas in Corsica).
+- **Races without location** (`locate.py`): Exa search `"{name} {year} course lieu"` (8 results, highlights, ~0.007 $), then a free OpenRouter model (`MODELS`, `models` fallback list) names the start commune from the results only; kept only if `resolve_commune()` finds it. At most `MAX_SEARCHES` = 20 per run; needs `EXA_API_KEY` + `OPENROUTER_API_KEY` (GitHub secrets; the OpenRouter key has a 0 $ limit = free models only, 1000 requests/day). Benchmark and method comparison: branch `bench/geo`.
+- **BAN API matches race names to street names** (e.g., "marathon" → "Rue de Marathon" in Rennes): that is why names are no longer geocoded. Name-keyed `OVERRIDES` still place races without location by hand.
 - **Scrape cache does NOT store lat/lng** — geocoding is always redone from geocache to allow corrections.
 - **Cache bust:** Increment `?v=N` in `docs/index.html` CSS/JS links after frontend changes (currently `?v=6`).
 
@@ -347,9 +351,8 @@ par `calmBasemap()` : les couches de détail (sentiers, courbes, villages, POI)
 voient leur zoom minimal relevé (`DETAIL_MINZOOM` dans `mapfx.ts`).
 
 ### Intro, arcs, cascade
-- Intro à la première visite seulement (`localStorage` `rev86-intro-seen` ;
-  `?intro` la force ; jamais sur un lien `#race/…` ni avec « réduire les
-  animations »). Globe (projection interpolée globe → mercator entre les zooms
+- Intro à chaque chargement (jamais sur un lien `#race/…` ni avec « réduire
+  les animations » ; `?intro` la force). Globe (projection interpolée globe → mercator entre les zooms
   2 et 4 : en globe, le fond outdoor se dessine trop lentement), vol vers les
   courses, puis cascade. Plein écran pendant le globe et le vol
   (`setImmersive`) ; le panneau revient à l'atterrissage, et le vol est

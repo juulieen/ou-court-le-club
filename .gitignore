@@ -26,6 +26,7 @@ docs/data/races.ics
 # Geocoding & slug caches (no personal data, but regenerable)
 data/geocache.json
 data/njuko_slugs.json
+data/lieux_auto.json
 
 # Python
 __pycache__/
@@ -83,3 +84,6 @@ last-run-summary.txt
 # Copie de build (source: scrapers/notify.py) — resync: cp scrapers/notify.py deploy/notify/
 deploy/notify/notify.py
 deploy/notify/.env
+
+# Banc d’essai de géolocalisation (jeux de données, cache HTTP, clé)
+data/bench/

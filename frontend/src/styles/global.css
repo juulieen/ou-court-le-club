@@ -1847,3 +1847,10 @@ body {
     animation: none;
   }
 }
+
+/* Lieu trouvé par une recherche web (plateforme sans adresse) */
+.location-auto {
+  font-size: 0.85em;
+  opacity: 0.7;
+  font-style: italic;
+}

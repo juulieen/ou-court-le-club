@@ -64,6 +64,17 @@ jobs:
           restore-keys: |
             scraper-data-
 
+      # Towns found by paid web search (scrapers/locate.py). Own cache, saved
+      # even when the run fails, so no search is ever paid twice.
+      - name: Restore found locations
+        if: ${{ !inputs.skip_scrape }}
+        uses: actions/cache/restore@v5
+        with:
+          path: data/lieux_auto.json
+          key: lieux-auto-${{ github.run_id }}
+          restore-keys: |
+            lieux-auto-
+
       # Past races leave platform discovery, so a scraper fix never reaches the
       # copy kept in races_archive.json. This repairs them in place, in the CI
       # cache — the local `repair-archive` cannot be uploaded. Off by default.
@@ -71,6 +82,8 @@ jobs:
         if: ${{ !inputs.skip_scrape && inputs.repair_archive }}
         env:
           REPAIR_PLATFORM: ${{ inputs.repair_platform }}
+          EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           if [ -n "$REPAIR_PLATFORM" ]; then
             python -m scrapers.cache_cli repair-archive --all --platform "$REPAIR_PLATFORM"
@@ -83,6 +96,10 @@ jobs:
         env:
           # ntfy topic: pinged when the run's warnings change (new / resolved)
           ALERT_URL: ${{ secrets.RUNEVENT86_NOTIFY_ALERT_URL }}
+          # Town of races without one (Njuko): Exa search + free model, at
+          # most 20 searches a run, each event once (scrapers/locate.py)
+          EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: python -m scrapers.main
 
       - name: Fetch races.json from live site (skip_scrape mode)
@@ -108,6 +125,13 @@ jobs:
             data/races.json
           key: scraper-data-${{ github.run_id }}
 
+      - name: Save found locations
+        if: ${{ always() && !inputs.skip_scrape && hashFiles('data/lieux_auto.json') != '' }}
+        uses: actions/cache/save@v5
+        with:
+          path: data/lieux_auto.json
+          key: lieux-auto-${{ github.run_id }}
+
       # Note: save_data() in main.py generates three versions:
       # - data/races.json (full, with member names — cached, never published)
       # - data/races_private.json (public schema, full names — artifact only,
@@ -126,6 +150,7 @@ jobs:
             data/scrape_cache.json
             data/njuko_slugs.json
             data/races_archive.json
+            data/lieux_auto.json
             data/races.json
             data/races_private.json
           retention-days: 7

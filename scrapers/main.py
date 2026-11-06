@@ -21,7 +21,8 @@ import requests
 import yaml
 
 from .base import Member, RaceResult, normalize_text, matches_known_member, canonical_member_name
-from .geocoder import geocode
+from .geocoder import geocode, override
+from .locate import find_location
 from .chronometrage import ChronometrageScraper
 from .chronometrage import discover_races as chronometrage_discover
 from .chronostart import ChronoStartScraper
@@ -89,78 +90,6 @@ SCRAPERS = {
     "sportsnconnect": SportsnConnectScraper,
     "adeorun": AdeorunScraper,
 }
-
-# Patterns for extracting location from race names
-_PREFIX_RE = re.compile(
-    r"^(marathon|semi[- ]?marathon|trail|course|foul[ée]es?|cross|grand|"
-    r"corrida|rando[- ]?trail|boucles?|nocturne|run|festival|"
-    r"harmonie\s+mutuelle|schneider\s+electric|"
-    r"p[èe]res?\s*no[eë]ls?|half|"
-    r"les?|la|du|de|des|l'|d')\s+",
-    re.IGNORECASE,
-)
-_SUFFIX_RE = re.compile(
-    r"\s+(trail|run\s*festival|run|festival|marathon|nocturne|"
-    r"course|cross|corrida|[çc]a\s+bouge)$",
-    re.IGNORECASE,
-)
-
-
-def _extract_location_from_name(name: str) -> list[str]:
-    """Try to extract geocodable locations from a race name.
-
-    Returns a list of candidate queries, best first.
-    Strategies (tried in order):
-    1. Strip event-type prefixes/suffixes, sponsors, distances, year
-    2. Extract text after last "de/d'/à" preposition (location indicator)
-
-    E.g. "Marathon Poitiers-Futuroscope 2026" -> ["Poitiers-Futuroscope"]
-         "La Course des Pères Noel de St Benoit le 20 décembre 2025"
-           -> ["Pères Noel St Benoit", "St Benoit"]
-    """
-    candidates = []
-
-    # --- Strategy 1: strip prefixes/suffixes (more complete) ---
-    cleaned = name
-    # Strip trailing year
-    cleaned = re.sub(r"\s+\d{4}$", "", cleaned).strip()
-    # Strip trailing date like "le 20 décembre"
-    cleaned = re.sub(
-        r"\s+le\s+\d{1,2}\s+\w+$", "", cleaned, flags=re.IGNORECASE
-    ).strip()
-    # Strip distances like "10K", "10-20K", "42.195km"
-    cleaned = re.sub(r"\s+\d+[\-,.]?\d*\s*[kK][mM]?\b", "", cleaned).strip()
-    # Strip leading prefixes repeatedly
-    while _PREFIX_RE.search(cleaned):
-        cleaned = _PREFIX_RE.sub("", cleaned, count=1).strip()
-    # Strip trailing suffixes
-    cleaned = _SUFFIX_RE.sub("", cleaned).strip()
-    if cleaned and cleaned.lower() != name.lower():
-        candidates.append(cleaned)
-
-    # --- Strategy 2: extract location after last "de/d'/à" preposition ---
-    stripped = re.sub(r"\s+\d{4}$", "", name).strip()
-    loc_matches = list(re.finditer(
-        r"\b(?:de|d'|à)\s+([A-ZÀ-Ÿ][a-zà-ÿ''-]+(?:[\s-]+[A-ZÀ-Ÿa-zà-ÿ''-]+)*)",
-        stripped,
-    ))
-    if loc_matches:
-        after_de = loc_matches[-1].group(1).strip()
-        # Clean trailing date patterns like "le 20 décembre"
-        after_de = re.sub(
-            r"\s+le\s+\d{1,2}(\s+\w+)?$", "", after_de, flags=re.IGNORECASE
-        ).strip()
-        # Strip trailing articles (le/la/les/sur)
-        after_de = re.sub(
-            r"\s+(le|la|les|sur)$", "", after_de, flags=re.IGNORECASE
-        ).strip()
-        if after_de and len(after_de) > 2:
-            if not candidates or after_de.lower() != candidates[0].lower():
-                candidates.append(after_de)
-
-    return candidates
-
-
 
 def _extract_first_name(member_name: str, known_members: list[str]) -> str:
     """Extract first name from a full name.
@@ -315,39 +244,38 @@ def _canonicalize_members(race: dict, known_members: list[str]) -> None:
 
 
 def geocode_race(race: dict, verbose: bool = False) -> bool:
-    """Geocode a race in place. Returns True if a lookup set new coordinates.
+    """Place a race in place (lat/lng, recomputed every time). True if placed.
 
-    Tries the platform-provided location first, then the race name, then the
-    city names extracted from it. Shared with cache_cli's archive repair so
-    both paths resolve places the same way.
+    The platform's location goes through the strict geocoder. A race without
+    one (Njuko) gets a manual OVERRIDES entry for its name, else a location
+    found by a web search (locate.py), flagged `location_auto` so the map says
+    so. The race name itself is never geocoded: BAN matched it to streets
+    (« Loup Blanc » -> Rue du Blanc Loup, Vendeuil). Shared with cache_cli's
+    archive repair so both paths place races the same way.
     """
-    if race.get("lat") is not None and race.get("lng") is not None:
-        # Already has coords (from scraper or cache). Keep if location
-        # was provided by the platform (trustworthy).
-        if race.get("location", "").strip():
-            return False
-        # No location field — coords came from name-based geocoding.
-        # Strip them so we re-geocode using the (possibly corrected) cache.
-        race.pop("lat", None)
-        race.pop("lng", None)
-
-    queries = [race.get("location", ""), race.get("name", "")]
+    race.pop("lat", None)
+    race.pop("lng", None)
     name = race.get("name", "")
-    if name:
-        for candidate in _extract_location_from_name(name):
-            if candidate.lower() != name.lower() and candidate not in queries:
-                queries.append(candidate)
+    if race.get("location_auto"):
+        race["location"] = ""
+        race.pop("location_auto")
+    location = (race.get("location") or "").strip()
 
-    for query in queries:
-        if not query:
-            continue
-        if verbose:
-            print(f"  Geocoding '{query}'...")
-        coords = geocode(query)
-        if coords:
-            race["lat"], race["lng"] = coords
-            return True
-    return False
+    if location:
+        coords = geocode(location)
+    else:
+        coords = override(name)
+        if coords is False:  # no manual fix for this name: search the web
+            coords = None
+            found = find_location(race) if name else None
+            if found:
+                race["location"], race["location_auto"] = found, True
+                coords = geocode(found)
+    if verbose and not coords:
+        print(f"  Non placée : {name} ({race.get('location') or 'sans lieu'})")
+    if coords:
+        race["lat"], race["lng"] = coords
+    return coords is not None
 
 
 def _enrich_race(race: dict, known_members: list[str] | None = None) -> dict:
@@ -434,16 +362,18 @@ def merge_archive(results: list[dict]) -> tuple[list[dict], list[dict]]:
     new_races = [r for r in new_races if r.get("id") in archive]
 
     # Past Njuko races drop out of discovery, so they never get the town from
-    # njuko._EVENT_LOCATIONS: fill it here and re-place them (their
-    # coordinates came from the race name — Pignada was in Mimizan).
+    # njuko._EVENT_LOCATIONS: fill it here. Then re-place every archived race:
+    # a geocoder fix must reach past races too (cached, so nearly free).
     for race in archive.values():
-        if race.get("platform") == "njuko" and not race.get("location"):
+        # The table also beats a town found by web search (location_auto).
+        if race.get("platform") == "njuko" and (
+            not race.get("location") or race.get("location_auto")
+        ):
             town = njuko_known_location(race.get("name", ""))
             if town:
                 race["location"] = town
-                race.pop("lat", None)
-                race.pop("lng", None)
-                geocode_race(race)
+                race.pop("location_auto", None)
+        geocode_race(race)
 
     ARCHIVE_PATH.parent.mkdir(parents=True, exist_ok=True)
     ARCHIVE_PATH.write_text(
@@ -991,20 +921,20 @@ def run():
 
     no_coords = sum(1 for r in results if r.get("lat") is None)
     print(f"  {geo_count} geocodes, {no_coords} sans coordonnees ({_elapsed(geo_start)})")
-    # A race without a location is shown with no town in the recap and placed
-    # from its name alone — which put Barbâtre (85) in Reims. Njuko exposes no
-    # address at all: those go in njuko._EVENT_LOCATIONS.
-    no_location = sorted(
-        f"{r.get('name', '?')} ({r.get('platform', '?')})"
+    # No point is better than a wrong one: these stay off the map until their
+    # town is known (njuko._EVENT_LOCATIONS, or OVERRIDES in geocoder.py).
+    unplaced = sorted(
+        f"{r.get('name', '?')} ({r.get('platform', '?')}, "
+        f"{(r.get('location') or '').strip() or 'sans lieu'})"
         for r in results
-        if not (r.get("location") or "").strip()
+        if r.get("lat") is None
     )
-    if no_location:
+    if unplaced:
         _warn(
-            "Courses sans lieu",
-            f"{len(no_location)} course(s) avec membres sans lieu, placées "
-            f"d'après leur nom: {', '.join(no_location)}",
-            no_location,
+            "Courses non placées",
+            f"{len(unplaced)} course(s) avec membres absentes de la carte, "
+            f"lieu inconnu ou introuvable: {', '.join(unplaced)}",
+            unplaced,
             run_warnings,
         )
 

@@ -368,7 +368,9 @@ def cmd_repair_archive(args):
         # race_config then returns the current values rather than a placeholder.
         rc = {"url": race.get("url", ""), "platform": race.get("platform", ""),
               "name": race.get("name", ""), "date": race.get("date", ""),
-              "location": race.get("location", "")}
+              # A town found by web search is not the platform's: let the
+              # scraper (njuko._EVENT_LOCATIONS) give its own.
+              "location": "" if race.get("location_auto") else race.get("location", "")}
         try:
             data = scrape_race(rc, patterns, known_members)
         except Exception as e:
@@ -381,6 +383,8 @@ def cmd_repair_archive(args):
         for field in ("name", "date", "location", "race_type", "distances"):
             if data.get(field):
                 race[field] = data[field]
+                if field == "location":
+                    race.pop("location_auto", None)
         geocode_race(race)
         fixed += 1
         print(f"  ✓ {race.get('date', ''):12} {race.get('location', ''):22} {race.get('name', '?')[:45]}")

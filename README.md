@@ -80,7 +80,7 @@ Certaines courses utilisent des plateformes que le projet ne peut pas scanner :
 
 - **Frontend** : MapLibre GL JS + MapTiler (outdoor-v2) + HTML/CSS/JS statique
 - **Backend** : Python (requests, BeautifulSoup, cloudscraper, xml.etree)
-- **Geocoding** : API BAN (primaire) + Nominatim (fallback), 30+ OVERRIDES manuels
+- **Geocoding** : strict (commune existante dans le bon département, API BAN, Nominatim en repli), OVERRIDES manuels ; lieu des courses sans adresse cherché sur le web (Exa + modèle gratuit OpenRouter)
 - **Hebergement** : GitHub Pages (deploiement via GitHub Actions artifact — les prenoms ne sont jamais commites)
 - **CI/CD** : GitHub Actions (scraping quotidien a 6h UTC)
 

@@ -123,7 +123,6 @@ declare const maplibregl: any;
     stopSpin();
     setImmersive(false);
     document.getElementById("intro-skip")?.remove();
-    fx.markIntroSeen();
     if (wasFlying) {
       map.stop(); // déclenche moveend, donc la cascade
       fitBounds(shownRaces(), 0);
@@ -157,7 +156,7 @@ declare const maplibregl: any;
       started = true;
       if (introState === "flying") skipIntro();
       fx.playReveal(map);
-      // Première visite : on propose la visite guidée une fois la carte posée.
+      // Après l'intro : on propose la visite guidée (une fois, cf. tour.offer).
       if (intro) setTimeout(() => tour.offer(), 3500);
     };
     const fly = () => {
@@ -767,7 +766,7 @@ declare const maplibregl: any;
               id: r.id,
               name: r.name,
               date: r.date || "",
-              location: r.location || "",
+              location: r.location ? r.location + (r.location_auto ? " (lieu trouvé automatiquement)" : "") : "",
               platform: r.platform || "",
               url: r.url || "",
               member_count: g.isMulti ? totalMembers : r.member_count,
@@ -1326,7 +1325,7 @@ declare const maplibregl: any;
         <div class="detail-badges">${typeBadge} ${countdownBadge}</div>
         <div class="detail-meta">
           <div class="detail-date">${escapeHtml(dateFormatted)}</div>
-          <div class="detail-location">${escapeHtml(race.location || "")}</div>
+          <div class="detail-location">${escapeHtml(race.location || "")}${race.location_auto ? ` <span class="location-auto" title="La plateforme ne donne pas le lieu : il a été trouvé par une recherche web et peut être approximatif.">· lieu trouvé automatiquement</span>` : ""}</div>
           ${distLabel ? `<div class="detail-distances">${escapeHtml(distLabel)}</div>` : ""}
         </div>
         <div class="detail-members">

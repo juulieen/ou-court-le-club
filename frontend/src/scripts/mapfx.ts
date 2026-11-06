@@ -9,7 +9,6 @@ declare const maplibregl: any;
 export const CLUB_HOME: [number, number] = [0.3404, 46.5802];
 
 const ORANGE = "245,124,32";
-const INTRO_SEEN_KEY = "rev86-intro-seen";
 const REVEAL_MS = 2400; // durée de la cascade (arcs + points)
 const ARC_GROW = 0.35; // part de la cascade que met un arc à atteindre sa course
 const PULSE_PERIOD_MS = 3500; // un éclat toutes les 3,5 s
@@ -17,24 +16,11 @@ const PULSE_PERIOD_MS = 3500; // un éclat toutes les 3,5 s
 export const reducedMotion = (): boolean =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
-// Intro : à la première visite seulement, jamais sur un lien direct vers une
-// course (#race/…). « ?intro » la force, pour la revoir ou la tester.
+// Intro à chaque chargement, sauf sur un lien direct vers une course (#race/…)
+// ou avec « réduire les animations ». « ?intro » la force quand même.
 export function shouldPlayIntro(): boolean {
   if (new URLSearchParams(location.search).has("intro")) return true;
-  if (reducedMotion() || location.hash.startsWith("#race/")) return false;
-  try {
-    return !localStorage.getItem(INTRO_SEEN_KEY);
-  } catch {
-    return false;
-  }
-}
-
-export function markIntroSeen() {
-  try {
-    localStorage.setItem(INTRO_SEEN_KEY, "1");
-  } catch {
-    /* navigation privée : l'intro rejouera, tant pis */
-  }
+  return !reducedMotion() && !location.hash.startsWith("#race/");
 }
 
 // --- Globe ---

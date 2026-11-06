@@ -5,7 +5,21 @@ Historique des évolutions notables. Format inspiré de
 
 ## [Non publié]
 
+### Modifié
+- Carte : l'intro (globe puis vol vers les courses) se joue à chaque
+  chargement, plus seulement à la première visite (2026-11-05).
+
 ### Corrigé
+- **Géocodage strict** (2026-11-06). Le lieu donné par la plateforme doit
+  désigner une commune existante, du même nom, dans le département annoncé ;
+  sinon pas de point plutôt qu'un point faux. 12 courses de l'archive étaient
+  à des centaines de km (Grenoble près de Paris, Landas en Corse, La Ronde de
+  Noël à La Réunion). Les coordonnées sont recalculées à chaque run, archive
+  comprise.
+- **Courses sans lieu (Njuko)** (2026-11-06) : le nom de la course n'est plus
+  géocodé (il tombait sur des rues homonymes). Le lieu est cherché sur le web
+  (Exa + modèle gratuit OpenRouter, validé par la BAN), une fois par
+  événement, et la carte indique « lieu trouvé automatiquement ».
 - **Carte : cadrage initial** (2026-11-05). Une course passée à La Réunion
   faisait dézoomer la carte jusqu'à l'océan Indien. Le cadrage suit
   maintenant les courses affichées et ignore celles à plus de 1500 km du gros
