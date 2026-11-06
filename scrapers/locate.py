@@ -40,7 +40,11 @@ _searches = 0
 _warned = False
 
 
-def _event_key(name: str) -> str:
+# (race id, name, town) of the towns found this run, for the ntfy check-me ping.
+found_this_run: list[tuple[str, str, str]] = []
+
+
+def event_key(name: str) -> str:
     return norm(re.sub(r"\b(19|20)\d{2}\b", " ", name or ""))
 
 
@@ -129,7 +133,7 @@ def find_location(race: dict) -> str | None:
     fails (quota, outage), the next run asks again without searching again."""
     global _searches, _warned
     name, date = race.get("name", ""), race.get("date", "")
-    key = _event_key(name)
+    key = event_key(name)
     if not key:
         return None
     cache = _load()
@@ -165,4 +169,6 @@ def find_location(race: dict) -> str | None:
     cache[key] = {"location": found, "tried": now.isoformat(timespec="seconds")}
     _save(cache)
     print(f"  Lieu cherché : {name} -> {found or 'introuvable'}")
+    if found:
+        found_this_run.append((race.get("id", ""), name, found))
     return found

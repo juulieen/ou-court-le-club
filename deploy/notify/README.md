@@ -104,6 +104,28 @@ sont marqués « (?) » et la fiche de la course propose **« ✕ pas un membre 
   reste ouvrable dans la vue club pour la rétablir.
 - Le récap mensuel applique aussi les exclusions privées.
 
+## Lieu faux (vue club, un clic)
+
+La fiche d'une course propose, dans la vue club, **« lieu faux ? »** : on tape
+la bonne commune (« Mulhouse » ou « Mulhouse (68) ») et la course est
+replacée tout de suite.
+
+- `POST https://courses.juulieen.fr/api/lieux`, corps `{race, location}` en
+  `text/plain` (mêmes règles d'origine que les exclusions ; `location` vide =
+  oublier la correction). Le service cherche la commune dans la BAN (dans le
+  département s'il est donné) et renvoie la commune retenue ; la course doit
+  exister dans `private/races.json`.
+- Stockage : **`./public/lieux.json`** (servi sur
+  `https://run.juulieen.fr/lieux.json`), `{races: {id: {name, location, lat,
+  lng}}}` — aucun nom de membre.
+- La carte l'applique au chargement ; le pipeline aussi, à chaque run
+  (`LIEUX_URL` dans `scrapers/main.py`), par id de course, ou par nom
+  d'événement pour l'édition suivante d'une course sans lieu. La correction
+  gagne sur tout le reste (lieu de la plateforme, recherche web).
+- Les lieux trouvés par recherche web sont signalés sur ntfy
+  (`ALERT_URL`), avec le lien de la fiche : un coup d'œil, et un clic si c'est
+  faux.
+
 **Caddy** (bloc `courses.juulieen.fr` du Caddyfile de `asus-1`) :
 
 ```

@@ -347,6 +347,7 @@ _EVENT_LOCATIONS = {
     "grands trails d auvergne": "Aubusson-d'Auvergne (63)",
     "epopee royale": "Blois (41)",
     "trail du loup blanc": "Guéret (23)",
+    "les mulhousiennes": "Mulhouse (68)",
     "trails du pignada": "Soustons (40)",
     "trail de la balocha": "Angresse (40)",
     "sente des moines": "Gruchet-le-Valasse (76)",

@@ -1854,3 +1854,15 @@ body {
   opacity: 0.7;
   font-style: italic;
 }
+
+/* « lieu faux ? » (vue club) */
+.location-fix { margin-top: 4px; font-size: 0.85em; }
+.location-fix summary { cursor: pointer; opacity: 0.7; width: fit-content; }
+.location-fix-form { display: flex; gap: 6px; margin-top: 6px; }
+.location-fix-form input {
+  flex: 1; min-width: 0; padding: 4px 8px; font: inherit;
+  border: 1px solid currentColor; border-radius: 6px; background: transparent; color: inherit;
+}
+.location-fix-form button { padding: 4px 10px; font: inherit; border-radius: 6px; cursor: pointer; }
+.location-fix-msg:empty { display: none; }
+.location-fix-msg { margin-top: 4px; opacity: 0.8; }

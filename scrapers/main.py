@@ -22,7 +22,7 @@ import yaml
 
 from .base import Member, RaceResult, normalize_text, matches_known_member, canonical_member_name
 from .geocoder import geocode, override
-from .locate import find_location
+from .locate import event_key, find_location, found_this_run
 from .chronometrage import ChronometrageScraper
 from .chronometrage import discover_races as chronometrage_discover
 from .chronostart import ChronoStartScraper
@@ -243,6 +243,41 @@ def _canonicalize_members(race: dict, known_members: list[str]) -> None:
     race["member_count"] = len(merged)
 
 
+# Lieux corrigés à la main depuis la vue club (« lieu faux », notify.py serve),
+# publiés sans aucun nom de membre : {"races": {race_id: {name, location, lat,
+# lng}}}. Lus une fois par run ; indisponibles = aucune correction.
+LIEUX_URL = os.environ.get("LIEUX_URL", "https://run.juulieen.fr/lieux.json")
+_location_fixes: dict | None = None
+
+
+def _load_location_fixes() -> dict:
+    global _location_fixes
+    if _location_fixes is None:
+        try:
+            resp = requests.get(LIEUX_URL, timeout=10)
+            resp.raise_for_status()
+            _location_fixes = resp.json().get("races") or {}
+        except (requests.RequestException, ValueError, AttributeError) as e:
+            print(f"  (corrections de lieu indisponibles : {e})")
+            _location_fixes = {}
+    return _location_fixes
+
+
+def _location_fix(race: dict) -> dict | None:
+    """Correction de la vue club pour cette course : par id, sinon par nom
+    d'événement (édition suivante) si la plateforme ne donne pas de lieu."""
+    fixes = {
+        rid: f for rid, f in _load_location_fixes().items()
+        if isinstance(f, dict) and f.get("location")
+        and isinstance(f.get("lat"), (int, float)) and isinstance(f.get("lng"), (int, float))
+    }
+    fix = fixes.get(race.get("id", ""))
+    if fix or (race.get("location") and not race.get("location_auto")):
+        return fix
+    key = event_key(race.get("name", ""))
+    return next((f for f in fixes.values() if key and event_key(f.get("name", "")) == key), None)
+
+
 def geocode_race(race: dict, verbose: bool = False) -> bool:
     """Place a race in place (lat/lng, recomputed every time). True if placed.
 
@@ -256,6 +291,11 @@ def geocode_race(race: dict, verbose: bool = False) -> bool:
     race.pop("lat", None)
     race.pop("lng", None)
     name = race.get("name", "")
+    fix = _location_fix(race)
+    if fix:
+        race["location"], race["lat"], race["lng"] = fix["location"], fix["lat"], fix["lng"]
+        race.pop("location_auto", None)
+        return True
     if race.get("location_auto"):
         race["location"] = ""
         race.pop("location_auto")
@@ -748,6 +788,28 @@ def _notify_warning_changes(run_warnings: list[str]) -> None:
         print(f"  (alerte ntfy non délivrée : {e})")
 
 
+SITE_URL = "https://juulieen.github.io/ou-court-le-club/"
+
+
+def _notify_found_locations() -> None:
+    """Ping ntfy (ALERT_URL) with the towns found by web search this run:
+    each one is a guess to check, and the club view's « lieu faux » button
+    corrects it in one click (link opens the race)."""
+    url = os.environ.get("ALERT_URL", "")
+    if not url or not found_this_run:
+        return
+    lines = [f"📍 {name} → {town}\n{SITE_URL}#race/{rid}" for rid, name, town in found_this_run]
+    try:
+        requests.post(
+            url,
+            data="\n".join(lines).encode("utf-8"),
+            headers={"Title": "Lieux trouvés automatiquement : à vérifier", "Tags": "round_pushpin"},
+            timeout=10,
+        )
+    except requests.RequestException as e:
+        print(f"  (alerte ntfy non délivrée : {e})")
+
+
 def run():
     import time
     run_start = time.time()
@@ -965,6 +1027,7 @@ def run():
 
     display_optin = club.get("display_optin", [])
     _notify_warning_changes(run_warnings)
+    _notify_found_locations()
     output = {
         "last_updated": datetime.now(timezone.utc).isoformat(),
         "races": all_races,

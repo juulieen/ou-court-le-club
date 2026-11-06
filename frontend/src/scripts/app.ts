@@ -275,6 +275,10 @@ declare const maplibregl: any;
   const PRIVATE_BASE = PRIVATE_DATA_URL.replace(/[^/]*$/, "");
   const PRIVATE_EXCLUSIONS_URL = PRIVATE_BASE + "exclusions.json";
   const EXCLUSIONS_API_URL = PRIVATE_BASE + "api/exclusions";
+  // Lieux corrigés depuis la vue club (« lieu faux ? ») : sans nom de membre,
+  // donc publics, à côté d'exclusions.json. {races: {id: {location, lat, lng}}}
+  const LIEUX_URL = EXCLUSIONS_URL.replace(/[^/]*$/, "lieux.json");
+  const LIEUX_API_URL = PRIVATE_BASE + "api/lieux";
 
   // --- Data loading ---
   function loadData() {
@@ -297,8 +301,11 @@ declare const maplibregl: any;
       })
         .then((r: Response) => (r.ok ? r.json() : null))
         .catch(() => null),
+      fetch(LIEUX_URL, { cache: "no-cache", signal: (AbortSignal as any).timeout?.(4000) })
+        .then((r: Response) => (r.ok ? r.json() : null))
+        .catch(() => null),
     ])
-      .then(([publicData, publicExcl, privateData, privateExcl]: [any, any, any, any]) => {
+      .then(([publicData, publicExcl, privateData, privateExcl, lieux]: [any, any, any, any, any]) => {
         const data =
           privateData && privateData.races ? privateData : publicData;
         isPrivateView = data === privateData;
@@ -317,7 +324,10 @@ declare const maplibregl: any;
           if (e.name) ex.names.add(e.name);
           else ex.anon += 1;
         }
-        const races = (data.races || []).map((r: any) => {
+        const fixes = lieux?.races || {};
+        const races = (data.races || []).map((raw: any) => {
+          // Lieu corrigé à la main : visible tout de suite, sans attendre le run.
+          const r = fixes[raw.id] ? applyLocationFix(raw, fixes[raw.id]) : raw;
           const ex = exByRace.get(r.id);
           if (!ex || excludedRaces.has(r.id)) return r;
           const names: string[] = r.first_names || [];
@@ -1234,6 +1244,48 @@ declare const maplibregl: any;
       });
   }
 
+  function applyLocationFix(race: any, fix: any) {
+    if (!fix || typeof fix.lat !== "number" || typeof fix.lng !== "number") return race;
+    return { ...race, location: fix.location, lat: fix.lat, lng: fix.lng, location_auto: false };
+  }
+
+  // --- Lieu faux (vue club) ---
+  function locationControls(race: any): string {
+    return `<details class="location-fix"><summary>lieu faux ?</summary>
+      <form class="location-fix-form">
+        <input name="location" type="text" required maxlength="100" placeholder="Commune (dép.), ex. Mulhouse (68)" aria-label="Bonne commune" />
+        <button type="submit">Corriger</button>
+      </form>
+      <div class="location-fix-msg" role="status"></div>
+    </details>`;
+  }
+
+  function submitLocationFix(race: any, form: HTMLFormElement) {
+    const input = form.querySelector("input") as HTMLInputElement;
+    const btn = form.querySelector("button") as HTMLButtonElement;
+    const msg = form.parentElement!.querySelector(".location-fix-msg") as HTMLElement;
+    btn.disabled = true;
+    msg.textContent = "…";
+    // text/plain : requête « simple », sans preflight CORS.
+    fetch(LIEUX_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ race: race.id, location: input.value }),
+    })
+      .then((r: Response) => r.json().then((body: any) => ({ ok: r.ok, body })))
+      .then(({ ok, body }: { ok: boolean; body: any }) => {
+        if (!ok || !body.lieu) throw new Error(body.error || "échec");
+        Object.assign(race, applyLocationFix(race, body.lieu));
+        raceGroups = groupEditions(allRaces);
+        renderAll();
+        showRaceDetail(race.id);
+      })
+      .catch((err: Error) => {
+        btn.disabled = false;
+        msg.textContent = err.message || "échec, réessayer";
+      });
+  }
+
   // Reflète la réponse du service sans recharger (le flux est déjà en mémoire).
   function applyExclusionLocally(race: any, name: string, exclude: boolean) {
     const names: string[] = race.first_names || [];
@@ -1308,6 +1360,7 @@ declare const maplibregl: any;
           : "")
       : "";
     const exclusionHtml = isPrivateView ? exclusionControls(race) : "";
+    const locationFixHtml = isPrivateView ? locationControls(race) : "";
 
     const linkHtml = race.url
       ? `<a class="detail-link" href="${escapeHtml(race.url)}" target="_blank" rel="noopener">S'inscrire sur ${escapeHtml(race.platform)} &rarr;</a>`
@@ -1326,6 +1379,7 @@ declare const maplibregl: any;
         <div class="detail-meta">
           <div class="detail-date">${escapeHtml(dateFormatted)}</div>
           <div class="detail-location">${escapeHtml(race.location || "")}${race.location_auto ? ` <span class="location-auto" title="La plateforme ne donne pas le lieu : il a été trouvé par une recherche web et peut être approximatif.">· lieu trouvé automatiquement</span>` : ""}</div>
+          ${locationFixHtml}
           ${distLabel ? `<div class="detail-distances">${escapeHtml(distLabel)}</div>` : ""}
         </div>
         <div class="detail-members">
@@ -1340,6 +1394,11 @@ declare const maplibregl: any;
       </div>`;
 
     document.getElementById("race-list")!.innerHTML = html;
+
+    document.querySelector<HTMLFormElement>(".location-fix-form")?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      submitLocationFix(race, e.currentTarget as HTMLFormElement);
+    });
 
     document.querySelectorAll<HTMLButtonElement>(".exclusion-btn").forEach((btn) =>
       btn.addEventListener("click", () =>

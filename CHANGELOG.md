@@ -5,6 +5,16 @@ Historique des évolutions notables. Format inspiré de
 
 ## [Non publié]
 
+### Ajouté
+- **Vue club : « lieu faux ? »** (2026-11-06). Sur la fiche d'une course, on
+  tape la bonne commune et la course est replacée tout de suite (service
+  `notify.py serve`, `POST /api/lieux`, fichier public `lieux.json` sans nom
+  de membre). Le pipeline applique la correction à chaque run, édition
+  suivante comprise.
+- Alerte ntfy pour chaque lieu trouvé automatiquement, avec le lien de la
+  fiche, pour le vérifier d'un coup d'œil.
+- Njuko : Les Mulhousiennes à Mulhouse.
+
 ### Modifié
 - Carte : l'intro (globe puis vol vers les courses) se joue à chaque
   chargement, plus seulement à la première visite (2026-11-05).

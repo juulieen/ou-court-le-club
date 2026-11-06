@@ -24,7 +24,7 @@ CLI:
     python -m scrapers.notify send            # dry-run: print what WOULD be sent
     python -m scrapers.notify send --live      # post the digest if due
     python -m scrapers.notify test             # digest preview → Note to self
-    python -m scrapers.notify serve            # exclusion API (/api/exclusions)
+    python -m scrapers.notify serve            # club-view API (/api/exclusions, /api/lieux)
     python -m scrapers.notify fetch-private    # drop races_private.json (full names)
                                                # into PRIVATE_DIR for the
                                                # tailnet-only courses.juulieen.fr
@@ -569,11 +569,92 @@ def _update_exclusion(race_id: str, name: str, exclude: bool) -> tuple[int, dict
     return 200, {"members": entries}
 
 
+# --- Corrections de lieu (« lieu faux » depuis la vue club) ---
+# PUBLIC_DIR/lieux.json, {"races": {race_id: {name, location, lat, lng}}}.
+# Aucun nom de membre : le fichier est public (run.juulieen.fr/lieux.json).
+# La carte l'applique dès le chargement, le pipeline à chaque run (le nom
+# de la course sert aussi pour l'édition suivante).
+
+_BAN_URL = "https://api-adresse.data.gouv.fr/search/"
+
+
+def _lieux_path() -> Path:
+    return Path(PUBLIC_DIR) / "lieux.json"
+
+
+def _load_lieux() -> dict:
+    data = _read_json(_lieux_path(), {}) if PUBLIC_DIR else {}
+    races = data.get("races") if isinstance(data, dict) else None
+    return races if isinstance(races, dict) else {}
+
+
+def _simple(text: str) -> str:
+    import unicodedata
+    text = unicodedata.normalize("NFD", text or "")
+    text = "".join(c for c in text if unicodedata.category(c) != "Mn").lower()
+    return "".join(c for c in text if c.isalnum())
+
+
+def _resolve_commune(text: str) -> dict | None:
+    """« Mulhouse », « Mulhouse (68) » ou « Mulhouse, 68 » -> commune BAN
+    {location: "Mulhouse (68)", lat, lng}, ou None. Avec un département, la
+    commune doit y être ; sans, le nom exact d'abord, sinon la meilleure."""
+    import re
+    m = re.match(r"\s*(.+?)\s*(?:\((\w{2,3})\)|,\s*(\w{2,3}))?\s*$", text or "")
+    if not m or not m.group(1):
+        return None
+    town, dept = m.group(1), (m.group(2) or m.group(3) or "").upper()
+    query = urllib.parse.urlencode({"q": town[:100], "type": "municipality", "limit": 10})
+    status, body = _http("GET", f"{_BAN_URL}?{query}", timeout=10)
+    if status != 200:
+        raise OSError(f"BAN {status}")
+    hits = []
+    for f in json.loads(body).get("features", []):
+        p = f.get("properties", {})
+        code = p.get("citycode", "")
+        lng, lat = f["geometry"]["coordinates"]
+        hits.append({"city": p.get("city") or p.get("name") or "",
+                     "dept": code[:3] if code.startswith("97") else code[:2],
+                     "score": p.get("score", 0), "lat": lat, "lng": lng})
+    if dept:
+        hits = [h for h in hits if h["dept"] == dept]
+    exact = [h for h in hits if _simple(h["city"]) == _simple(town)]
+    best = (exact or [h for h in hits if h["score"] >= 0.5] or [None])[0]
+    if not best:
+        return None
+    return {"location": f"{best['city']} ({best['dept']})",
+            "lat": round(best["lat"], 5), "lng": round(best["lng"], 5)}
+
+
+def _update_lieu(race_id: str, text: str) -> tuple[int, dict]:
+    """Corrige (ou, texte vide, oublie) le lieu d'une course du races.json
+    privé. Renvoie la commune retenue pour que l'interface l'affiche."""
+    races = _read_json(Path(PRIVATE_DIR) / "races.json", {}).get("races", [])
+    race = next((r for r in races if r.get("id") == race_id), None)
+    lieux = _load_lieux()
+    if not text.strip():
+        lieux.pop(race_id, None)
+        hit = None
+    else:
+        if not race:
+            return 404, {"error": "course inconnue"}
+        try:
+            hit = _resolve_commune(text)
+        except (OSError, ValueError) as e:
+            return 502, {"error": f"géocodeur indisponible ({e})"}
+        if not hit:
+            return 422, {"error": f"commune introuvable : {text}"}
+        lieux[race_id] = {"name": race.get("name", ""), **hit}
+    _write_json_atomic(_lieux_path(), {"races": lieux, "updated_at": int(time.time())})
+    return 200, {"race": race_id, "lieu": hit}
+
+
 def cmd_serve(argv: list[str]) -> int:
-    """Service HTTP d'exclusion, derrière /api/* du vhost tailnet-only
+    """Service HTTP de la vue club, derrière /api/* du vhost tailnet-only
     courses.juulieen.fr. POST /api/exclusions, corps JSON
-    {"race", "name", "exclude": true|false}, envoyé en text/plain par le
-    front (requête « simple », sans preflight CORS)."""
+    {"race", "name", "exclude": true|false} ; POST /api/lieux, corps
+    {"race", "location"} (vide = oublier la correction). Envoyés en
+    text/plain par le front (requête « simple », sans preflight CORS)."""
     import threading
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -593,7 +674,8 @@ def cmd_serve(argv: list[str]) -> int:
             self.wfile.write(data)
 
         def do_POST(self):
-            if self.path.rstrip("/") != "/api/exclusions":
+            path = self.path.rstrip("/")
+            if path not in ("/api/exclusions", "/api/lieux"):
                 return self._reply(404, {"error": "not found"})
             if self.headers.get("Origin", "") not in ALLOWED_ORIGINS:
                 return self._reply(403, {"error": "origine refusée"})
@@ -602,13 +684,21 @@ def cmd_serve(argv: list[str]) -> int:
                 if not 0 < length <= 4096:
                     raise ValueError("longueur")
                 body = json.loads(self.rfile.read(length))
-                race_id, name = str(body["race"]), str(body["name"])
-                exclude = bool(body.get("exclude", True))
+                race_id = str(body["race"])
+                if path == "/api/lieux":
+                    text = str(body.get("location") or "")[:120]
+                else:
+                    name = str(body["name"])
+                    exclude = bool(body.get("exclude", True))
             except (ValueError, KeyError, TypeError):
                 return self._reply(400, {"error": "corps invalide"})
             with lock:
-                status, payload = _update_exclusion(race_id, name, exclude)
-            print(f"[exclusions] {'exclu' if exclude else 'rétabli'} {race_id} → {status}", flush=True)
+                if path == "/api/lieux":
+                    status, payload = _update_lieu(race_id, text)
+                    print(f"[lieux] {race_id} → {status}", flush=True)
+                else:
+                    status, payload = _update_exclusion(race_id, name, exclude)
+                    print(f"[exclusions] {'exclu' if exclude else 'rétabli'} {race_id} → {status}", flush=True)
             self._reply(status, payload)
 
         def log_message(self, *args):  # pas de noms dans les logs
