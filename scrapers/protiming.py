@@ -13,6 +13,10 @@ Protiming (protiming.fr) was rebuilt as a Tailwind SPA (Sept 2026). The old
 
 The club filter is what makes Protiming valuable: it finds members who are
 not in `known_members`, without downloading full participant lists.
+
+Since Nov 2026 the site is behind Cloudflare, which answers 403 to plain
+`requests` from GitHub Actions (home IPs still get 200). Requests go through
+a `cloudscraper` session, as for Chrono-Start.
 """
 
 import re
@@ -20,6 +24,11 @@ from datetime import datetime, timezone
 
 import requests
 from bs4 import BeautifulSoup
+
+try:
+    import cloudscraper
+except ImportError:
+    cloudscraper = None
 
 from .base import BaseScraper, Member, RaceResult, matches_club, matches_known_member
 
@@ -42,6 +51,17 @@ MONTHS_FR = {
     "janv": "01", "fev": "02", "fév": "02", "avr": "04", "juil": "07",
     "sept": "09", "oct": "10", "nov": "11", "dec": "12", "déc": "12",
 }
+
+_session = None
+
+
+def _get(url: str, **kwargs) -> requests.Response:
+    """GET through one shared cloudscraper session (plain requests without it)."""
+    global _session
+    if _session is None:
+        _session = cloudscraper.create_scraper() if cloudscraper else requests.Session()
+    return _session.get(url, **kwargs)
+
 
 # A runners page holds 50 rows; stop paginating well before a huge event
 # drains the global scrape budget.
@@ -138,7 +158,7 @@ class ProtimingScraper(BaseScraper):
         rows: list[dict] = []
         for page in range(1, MAX_RUNNER_PAGES + 1):
             try:
-                resp = requests.get(
+                resp = _get(
                     f"{BASE_URL}/events/{slug}/runners",
                     params={**params, "page": page},
                     timeout=15,
@@ -200,9 +220,7 @@ def discover_races() -> list[dict]:
     page = 1
     while True:
         try:
-            resp = requests.get(
-                f"{BASE_URL}/events", params={"page": page}, timeout=15
-            )
+            resp = _get(f"{BASE_URL}/events", params={"page": page}, timeout=15)
             resp.raise_for_status()
         except requests.RequestException as e:
             print(f"  [protiming] Erreur liste page {page}: {e}")

@@ -20,6 +20,15 @@ Historique des évolutions notables. Format inspiré de
   chargement, plus seulement à la première visite (2026-11-05).
 
 ### Corrigé
+- Protiming : 0 course depuis le 6 novembre, le site est passé derrière
+  Cloudflare et refuse les serveurs GitHub (403). Les requêtes passent par
+  `cloudscraper`, comme Chrono-Start (2026-11-09).
+- Runs trop longs les 8 et 9 novembre (2026-11-09). Les courses sans membre
+  sont revérifiées entre 36 et 60 h, selon la course, au lieu de 48 h pour
+  toutes : après le run du 5 qui en avait revérifié 3033, elles arrivaient
+  toutes à échéance le même jour. Le scraping s'arrête aussi 38 min après le
+  début du run, découverte comprise, pour que le cache soit toujours
+  enregistré (le run du 8 avait été coupé à 50 min sans l'enregistrer).
 - Sportips : nom et date lus séparément sur la page d'accueil. Le nom
   contenait la date et « Inscription » (« 20/03/2027LES FOULEES VICHYSSOISES
   2027Inscription ») et la course n'avait pas de date, donc pas de lieu

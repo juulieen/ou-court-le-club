@@ -11,6 +11,7 @@ import json
 import os
 import re
 import shutil
+import zlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from concurrent.futures import TimeoutError as FuturesTimeoutError
 from dataclasses import asdict
@@ -168,12 +169,17 @@ MAX_WORKERS = 6
 # Hard budget for the whole scraping phase. A single misbehaving site must never
 # hang the run: once this is exceeded, stragglers are abandoned and the pipeline
 # continues to geocoding/save with whatever was found. Overridable via env for
-# cold/recovery runs (empty cache scrapes all ~3000 events). Kept under the job's
-# timeout-minutes: 50. Normal cached runs finish well under this.
+# cold/recovery runs (empty cache scrapes all ~3000 events). Normal cached runs
+# finish well under this.
 SCRAPE_BUDGET_S = int(os.environ.get("SCRAPE_BUDGET_S", 40 * 60))  # default 40 min
+# Scraping also stops RUN_BUDGET_S after the start of the run (discovery
+# included), so that geocoding, the cache save and the site build fit in the
+# job's timeout-minutes: 50. On 8 Nov 2026, 12 min of discovery + 40 min of
+# scraping hit the timeout: the job was killed and its cache was never saved.
+RUN_BUDGET_S = int(os.environ.get("RUN_BUDGET_S", 38 * 60))
 
 # Cache TTL: avoid re-scraping the same URL too often
-CACHE_TTL_EMPTY = 48       # 2 days for courses with 0 members
+CACHE_TTL_EMPTY = 48       # ~2 days for courses with 0 members (spread, see _ttl_hours)
 CACHE_TTL_WITH_MEMBERS = 6  # 6h for courses with members (check for new registrations)
 
 
@@ -680,8 +686,18 @@ def should_scrape(url: str, cache: dict) -> bool:
     except (ValueError, TypeError):
         return True
     member_count = entry.get("member_count", 0)
-    ttl = CACHE_TTL_WITH_MEMBERS if member_count > 0 else CACHE_TTL_EMPTY
+    ttl = CACHE_TTL_WITH_MEMBERS if member_count > 0 else _ttl_hours(url)
     return datetime.now(timezone.utc) - last_dt > timedelta(hours=ttl)
+
+
+def _ttl_hours(url: str) -> int:
+    """CACHE_TTL_EMPTY ± 12 h, fixed per URL.
+
+    With a single TTL, races scraped by the same run all expire on the same
+    day: after a fresh run (5 Nov 2026, 3033 races), the run 48 h later had
+    3406 races to scrape and could not finish. A per-URL offset spreads them
+    over a day."""
+    return CACHE_TTL_EMPTY - 12 + zlib.crc32(url.encode()) % 25
 
 
 # --- Scraping ---
@@ -917,12 +933,13 @@ def run():
     print(f"  PHASE 2/4 — Scraping ({len(to_scrape)} courses, {cached} en cache)")
     print(f"{'─'*60}")
     scrape_start = time.time()
+    budget_s = max(5 * 60, min(SCRAPE_BUDGET_S, RUN_BUDGET_S - (scrape_start - run_start)))
 
     # --- Scrape concurrently ---
     results: list[dict] = list(cached_results)
     found_count = len(cached_results)
 
-    # Bounded by SCRAPE_BUDGET_S: a misbehaving site must never hang the run.
+    # Bounded by budget_s: a misbehaving site must never hang the run.
     # We don't use the context manager (its __exit__ would block on stragglers);
     # on budget overrun we abandon unfinished tasks and continue to save.
     executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
@@ -932,7 +949,7 @@ def run():
     }
     done = 0
     try:
-        for future in as_completed(future_to_rc, timeout=SCRAPE_BUDGET_S):
+        for future in as_completed(future_to_rc, timeout=budget_s):
             done += 1
             rc = future_to_rc[future]
             platform = rc.get("platform", "")
@@ -968,7 +985,7 @@ def run():
     except FuturesTimeoutError:
         unfinished = sum(1 for f in future_to_rc if not f.done())
         print(
-            f"  ⚠️ Budget scraping ({SCRAPE_BUDGET_S // 60} min) dépassé — "
+            f"  ⚠️ Budget scraping ({budget_s // 60:.0f} min) dépassé — "
             f"{unfinished} course(s) abandonnée(s), on continue avec {found_count} trouvée(s)"
         )
     finally:
