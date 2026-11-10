@@ -13,7 +13,8 @@ sports107.com, timeto.com).
 
 import json
 import re
-from datetime import datetime, timezone
+import zlib
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
 
@@ -490,28 +491,65 @@ def discover_races() -> list[dict]:
         print("  [njuko] Aucun slug connu")
         return []
 
-    print(f"  [njuko] {len(slugs)} slug(s), validation API...")
-    races = _validate_slugs_concurrent(slugs)
+    dead = _load_dead()
+    today = date.today().isoformat()
+    to_check = {s for s in slugs if dead.get(s, "") <= today}
+    print(f"  [njuko] {len(slugs)} slug(s), {len(slugs) - len(to_check)} morts ignorés, "
+          f"validation API de {len(to_check)}...")
+    races, rejected = _validate_slugs_concurrent(to_check)
+    for entry, days in rejected.items():
+        dead[entry] = _recheck_date(entry, days)
+    for race in races:
+        dead.pop(race.pop("_slug_entry"), None)
+    _save_slug_cache(slugs, dead)
     print(f"  [njuko] {len(races)} course(s) valides")
     return races
 
 
-def _load_slug_cache() -> set[str]:
+def _read_slug_file() -> dict:
     if _SLUG_CACHE_PATH.exists():
         try:
-            data = json.loads(_SLUG_CACHE_PATH.read_text(encoding="utf-8"))
-            return set(data.get("slugs", []))
+            return json.loads(_SLUG_CACHE_PATH.read_text(encoding="utf-8"))
         except Exception:
             pass
-    return set()
+    return {}
 
 
-def _save_slug_cache(slugs: set[str]) -> None:
+def _load_slug_cache() -> set[str]:
+    return set(_read_slug_file().get("slugs", []))
+
+
+def _load_dead() -> dict[str, str]:
+    """{entry: date from which to check it again}, see _recheck_date()."""
+    return dict(_read_slug_file().get("dead", {}))
+
+
+def _save_slug_cache(slugs: set[str], dead: dict[str, str] | None = None) -> None:
+    if dead is None:
+        dead = _load_dead()
     _SLUG_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
     _SLUG_CACHE_PATH.write_text(
-        json.dumps({"slugs": sorted(slugs)}, indent=2),
+        json.dumps({"slugs": sorted(slugs),
+                    "dead": {k: dead[k] for k in sorted(dead) if k in slugs}}, indent=2),
         encoding="utf-8",
     )
+
+
+# A slug the API rejects is not asked again before a few days: about half of
+# the ~2600 known slugs are dead or past, and asking for all of them every day
+# took 9 min of the run and loaded Njuko's API for nothing (Nov 2026).
+# Unknown on the API (404): the page was deleted, it will not come back soon.
+DEAD_ABSENT_DAYS = 60
+# Answered, but not an open edition (draft, finished, cancelled...): a draft
+# can open its registrations, so check it again within the week.
+DEAD_STATUS_DAYS = 7
+
+
+def _recheck_date(entry: str, days: int) -> str:
+    """Today + days, minus 0 to days/3 fixed per slug: a slug batch rejected
+    on the same day is not all checked again on the same day."""
+    spread = zlib.crc32(entry.encode()) % (days // 3 + 1)
+    return (date.today() + timedelta(days=days - spread)).isoformat()
 
 
 def _fetch_slugs_from_cdx() -> set[str]:
@@ -640,28 +678,34 @@ def _extract_slug(url: str) -> str | None:
     return slug
 
 
-def _validate_slugs_concurrent(slugs: set[str]) -> list[dict]:
+def _validate_slugs_concurrent(slugs: set[str]) -> tuple[list[dict], dict[str, int]]:
     """Validate slugs against the Njuko API concurrently."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
-    races = []
+    races, rejected = [], {}
     with ThreadPoolExecutor(max_workers=3) as executor:
         futures = {executor.submit(_validate_slug, s): s for s in slugs}
         for future in as_completed(futures):
             try:
                 race = future.result()
-                if race:
-                    races.append(race)
             except Exception:
-                pass
-    return races
+                continue
+            if isinstance(race, dict):
+                race["_slug_entry"] = futures[future]
+                races.append(race)
+            elif race:
+                rejected[futures[future]] = race
+    return races, rejected
 
 
-def _validate_slug(entry: str) -> dict | None:
+def _validate_slug(entry: str) -> dict | int | None:
     """Check if a cache entry corresponds to a valid, current Njuko edition.
 
     Entries are plain slugs for njuko.com/net, or "domain/slug" for
     white-label platforms (validated against their own API base).
+    Returns the race, or the number of days before asking again when the API
+    rejects the slug, or None when the API could not answer (network error,
+    rate limit, outage: asked again next run).
     """
     if "/" in entry:
         domain, slug = entry.split("/", 1)
@@ -677,6 +721,8 @@ def _validate_slug(entry: str) -> dict | None:
             headers={"User-Agent": BROWSER_UA},
             timeout=8,
         )
+        if resp.status_code in (404, 410):
+            return DEAD_ABSENT_DAYS
         if resp.status_code != 200:
             return None
         data = resp.json()
@@ -685,7 +731,7 @@ def _validate_slug(entry: str) -> dict | None:
 
     status = data.get("status", "")
     if status not in ("OPEN", "CLOSED", "FULL"):
-        return None
+        return DEAD_STATUS_DAYS
 
     edition_id = data.get("_id", "")
     name = _edition_name(data) or data.get("reportName", slug)

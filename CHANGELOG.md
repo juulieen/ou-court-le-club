@@ -16,6 +16,11 @@ Historique des évolutions notables. Format inspiré de
 - Njuko : Les Mulhousiennes à Mulhouse.
 
 ### Modifié
+- Njuko : une adresse de course refusée par l'API (supprimée, brouillon,
+  terminée) n'est plus redemandée chaque jour, mais après une semaine (ou
+  deux mois si elle n'existe plus). La moitié des ~2600 adresses connues
+  sont mortes : les valider toutes prenait 9 min par run et chargeait l'API
+  de Njuko pour rien (2026-11-10).
 - Carte : l'intro (globe puis vol vers les courses) se joue à chaque
   chargement, plus seulement à la première visite (2026-11-05).
 
