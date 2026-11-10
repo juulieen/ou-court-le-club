@@ -21,6 +21,10 @@ Historique des évolutions notables. Format inspiré de
   deux mois si elle n'existe plus). La moitié des ~2600 adresses connues
   sont mortes : les valider toutes prenait 9 min par run et chargeait l'API
   de Njuko pour rien (2026-11-10).
+- Chrono-Start : une page d'événement sans liste d'inscrits n'est rouverte
+  qu'au bout d'une semaine environ (~600 des ~630 pages, ouvertes chaque
+  jour jusque-là, 15 à la fois, sur un site derrière Cloudflare). 5 accès
+  simultanés au lieu de 15 (2026-11-10).
 - Carte : l'intro (globe puis vol vers les courses) se joue à chaque
   chargement, plus seulement à la première visite (2026-11-05).
 

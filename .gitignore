@@ -27,6 +27,7 @@ docs/data/races.ics
 data/geocache.json
 data/njuko_slugs.json
 data/lieux_auto.json
+data/chronostart_seen.json
 
 # Python
 __pycache__/

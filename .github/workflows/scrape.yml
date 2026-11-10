@@ -76,6 +76,18 @@ jobs:
           restore-keys: |
             lieux-auto-
 
+      # Chrono-Start event pages without a registration list, not reopened
+      # every day (scrapers/chronostart.py). Own cache: adding a path to
+      # scraper-data would change its version and lose that cache.
+      - name: Restore Chrono-Start seen events
+        if: ${{ !inputs.skip_scrape }}
+        uses: actions/cache/restore@v5
+        with:
+          path: data/chronostart_seen.json
+          key: chronostart-seen-${{ github.run_id }}
+          restore-keys: |
+            chronostart-seen-
+
       # Past races leave platform discovery, so a scraper fix never reaches the
       # copy kept in races_archive.json. This repairs them in place, in the CI
       # cache — the local `repair-archive` cannot be uploaded. Off by default.
@@ -132,6 +144,13 @@ jobs:
         with:
           path: data/lieux_auto.json
           key: lieux-auto-${{ github.run_id }}
+
+      - name: Save Chrono-Start seen events
+        if: ${{ always() && !inputs.skip_scrape && hashFiles('data/chronostart_seen.json') != '' }}
+        uses: actions/cache/save@v5
+        with:
+          path: data/chronostart_seen.json
+          key: chronostart-seen-${{ github.run_id }}
 
       # Note: save_data() in main.py generates three versions:
       # - data/races.json (full, with member names — cached, never published)

@@ -9,7 +9,9 @@ Registration lists: chrono-start.fr/Inscription/Course/listing/c/{event_id}
 import html
 import json
 import re
-from datetime import datetime, timezone
+import zlib
+from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 
 try:
     import cloudscraper
@@ -264,26 +266,68 @@ def discover_races() -> list[dict]:
             break
         page += 1
 
-    print(f"  [chronostart] {len(event_links)} evenements WP, resolution IDs...")
+    # Step 2: Resolve listing IDs concurrently, skipping pages seen without a
+    # listing recently (see NO_LISTING_DAYS)
+    seen = _load_seen()
+    today = date.today().isoformat()
+    to_check = [(t, link) for t, link in event_links if seen.get(link, "") <= today]
+    print(f"  [chronostart] {len(event_links)} evenements WP, "
+          f"{len(event_links) - len(to_check)} sans listing ignorés, resolution IDs de {len(to_check)}...")
 
-    # Step 2: Resolve listing IDs concurrently
     races = []
-    with ThreadPoolExecutor(max_workers=15) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         futures = {
-            executor.submit(_resolve_event, title, link): (title, link)
-            for title, link in event_links
+            executor.submit(_resolve_event, title, link): link
+            for title, link in to_check
         }
         for future in as_completed(futures):
+            link = futures[future]
             race = future.result()
-            if race:
+            if race == NO_LISTING:
+                seen[link] = _recheck_date(link)
+            elif race:
+                seen.pop(link, None)
                 races.append(race)
 
+    if event_links:  # the WP API failed: keep the memory as it is
+        live = {link for _, link in event_links}
+        _save_seen({k: v for k, v in seen.items() if k in live})
     print(f"  [chronostart] {len(races)} course(s) avec listing")
     return races
 
 
-def _resolve_event(title: str, event_page_url: str) -> dict | None:
-    """Fetch an event page and extract the listing ID, date, and location."""
+# Of ~630 event pages, only ~30 have a registration list. Opening all of them
+# every day (Cloudflare site) looked like a bot: a page without a list is
+# opened again after NO_LISTING_DAYS (minus up to 2 days, fixed per page so
+# they do not all come back the same day). Kept in its own CI cache.
+SEEN_PATH = Path(__file__).resolve().parent.parent / "data" / "chronostart_seen.json"
+NO_LISTING = "no-listing"
+NO_LISTING_DAYS = 7
+
+
+def _load_seen() -> dict[str, str]:
+    try:
+        seen = json.loads(SEEN_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return seen if isinstance(seen, dict) else {}
+
+
+def _save_seen(seen: dict[str, str]) -> None:
+    SEEN_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SEEN_PATH.write_text(json.dumps(seen, indent=0, sort_keys=True), encoding="utf-8")
+
+
+def _recheck_date(link: str) -> str:
+    spread = zlib.crc32(link.encode()) % 3
+    return (date.today() + timedelta(days=NO_LISTING_DAYS - spread)).isoformat()
+
+
+def _resolve_event(title: str, event_page_url: str) -> dict | str | None:
+    """Fetch an event page and extract the listing ID, date, and location.
+
+    NO_LISTING when the page has no registration list; None when it could
+    not be read (asked again next run)."""
     try:
         resp = requests.get(event_page_url, timeout=8)
         resp.raise_for_status()
@@ -292,7 +336,7 @@ def _resolve_event(title: str, event_page_url: str) -> dict | None:
 
     match = re.search(r"/listing/c/(\d+)", resp.text)
     if not match:
-        return None
+        return NO_LISTING
 
     event_id = match.group(1)
     listing_url = f"https://chrono-start.fr/Inscription/Course/listing/c/{event_id}"
