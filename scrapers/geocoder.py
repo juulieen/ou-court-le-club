@@ -45,6 +45,9 @@ OVERRIDES: dict[str, tuple[float, float] | None] = {
     # the event nickname ("BaillaRun") in place of a town, which BAN can't match.
     "baillarun": (46.67, 0.41),
     "la baïlla run des galopins baillargeois": (46.67, 0.41),
+    # Trail Insolite de Ligugé (86) — same: OnSinscrit gives « Insolite Liguge ».
+    "insolite liguge, vienne": (46.52, 0.29),
+    "insolite liguge, 86": (46.52, 0.29),
     # Laval Urban Trail — Laval (Mayenne). BAN's bare "Laval" lands on a
     # hamlet in the Alpes-Maritimes.
     "laval": (48.06, -0.77),

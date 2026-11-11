@@ -29,6 +29,8 @@ Historique des évolutions notables. Format inspiré de
   chargement, plus seulement à la première visite (2026-11-05).
 
 ### Corrigé
+- Trail Insolite de Ligugé absent de la carte : OnSinscrit donne
+  « Insolite Liguge » comme ville. Lieu forcé à Ligugé (86) (2026-11-11).
 - Protiming : 0 course depuis le 6 novembre, le site est passé derrière
   Cloudflare et refuse les serveurs GitHub (403). Les requêtes passent par
   `cloudscraper`, comme Chrono-Start (2026-11-09).
