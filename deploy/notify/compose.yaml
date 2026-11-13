@@ -7,6 +7,10 @@ services:
     build: .
     container_name: runevent86-notify
     restart: unless-stopped
+    # Image construite localement (absente des registres) : Diun ne peut pas
+    # la surveiller et échouait à chaque passage.
+    labels:
+      - "diun.enable=false"
     environment:
       # Fuseau du cron : 11h30 locale = Europe/Paris (gère l'heure été/hiver).
       TZ: Europe/Paris
@@ -52,6 +56,10 @@ services:
     build: .
     container_name: runevent86-exclusions
     restart: unless-stopped
+    # Image construite localement (absente des registres) : Diun ne peut pas
+    # la surveiller et échouait à chaque passage.
+    labels:
+      - "diun.enable=false"
     command: ["python", "/app/notify.py", "serve"]
     environment:
       PRIVATE_DIR: "/private"
