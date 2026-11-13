@@ -6,6 +6,9 @@ Historique des évolutions notables. Format inspiré de
 ## [Non publié]
 
 ### Ajouté
+- Carte : lien **Site du club** (runevent86.fr) en bas de la liste, à côté
+  des mentions légales. Il aide aussi Google à découvrir le site du club,
+  dont deux pages n'étaient pas encore indexées (2026-11-13).
 - **Vue club : « lieu faux ? »** (2026-11-06). Sur la fiche d'une course, on
   tape la bonne commune et la course est replacée tout de suite (service
   `notify.py serve`, `POST /api/lieux`, fichier public `lieux.json` sans nom
