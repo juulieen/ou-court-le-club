@@ -48,6 +48,8 @@ frontend/                -- Astro static frontend project
     scripts/mapfx.ts     # map effects: globe intro, club→race arcs, reveal cascade,
                          #   lighter basemap, season-film layers (feature-state)
     scripts/markers.ts   # canvas-drawn race icons (trail/route/autre) and cluster icons
+    scripts/basemap.ts   # basemap: juulieen style + Protomaps tiles from map.juulieen.fr,
+                         #   pmtiles protocol, landing-view prefetch kept in memory
     scripts/season.ts    # « Rejouer la saison » film (Sept → Aug seasons)
     scripts/tour.ts      # « Découvrir la carte » guided tour
     styles/global.css    # vanilla CSS stylesheet for all screen modes
@@ -336,10 +338,24 @@ Three stats computed in `updateStats()`:
 ### Chargement carte / données (découplés)
 `init()` lance `loadData()` immédiatement, sans attendre la carte. Seul
 `setupMapLayers()` (qui appelle `addSource`/`addLayer`, lesquels exigent un style
-chargé) est différé via `whenMapReady()`. Conséquence : si la clé MapTiler manque
-ou est invalide, la liste, les stats et les filtres restent utilisables — avant,
-tout était accroché à `map.on("load")` et le site entier restait vide. Sans clé,
-le style retombe sur `demotiles.maplibre.org` pour rester testable en local.
+chargé) est différé via `whenMapReady()`. Conséquence : si le fond de carte ne
+répond pas (map.juulieen.fr injoignable), la liste, les stats et les filtres
+restent utilisables — avant, tout était accroché à `map.on("load")` et le site
+entier restait vide.
+
+### Fond de carte (`basemap.ts`)
+Auto-hébergé depuis novembre 2026, sans clé ni quota (MapTiler avant) : style
+`https://map.juulieen.fr/styles/juulieen.json` (thème « juulieen », dépôt
+public `juulieen/map`, généré par son `src/build-style.mjs`), tuiles Protomaps
+lues par plages d'octets dans `map.juulieen.fr/france.pmtiles` (protocole
+`pmtiles://`, paquet npm `pmtiles`), relief Terrarium (AWS Open Data). Le
+fichier vit sur l'ASUS (`~/server/asus-1/tiles/`, partagé avec
+4g-dans-le-train ; régénération : `tiles-cli/regen-AAAAMMJJ.sh`, planète du
+zoom 0 au 6 + Europe de l'Ouest du 7 au 15). Polices disponibles : Noto Sans
+Regular / Medium / Italic → les étiquettes du site utilisent `LABEL_FONT`
+(Medium), jamais Bold (absente, le symbole entier ne s'afficherait pas).
+Changer le rendu du fond = modifier `juulieen/map`, puis republier son
+`site/` sur l'ASUS : le site du club n'est pas à redéployer.
 
 ### Legend
 Map overlay (not in sidebar) — positioned bottom-left on desktop, top-left on mobile. Semi-transparent background with backdrop blur. Colours = date (cette semaine / ce mois / à venir / passées), shapes = type (Trail / Route).
@@ -350,9 +366,7 @@ Icônes dessinées sur canvas une fois, puis `map.addImage` (`markers.ts`) :
 Les regroupements (`mk-cluster-{trail|route|mixed}-{couleur}`) superposent deux
 formes, avec le nombre de courses dans une pastille étirable (`mk-pill-*`,
 `icon-text-fit`). Les `clusterProperties` (`n_trail`, `n_route`,
-`max_urgency`) choisissent la forme et la couleur. Le fond outdoor est allégé
-par `calmBasemap()` : les couches de détail (sentiers, courbes, villages, POI)
-voient leur zoom minimal relevé (`DETAIL_MINZOOM` dans `mapfx.ts`).
+`max_urgency`) choisissent la forme et la couleur.
 
 ### Intro, arcs, cascade
 - Intro à chaque chargement (jamais sur un lien `#race/…` ni avec « réduire
@@ -370,8 +384,10 @@ voient leur zoom minimal relevé (`DETAIL_MINZOOM` dans `mapfx.ts`).
   cadrage de `fitBounds(shownRaces(), …, true)` en Mercator (la carte est
   encore en globe) et demande les mêmes tuiles que MapLibre à l'arrivée (zoom
   arrondi en dessous pour le vectoriel, au plus proche pour le relief, tuiles
-  de 512 px) ; le cache HTTP (MapTiler : max-age 4 h) les lui resert. En 4G
-  lente, cette vue pèse 3 à 4 Mo (fond + relief).
+  de 512 px). Tuiles du fond (PMTiles) : `basemap.prefetchTile` les lit et
+  garde leurs octets en mémoire, rendus à la carte quand elle demande la même
+  plage (le cache HTTP ne ressert pas des lectures par plages) ; relief : cache
+  HTTP. La vue France pèse environ 0,5 Mo de fond + le relief.
   Le tour de globe de 1,5 s compte à partir de là. La règle « intro ou pas »
   est dans le script en ligne qui le précède (classe `intro` sur `<html>`,
   lue par `shouldPlayIntro`), pour qu'il s'affiche avant le premier rendu.

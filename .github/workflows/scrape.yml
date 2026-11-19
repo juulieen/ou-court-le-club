@@ -197,8 +197,6 @@ jobs:
 
       - name: Build Astro site
         run: cd frontend && npm run build
-        env:
-          PUBLIC_MAPTILER_KEY: ${{ secrets.MAPTILER_KEY }}
 
       # --- Deploy to GitHub Pages ---
       - uses: actions/configure-pages@v6

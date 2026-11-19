@@ -6,6 +6,13 @@ Historique des évolutions notables. Format inspiré de
 ## [Non publié]
 
 ### Ajouté
+- Carte : **fond auto-hébergé** à la place de MapTiler (2026-11-19). Tuiles
+  Protomaps servies par map.juulieen.fr (planète en vue large, Europe de
+  l'Ouest en détail), thème « juulieen » publié dans le dépôt public
+  `juulieen/map` : terre crème, forêts vertes discrètes en vue large, relief,
+  noms plus lisibles. Plus de clé ni de quota. La vue d'arrivée de l'intro
+  pèse environ 0,5 Mo de fond au lieu de 2 Mo ; ses tuiles, lues par plages
+  dans le fichier PMTiles, sont gardées en mémoire pendant le logo.
 - Carte : pendant le logo d'ouverture, **préchargement des tuiles de la vue
   d'arrivée** du vol, avec une barre de chargement ; le logo attend qu'elles
   soient là (25 s au plus) pour qu'on atterrisse sur une carte complète,

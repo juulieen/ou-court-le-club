@@ -13,7 +13,7 @@ Un pipeline de scrapers parcourt chaque jour les listes d'inscription de **19 pl
 1. **Par club** — regex sur le champ "club" des inscriptions (ex: "Run Event 86", "RunEvent", etc.)
 2. **Par nom** — liste de membres connus pour ceux qui n'ont pas rempli le champ club
 
-Les resultats sont affiches sur une carte MapLibre GL avec les tuiles MapTiler. Les prenoms des membres qui ont donne leur consentement sont affiches a cote des courses.
+Les resultats sont affiches sur une carte MapLibre GL avec un fond auto-heberge (tuiles Protomaps, theme [juulieen](https://github.com/juulieen/map), servi par map.juulieen.fr). Les prenoms des membres qui ont donne leur consentement sont affiches a cote des courses.
 
 ## Plateformes supportees (19)
 
@@ -78,7 +78,7 @@ Certaines courses utilisent des plateformes que le projet ne peut pas scanner :
 
 ## Stack technique
 
-- **Frontend** : MapLibre GL JS + MapTiler (outdoor-v2) + HTML/CSS/JS statique
+- **Frontend** : MapLibre GL JS + fond Protomaps auto-heberge (map.juulieen.fr, theme juulieen) + HTML/CSS/JS statique
 - **Backend** : Python (requests, BeautifulSoup, xml.etree)
 - **Geocoding** : strict (commune existante dans le bon département, API BAN, Nominatim en repli), OVERRIDES manuels ; lieu des courses sans adresse cherché sur le web (Exa + modèle gratuit OpenRouter)
 - **Hebergement** : GitHub Pages (deploiement via GitHub Actions artifact — les prenoms ne sont jamais commites)

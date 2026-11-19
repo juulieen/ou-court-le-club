@@ -3,6 +3,8 @@
 // Tout passe par MapLibre (pas de DOM par point) pour rester fluide sur mobile.
 // « Réduire les animations » coupe tout : la carte arrive sur sa vue finale.
 
+import { prefetchTile, type BytesTracker } from "./basemap";
+
 declare const maplibregl: any;
 
 // Local du club (Poitiers), point de départ des arcs.
@@ -106,8 +108,8 @@ function setSplashProgress(p: number) {
 // --- Préchargement de la vue d'arrivée ---
 // Le vol de l'intro finit sur les courses. Sans préchargement, ses tuiles ne
 // partent qu'à l'atterrissage et la carte se remplit à vue ; on les demande
-// pendant le logo. Le navigateur les garde en cache (MapTiler : max-age 4 h,
-// 8 h pour le relief) et MapLibre les y retrouve.
+// pendant le logo. Fond (PMTiles) : octets gardés en mémoire par basemap.ts
+// et rendus à la carte. Relief (images Terrarium) : cache HTTP du navigateur.
 
 const MAX_PREFETCH = 80; // grand écran : on s'arrête là
 
@@ -137,13 +139,16 @@ function landingView(points: [number, number][], pad: Padding, w: number, h: num
   return { cx, cy, zoom };
 }
 
-// URL des tuiles que MapLibre demandera à l'arrivée : pour chaque source
+// Tuiles que MapLibre demandera à l'arrivée (URL, ou z/x/y pour le fichier
+// PMTiles du fond) : pour chaque source
 // qu'une couche affiche à ce zoom, les tuiles qui couvrent l'écran. Zoom des
 // tuiles comme MapLibre pour des tuiles de 512 px : arrondi inférieur pour
 // les tuiles vectorielles, au plus proche pour les images (relief).
-function landingTiles(map: any, view: { cx: number; cy: number; zoom: number }, w: number, h: number): string[] {
+type LandingTile = { url: string } | { z: number; x: number; y: number };
+
+function landingTiles(map: any, view: { cx: number; cy: number; zoom: number }, w: number, h: number): LandingTile[] {
   const { layers, sources } = map.getStyle(); // copie tout le style : une fois
-  const urls: string[] = [];
+  const tiles: LandingTile[] = [];
   for (const [id, def] of Object.entries<any>(sources)) {
     const src = map.getSource(id);
     const template: string | undefined = src?.tiles?.[0];
@@ -169,10 +174,14 @@ function landingTiles(map: any, view: { cx: number; cy: number; zoom: number }, 
       for (let y = ya; y <= yb; y++) {
         const wx = ((x % n) + n) % n; // le monde se répète en longitude
         const yy = src.scheme === "tms" ? n - 1 - y : y;
-        urls.push(template.replace("{z}", String(z)).replace("{x}", String(wx)).replace("{y}", String(yy)));
+        tiles.push(
+          template.startsWith("pmtiles://")
+            ? { z, x: wx, y: yy }
+            : { url: template.replace("{z}", String(z)).replace("{x}", String(wx)).replace("{y}", String(yy)) },
+        );
       }
   }
-  return urls.slice(0, MAX_PREFETCH);
+  return tiles.slice(0, MAX_PREFETCH);
 }
 
 // Télécharge les tuiles de la vue d'arrivée en faisant avancer la barre du
@@ -183,65 +192,78 @@ export function prefetchLanding(map: any, points: [number, number][], pad: Paddi
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
   const view = landingView(points, pad, w, h, maxZoom);
-  const urls = landingTiles(map, view, w, h);
-  const progress = new DownloadProgress(urls.length, (p) => setSplashProgress(0.1 + 0.9 * p));
-  return Promise.all(urls.map((url, i) => progress.fetch(url, i))).then(() => {});
+  const tiles = landingTiles(map, view, w, h);
+  const progress = new DownloadProgress((p) => setSplashProgress(0.1 + 0.9 * p));
+  return Promise.all(
+    tiles.map((t) => {
+      const task = progress.task();
+      const done = "url" in t ? fetchTracked(t.url, task) : prefetchTile(t.z, t.x, t.y, task);
+      // Ne rejette jamais : une tuile en échec sera redemandée par MapLibre.
+      return done.catch(() => {}).finally(() => task.finish());
+    }),
+  ).then(() => {});
 }
 
-// Avancement d'un lot de téléchargements, en octets transférés : une tuile
-// du fond pèse 300 à 550 Ko, une du relief 150 à 370 Ko, une de la couche
-// outdoor 15 à 50 Ko ; compter les tuiles faisait stagner puis sauter la
-// barre. Chaque tuile pèse son Content-Length (octets sur le réseau), connu
-// dès ses en-têtes ; avant, la moyenne des tailles déjà connues.
-//
-// Le corps lu est décompressé : pour le fond (gzip), les octets lus dépassent
-// le Content-Length. Le rapport lu / transféré s'apprend sur la première
-// tuile terminée de chaque type ; d'ici là, ~2,5 pour les tuiles vectorielles
-// (gzip chez MapTiler), 1 pour les images (webp, déjà compressées).
+// Télécharge une image (relief) jusqu'au bout, sinon le navigateur ne la met
+// pas en cache, en comptant ses octets.
+async function fetchTracked(url: string, tracker: BytesTracker) {
+  const res = await fetch(url);
+  const part = tracker.part(Number(res.headers.get("content-length")) || null);
+  try {
+    if (!res.body) return void (await res.arrayBuffer());
+    const reader = res.body.getReader();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      part.read(value.byteLength);
+    }
+  } finally {
+    part.done();
+  }
+}
+
+// Avancement d'un lot de tuiles, en octets : une tuile du fond pèse 300 à
+// 550 Ko, une du relief environ 65 Ko ; compter les tuiles faisait stagner
+// puis sauter la barre. Chaque tâche (une tuile) a ses téléchargements
+// (« parts »), dont la taille est connue au départ : plage d'octets du
+// fichier PMTiles, ou Content-Length d'une image. Tant qu'une tâche n'a pas
+// commencé la lecture de sa tuile, elle pèse la moyenne des tâches finies.
+const DEFAULT_TILE_BYTES = 300_000;
+
 class DownloadProgress {
-  private expected: (number | null)[];
-  private received: number[];
-  private ratio = new Map<string, number>();
+  private tasks: { parts: { expected: number; got: number }[]; done: boolean }[] = [];
   private frame = 0;
   private shown = 0;
   private onProgress: (p: number) => void;
 
-  constructor(n: number, onProgress: (p: number) => void) {
+  constructor(onProgress: (p: number) => void) {
     this.onProgress = onProgress;
-    this.expected = Array(n).fill(null);
-    this.received = Array(n).fill(0);
   }
 
-  async fetch(url: string, i: number): Promise<void> {
-    try {
-      const res = await fetch(url);
-      const size = Number(res.headers.get("content-length")) || null;
-      const type = res.headers.get("content-type") || "";
-      this.expected[i] = size;
-      if (!res.body) {
-        await res.arrayBuffer();
-        return;
-      }
-      // Lu jusqu'au bout, sinon le navigateur ne le met pas en cache.
-      const reader = res.body.getReader();
-      let read = 0;
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        read += value.byteLength;
-        if (size) {
-          const r = this.ratio.get(type) ?? (type.startsWith("image/") ? 1 : 2.5);
-          this.received[i] = Math.min(0.97 * size, read / r);
-          this.schedule();
-        }
-      }
-      if (size && !this.ratio.has(type)) this.ratio.set(type, read / size);
-    } catch {
-      // MapLibre la redemandera.
-    } finally {
-      this.received[i] = this.expected[i] ??= 1;
-      this.schedule();
-    }
+  task(): BytesTracker & { finish(): void } {
+    const t = { parts: [] as { expected: number; got: number }[], done: false };
+    this.tasks.push(t);
+    return {
+      part: (expected) => {
+        const p = { expected: expected ?? 0, got: 0 };
+        t.parts.push(p);
+        return {
+          read: (n) => {
+            p.got += n;
+            if (!expected) p.expected = p.got;
+            this.schedule();
+          },
+          done: () => {
+            p.got = p.expected = Math.max(p.got, p.expected);
+            this.schedule();
+          },
+        };
+      },
+      finish: () => {
+        t.done = true;
+        this.schedule();
+      },
+    };
   }
 
   // Une mise à jour de la barre par image, pas une par morceau reçu.
@@ -249,12 +271,20 @@ class DownloadProgress {
     if (this.frame) return;
     this.frame = requestAnimationFrame(() => {
       this.frame = 0;
-      const known = this.expected.filter((e): e is number => e !== null);
-      const guess = known.length ? known.reduce((a, b) => a + b, 0) / known.length : 1;
-      const total = this.expected.reduce<number>((a, e) => a + (e ?? guess), 0);
-      const got = this.received.reduce((a, b) => a + b, 0);
-      // Jamais en arrière : la taille d'une tuile qui remplace la moyenne
-      // estimée peut faire grossir le total.
+      const sum = (t: (typeof this.tasks)[number], k: "expected" | "got") =>
+        t.parts.reduce((a, p) => a + p[k], 0);
+      const finished = this.tasks.filter((t) => t.done);
+      const avg = finished.length
+        ? finished.reduce((a, t) => a + sum(t, "expected"), 0) / finished.length
+        : DEFAULT_TILE_BYTES;
+      let total = 0;
+      let got = 0;
+      for (const t of this.tasks) {
+        total += t.done ? sum(t, "expected") : Math.max(sum(t, "expected"), avg);
+        got += sum(t, "got");
+      }
+      // Jamais en arrière : une tuile plus lourde que la moyenne fait grossir
+      // le total.
       this.shown = Math.max(this.shown, total ? Math.min(1, got / total) : 1);
       this.onProgress(this.shown);
     });
@@ -266,7 +296,7 @@ class DownloadProgress {
 export function setupGlobe(map: any) {
   map.on("style.load", () => {
     // Globe vu de loin, carte plate dès la vue régionale : en globe, le fond
-    // outdoor (≈120 couches) se dessine trop lentement et la carte saccade.
+    // se dessine trop lentement et la carte saccade.
     map.setProjection({
       type: ["interpolate", ["linear"], ["zoom"], 2, "vertical-perspective", 4, "mercator"],
     });
@@ -280,35 +310,6 @@ export function setupGlobe(map: any) {
       // Atmosphère visible de loin, effacée en vue régionale.
       "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 2, 1, 4, 0],
     });
-  });
-}
-
-// Zoom minimal d'apparition des détails du fond outdoor (identifiants de
-// couches MapTiler). Le style les montre très tôt (sentiers balisés dès le
-// zoom 5, villages dès 8) et ils noient les courses en vue régionale ; on les
-// garde, mais seulement quand on s'approche.
-const DETAIL_MINZOOM: [RegExp, number][] = [
-  [/^Longdistance trail|^Bicycle longdistance/, 11],
-  [/trail|^Bicycle local|^Via ferrata/i, 13],
-  [/^(Path|Track|Steps|Tunnel path|Pedestrian)/, 14],
-  [/^(Glacier )?[Cc]ontour/, 12],
-  [/^(Peak|Volcano) labels/, 12],
-  [/^(Village|Place) labels$/, 10],
-  [/^(Road|River|Aerialway) labels$/, 11],
-  [/^(Airport|Lake) labels$/, 11],
-  [/^Park outline$/, 11],
-  [/^National park labels$/, 9],
-  [/^Protected area labels$/, 13],
-  [/^(Outdoor shop|Sport|Outdoor water|Transport|Food|Park labels|Healthcare|Tourism|Culture|Outdoor|Station|Castle)$/, 15],
-];
-
-export function calmBasemap(map: any) {
-  map.on("style.load", () => {
-    for (const layer of map.getStyle().layers) {
-      const rule = DETAIL_MINZOOM.find(([re]) => re.test(layer.id));
-      if (!rule || (layer.minzoom ?? 0) >= rule[1]) continue;
-      map.setLayerZoomRange(layer.id, rule[1], layer.maxzoom ?? 24);
-    }
   });
 }
 
