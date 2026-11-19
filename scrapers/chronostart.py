@@ -2,7 +2,11 @@
 
 Event discovery: WP REST API at chrono-start.com/wp-json/wp/v2/mec-events
 Registration lists: chrono-start.fr/Inscription/Course/listing/c/{event_id}
-  - Protected by Cloudflare (needs cloudscraper)
+  - Protected by Cloudflare: plain `requests` gets a 403 challenge
+    ("Just a moment...") from GitHub Actions. A shared session with one fixed,
+    recent Chrome User-Agent passes (15/15 on 2026-11-19). Not cloudscraper:
+    it draws a random User-Agent per session and 7 in 12 were challenged,
+    the same flaw that left Protiming empty on 17-19 Nov 2026.
   - Table #table_listing with Club column (index 7)
 """
 
@@ -12,11 +16,6 @@ import re
 import zlib
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-
-try:
-    import cloudscraper
-except ImportError:
-    cloudscraper = None
 
 import requests
 from bs4 import BeautifulSoup
@@ -28,13 +27,21 @@ class ChronoStartScraper(BaseScraper):
     """Scrape registered participants from Chrono-Start."""
 
     BASE_FR = "https://chrono-start.fr"
-    # Shared cloudscraper session to avoid Cloudflare blocks in concurrent use
+    BROWSER_UA = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    )
+    # One shared session with a recent Chrome UA gets past Cloudflare
     _session = None
 
     @classmethod
-    def _get_session(cls):
-        if cls._session is None and cloudscraper:
-            cls._session = cloudscraper.create_scraper()
+    def _get_session(cls) -> requests.Session:
+        if cls._session is None:
+            cls._session = requests.Session()
+            cls._session.headers.update({
+                "User-Agent": cls.BROWSER_UA,
+                "Accept-Language": "fr-FR,fr;q=0.9",
+            })
         return cls._session
 
     def scrape(self, race_config: dict) -> RaceResult | None:
@@ -54,13 +61,9 @@ class ChronoStartScraper(BaseScraper):
 
         list_url = f"{self.BASE_FR}/Inscription/Course/listing/c/{event_id}"
 
-        # Cloudflare-protected: use shared cloudscraper session
+        # Cloudflare-protected: use the shared browser-UA session
         try:
-            session = self._get_session()
-            if session:
-                resp = session.get(list_url, timeout=15)
-            else:
-                resp = requests.get(list_url, timeout=15)
+            resp = self._get_session().get(list_url, timeout=15)
             resp.raise_for_status()
         except Exception:
             return None
@@ -124,10 +127,7 @@ class ChronoStartScraper(BaseScraper):
         for ep_id, course_name in courses:
             ep_url = f"{self.BASE_FR}/Inscription/course/listing?c={event_id}&idEp={ep_id}"
             try:
-                if session:
-                    resp = session.get(ep_url, timeout=15)
-                else:
-                    resp = requests.get(ep_url, timeout=15)
+                resp = session.get(ep_url, timeout=15)
                 resp.raise_for_status()
             except Exception:
                 continue
