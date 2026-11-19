@@ -17,10 +17,61 @@ export const reducedMotion = (): boolean =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
 // Intro à chaque chargement, sauf sur un lien direct vers une course (#race/…)
-// ou avec « réduire les animations ». « ?intro » la force quand même.
+// ou avec « réduire les animations ». « ?intro » la force quand même. La règle
+// est dans le script en ligne d'index.astro, qui doit afficher le logo avant
+// le premier rendu : il pose la classe `intro` sur <html>.
 export function shouldPlayIntro(): boolean {
-  if (new URLSearchParams(location.search).has("intro")) return true;
-  return !reducedMotion() && !location.hash.startsWith("#race/");
+  return document.documentElement.classList.contains("intro");
+}
+
+// --- Écran du logo ---
+
+const SPLASH_MIN_MS = 1200; // le logo a le temps d'apparaître, même en cache
+const SPLASH_MAX_MS = 8000; // style ou tuiles qui ne répondent pas
+const SPLASH_FADE_MS = 700; // doit suivre la transition de #splash.leaving
+
+let splashLeft: (() => void) | null = null;
+
+// Retire le logo une fois le globe dessiné : style chargé, au moins une tuile
+// reçue et plus aucune en attente. Résout quand il commence à s'effacer, ou
+// plus tôt si hideSplash() est appelé (intro passée).
+export function hideSplashWhenReady(map: any): Promise<void> {
+  return new Promise((resolve) => {
+    let tiles = 0;
+    splashLeft = () => {
+      splashLeft = null;
+      map.off("data", onData);
+      map.off("render", onRender);
+      clearTimeout(maxTimer);
+      resolve();
+    };
+    let ready = false;
+    const finish = () => {
+      if (ready) return;
+      ready = true;
+      // Au moins SPLASH_MIN_MS depuis l'ouverture de la page.
+      setTimeout(hideSplash, Math.max(0, SPLASH_MIN_MS - performance.now()));
+    };
+    const onData = (e: any) => {
+      if (e.dataType === "source" && e.tile) tiles++;
+    };
+    const onRender = () => {
+      // La tuile est reçue ; on laisse passer l'image qui la dessine.
+      if (tiles > 0 && map.isStyleLoaded() && map.areTilesLoaded())
+        requestAnimationFrame(() => requestAnimationFrame(finish));
+    };
+    map.on("data", onData);
+    map.on("render", onRender);
+    const maxTimer = setTimeout(finish, SPLASH_MAX_MS);
+  });
+}
+
+export function hideSplash() {
+  splashLeft?.();
+  const el = document.getElementById("splash");
+  if (!el || el.classList.contains("leaving")) return;
+  el.classList.add("leaving");
+  setTimeout(() => el.remove(), SPLASH_FADE_MS);
 }
 
 // --- Globe ---

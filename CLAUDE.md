@@ -361,6 +361,13 @@ voient leur zoom minimal relevé (`DETAIL_MINZOOM` dans `mapfx.ts`).
   courses, puis cascade. Plein écran pendant le globe et le vol
   (`setImmersive`) ; le panneau revient à l'atterrissage, et le vol est
   déjà cadré pour lui (`fitBounds(…, asIfShown)`).
+- Logo d'ouverture (`#splash` dans `index.astro`) : il couvre le globe tant
+  que ses tuiles arrivent (`hideSplashWhenReady` : au moins une tuile reçue,
+  plus aucune en attente ; entre 1,2 s et 8 s), puis s'efface en grossissant.
+  Le tour de globe de 1,5 s compte à partir de là. La règle « intro ou pas »
+  est dans le script en ligne qui le précède (classe `intro` sur `<html>`,
+  lue par `shouldPlayIntro`), pour qu'il s'affiche avant le premier rendu.
+  MapLibre est chargé en `defer` pour ne pas retarder cet affichage.
 - Arcs club → courses à venir (source `arcs`, `line-gradient`) qui poussent
   pendant la cascade ; un éclat les parcourt 3 fois puis la carte redevient
   immobile (redessiner en continu faisait saccader le fond outdoor). Le halo

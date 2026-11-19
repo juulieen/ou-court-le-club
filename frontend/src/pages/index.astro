@@ -7,6 +7,29 @@ const description = 'Carte interactive des courses ou les membres du club Run Ev
 
 <Base title={title} description={description}>
 
+  <!-- Logo du club pendant que le globe se dessine (intro seulement). Affiché
+       par le script juste dessous, avant le premier rendu ; retiré par
+       mapfx.hideSplash(). -->
+  <div id="splash" aria-hidden="true">
+    <div class="splash-mark">
+      <svg class="splash-ring" viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" /></svg>
+      <img src={`${import.meta.env.BASE_URL}img/logo.jpg`} alt="" width="500" height="500" fetchpriority="high">
+    </div>
+    <p class="splash-title">Où court le club ?</p>
+  </div>
+  <script is:inline>
+    // Même règle que l'intro (mapfx.shouldPlayIntro lit cette classe) : à
+    // chaque chargement, sauf lien direct vers une course ou « réduire les
+    // animations » ; « ?intro » la force.
+    (function () {
+      var forced = new URLSearchParams(location.search).has("intro");
+      var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (forced || (!calm && location.hash.indexOf("#race/") !== 0)) {
+        document.documentElement.classList.add("intro");
+      }
+    })();
+  </script>
+
   <div id="sidebar">
     <div id="sidebar-header">
       <div class="header-content">

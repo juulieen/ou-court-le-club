@@ -61,7 +61,10 @@ const defaultOgImage = `${Astro.site}${siteBase}img/screenshot.png`.replace(/([^
 
   <!-- MapLibre GL -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.css" />
-  <script is:inline src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js"></script>
+  <!-- defer : la page (et l'écran du logo) s'affiche sans attendre ces 800 Ko.
+       Les scripts différés s'exécutent dans l'ordre du document, donc avant
+       le module de la page, placé plus bas dans le body. -->
+  <script is:inline defer src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js"></script>
 
   <!-- Plausible Analytics -->
   <script defer data-domain="juulieen.github.io" src="https://plausible.juulieen.fr/js/script.file-downloads.hash.outbound-links.js" is:inline></script>

@@ -91,7 +91,9 @@ declare const maplibregl: any;
   // vol vers les courses ; "done" : vue normale. Un clic sur « Passer » ou un
   // geste sur la carte saute directement à la vue finale.
   let introState: "spinning" | "flying" | "done" = fx.shouldPlayIntro() ? "spinning" : "done";
-  const introStart = performance.now();
+  // Début du tour de globe visible : quand le logo s'efface.
+  let introStart = performance.now();
+  let splashGone: Promise<void> = Promise.resolve();
   let stopSpin = () => {};
   let tour: Tour;
 
@@ -122,6 +124,7 @@ declare const maplibregl: any;
     introState = "done";
     stopSpin();
     setImmersive(false);
+    fx.hideSplash();
     document.getElementById("intro-skip")?.remove();
     if (wasFlying) {
       map.stop(); // déclenche moveend, donc la cascade
@@ -132,6 +135,9 @@ declare const maplibregl: any;
   function setupIntro() {
     if (introState !== "spinning") return;
     stopSpin = fx.startSpin(map);
+    splashGone = fx.hideSplashWhenReady(map).then(() => {
+      introStart = performance.now();
+    });
     const btn = document.createElement("button");
     btn.id = "intro-skip";
     btn.type = "button";
@@ -169,8 +175,14 @@ declare const maplibregl: any;
       // Le panneau revient à l'atterrissage (skipIntro) : on cadre déjà pour lui.
       fitBounds(shownRaces(), introState === "flying" ? 5500 : 0, true);
     };
-    // Laisse le globe tourner au moins 1,5 s : sinon l'intro passe inaperçue.
-    if (intro) setTimeout(fly, Math.max(0, introStart + 1500 - performance.now()));
+    // Laisse le globe tourner au moins 1,5 s une fois le logo parti : sinon
+    // l'intro passe inaperçue.
+    if (intro)
+      splashGone.then(() =>
+        introState === "spinning"
+          ? setTimeout(fly, Math.max(0, introStart + 1500 - performance.now()))
+          : fly(), // intro passée pendant le logo
+      );
     else fly();
   }
 

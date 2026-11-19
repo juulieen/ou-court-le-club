@@ -1215,7 +1215,7 @@ body {
   left: 50%;
   bottom: 28px;
   transform: translateX(-50%);
-  z-index: 50;
+  z-index: 3001; /* au-dessus du logo d'ouverture */
   padding: 10px 20px;
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 999px;
@@ -1234,6 +1234,123 @@ body {
 
 @keyframes intro-skip-in {
   from { opacity: 0; transform: translate(-50%, 10px); }
+}
+
+/* ---- Logo d'ouverture (intro) ----
+   Couvre le globe le temps que ses tuiles arrivent, puis s'efface en
+   grossissant, comme si on plongeait vers la carte. Le fond reprend le ciel
+   du globe (setSky) pour que le passage se voie à peine. */
+#splash {
+  display: none;
+}
+
+html.intro #splash {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  background: radial-gradient(circle at 50% 45%, #24477f 0%, #13254a 55%, #0a0f24 100%);
+  transition: opacity 0.7s ease, visibility 0s linear 0.7s;
+}
+
+#splash.leaving {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-mark {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  animation: splash-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transition: transform 0.7s cubic-bezier(0.5, 0, 0.75, 0);
+}
+
+#splash.leaving .splash-mark {
+  transform: scale(1.6);
+}
+
+.splash-mark img {
+  position: absolute;
+  inset: 14px;
+  width: calc(100% - 28px);
+  height: calc(100% - 28px);
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08), 0 18px 50px rgba(0, 0, 0, 0.45);
+  animation: splash-breathe 2.4s ease-in-out 0.8s infinite;
+}
+
+/* Halo orange qui s'élargit derrière le logo. */
+.splash-mark::before {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(245, 124, 32, 0.5);
+  animation: splash-pulse 2.4s ease-out 0.8s infinite;
+}
+
+/* Arc de chargement qui tourne autour du logo. */
+.splash-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: splash-spin 1.6s linear infinite;
+}
+
+.splash-ring circle {
+  fill: none;
+  stroke: var(--orange);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 90 262;
+  opacity: 0.9;
+}
+
+.splash-title {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font: 400 26px/1 "Bebas Neue", "DM Sans", system-ui, sans-serif;
+  letter-spacing: 0.18em;
+  animation: splash-title-in 0.8s ease 0.35s both;
+}
+
+#splash.leaving .splash-title {
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+
+@keyframes splash-in {
+  from { opacity: 0; transform: scale(0.82); }
+}
+
+@keyframes splash-title-in {
+  from { opacity: 0; transform: translateY(8px); letter-spacing: 0.32em; }
+}
+
+@keyframes splash-breathe {
+  50% { transform: scale(1.035); }
+}
+
+@keyframes splash-pulse {
+  70%, 100% { box-shadow: 0 0 0 26px rgba(245, 124, 32, 0); }
+}
+
+@keyframes splash-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .splash-mark { width: 136px; height: 136px; }
+  .splash-title { font-size: 22px; }
 }
 
 /* Halo du club : animation CSS, sans redessin de la carte. */
