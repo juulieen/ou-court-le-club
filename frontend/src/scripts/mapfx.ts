@@ -108,8 +108,9 @@ function setSplashProgress(p: number) {
 // --- Préchargement de la vue d'arrivée ---
 // Le vol de l'intro finit sur les courses. Sans préchargement, ses tuiles ne
 // partent qu'à l'atterrissage et la carte se remplit à vue ; on les demande
-// pendant le logo. Fond (PMTiles) : octets gardés en mémoire par basemap.ts
-// et rendus à la carte. Relief (images Terrarium) : cache HTTP du navigateur.
+// pendant le logo. Fichiers PMTiles (fond, relief) : octets gardés en mémoire
+// par basemap.ts et rendus à la carte. Autres sources (URL de tuiles) : cache
+// HTTP du navigateur.
 
 const MAX_PREFETCH = 80; // grand écran : on s'arrête là
 
@@ -144,7 +145,7 @@ function landingView(points: [number, number][], pad: Padding, w: number, h: num
 // qu'une couche affiche à ce zoom, les tuiles qui couvrent l'écran. Zoom des
 // tuiles comme MapLibre pour des tuiles de 512 px : arrondi inférieur pour
 // les tuiles vectorielles, au plus proche pour les images (relief).
-type LandingTile = { url: string } | { z: number; x: number; y: number };
+type LandingTile = { url: string } | { archive: string; z: number; x: number; y: number };
 
 function landingTiles(map: any, view: { cx: number; cy: number; zoom: number }, w: number, h: number): LandingTile[] {
   const { layers, sources } = map.getStyle(); // copie tout le style : une fois
@@ -176,7 +177,7 @@ function landingTiles(map: any, view: { cx: number; cy: number; zoom: number }, 
         const yy = src.scheme === "tms" ? n - 1 - y : y;
         tiles.push(
           template.startsWith("pmtiles://")
-            ? { z, x: wx, y: yy }
+            ? { archive: template.slice("pmtiles://".length, template.indexOf("/{z}")), z, x: wx, y: yy }
             : { url: template.replace("{z}", String(z)).replace("{x}", String(wx)).replace("{y}", String(yy)) },
         );
       }
@@ -197,14 +198,14 @@ export function prefetchLanding(map: any, points: [number, number][], pad: Paddi
   return Promise.all(
     tiles.map((t) => {
       const task = progress.task();
-      const done = "url" in t ? fetchTracked(t.url, task) : prefetchTile(t.z, t.x, t.y, task);
+      const done = "url" in t ? fetchTracked(t.url, task) : prefetchTile(t.archive, t.z, t.x, t.y, task);
       // Ne rejette jamais : une tuile en échec sera redemandée par MapLibre.
       return done.catch(() => {}).finally(() => task.finish());
     }),
   ).then(() => {});
 }
 
-// Télécharge une image (relief) jusqu'au bout, sinon le navigateur ne la met
+// Télécharge une tuile par URL jusqu'au bout, sinon le navigateur ne la met
 // pas en cache, en comptant ses octets.
 async function fetchTracked(url: string, tracker: BytesTracker) {
   const res = await fetch(url);
@@ -222,11 +223,11 @@ async function fetchTracked(url: string, tracker: BytesTracker) {
   }
 }
 
-// Avancement d'un lot de tuiles, en octets : une tuile du fond pèse 300 à
-// 550 Ko, une du relief environ 65 Ko ; compter les tuiles faisait stagner
+// Avancement d'un lot de tuiles, en octets : une tuile du fond pèse 60 à
+// 130 Ko, une du relief jusqu'à 170 Ko en montagne ; compter les tuiles faisait stagner
 // puis sauter la barre. Chaque tâche (une tuile) a ses téléchargements
 // (« parts »), dont la taille est connue au départ : plage d'octets du
-// fichier PMTiles, ou Content-Length d'une image. Tant qu'une tâche n'a pas
+// fichier PMTiles, ou Content-Length d'une tuile par URL. Tant qu'une tâche n'a pas
 // commencé la lecture de sa tuile, elle pèse la moyenne des tâches finies.
 const DEFAULT_TILE_BYTES = 300_000;
 

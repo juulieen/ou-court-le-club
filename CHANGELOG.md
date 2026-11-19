@@ -6,6 +6,11 @@ Historique des évolutions notables. Format inspiré de
 ## [Non publié]
 
 ### Ajouté
+- Carte : **relief auto-hébergé et plus précis** (2026-11-19). Altitudes
+  Mapterhorn servies par map.juulieen.fr (planète en vue large, Europe de
+  l'Ouest jusqu'à ~13 m par point) à la place des tuiles Terrarium d'AWS :
+  les vallons et escarpements de la Vienne se voient au zoom, les crêtes des
+  Alpes sont plus nettes. Préchargé pendant le logo comme le fond.
 - Carte : **fond auto-hébergé** à la place de MapTiler (2026-11-19). Tuiles
   Protomaps servies par map.juulieen.fr (planète en vue large, Europe de
   l'Ouest en détail), thème « juulieen » publié dans le dépôt public

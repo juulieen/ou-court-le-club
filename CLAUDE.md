@@ -348,10 +348,12 @@ Auto-hébergé depuis novembre 2026, sans clé ni quota (MapTiler avant) : style
 `https://map.juulieen.fr/styles/juulieen.json` (thème « juulieen », dépôt
 public `juulieen/map`, généré par son `src/build-style.mjs`), tuiles Protomaps
 lues par plages d'octets dans `map.juulieen.fr/france.pmtiles` (protocole
-`pmtiles://`, paquet npm `pmtiles`), relief Terrarium (AWS Open Data). Le
-fichier vit sur l'ASUS (`~/server/asus-1/tiles/`, partagé avec
-4g-dans-le-train ; régénération : `tiles-cli/regen-AAAAMMJJ.sh`, planète du
-zoom 0 au 6 + Europe de l'Ouest du 7 au 15). Polices disponibles : Noto Sans
+`pmtiles://`, paquet npm `pmtiles`), relief Mapterhorn dans
+`map.juulieen.fr/relief.pmtiles` (codage Terrarium, webp 512 px, ~13 m par
+point jusqu'au zoom 12). Les deux fichiers vivent sur l'ASUS
+(`~/server/asus-1/tiles/`, partagés avec 4g-dans-le-train ; régénération :
+`asus-1/tiles-regen.sh AAAAMMJJ` et `asus-1/relief-regen.sh` du dépôt homelab,
+planète du zoom 0 au 6 + Europe de l'Ouest au-delà). Polices disponibles : Noto Sans
 Regular / Medium / Italic → les étiquettes du site utilisent `LABEL_FONT`
 (Medium), jamais Bold (absente, le symbole entier ne s'afficherait pas).
 Changer le rendu du fond = modifier `juulieen/map`, puis republier son
@@ -384,10 +386,10 @@ formes, avec le nombre de courses dans une pastille étirable (`mk-pill-*`,
   cadrage de `fitBounds(shownRaces(), …, true)` en Mercator (la carte est
   encore en globe) et demande les mêmes tuiles que MapLibre à l'arrivée (zoom
   arrondi en dessous pour le vectoriel, au plus proche pour le relief, tuiles
-  de 512 px). Tuiles du fond (PMTiles) : `basemap.prefetchTile` les lit et
-  garde leurs octets en mémoire, rendus à la carte quand elle demande la même
-  plage (le cache HTTP ne ressert pas des lectures par plages) ; relief : cache
-  HTTP. La vue France pèse environ 0,5 Mo de fond + le relief.
+  de 512 px). Fond et relief sont des fichiers PMTiles : `basemap.prefetchTile`
+  lit leurs tuiles et garde les octets en mémoire, rendus à la carte quand elle
+  demande la même plage du même fichier (le cache HTTP ne ressert pas des
+  lectures par plages). La vue France pèse environ 0,5 Mo de fond + le relief.
   Le tour de globe de 1,5 s compte à partir de là. La règle « intro ou pas »
   est dans le script en ligne qui le précède (classe `intro` sur `<html>`,
   lue par `shouldPlayIntro`), pour qu'il s'affiche avant le premier rendu.
