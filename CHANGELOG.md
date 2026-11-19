@@ -6,6 +6,10 @@ Historique des évolutions notables. Format inspiré de
 ## [Non publié]
 
 ### Ajouté
+- Carte : **logo du club à l'ouverture**, le temps que le globe reçoive son
+  fond de carte (au moins 1,2 s, au plus 8 s), puis il s'efface en
+  grossissant ; le tour du globe commence après lui. MapLibre est chargé en
+  `defer` : le logo s'affiche sans attendre ses 800 Ko (2026-11-19).
 - Carte : lien **Site du club** (runevent86.fr) en bas de la liste, à côté
   des mentions légales. Il aide aussi Google à découvrir le site du club,
   dont deux pages n'étaient pas encore indexées (2026-11-13).

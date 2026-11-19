@@ -1255,6 +1255,13 @@ html.intro #splash {
   gap: 26px;
   background: radial-gradient(circle at 50% 45%, #24477f 0%, #13254a 55%, #0a0f24 100%);
   transition: opacity 0.7s ease, visibility 0s linear 0.7s;
+  /* Filet si le script de la carte ne tourne pas (WebGL absent, unpkg
+     bloqué) : sans lui, le logo ne partirait jamais. */
+  animation: splash-giveup 0.7s ease 12s forwards;
+}
+
+@keyframes splash-giveup {
+  to { opacity: 0; visibility: hidden; pointer-events: none; }
 }
 
 #splash.leaving {
