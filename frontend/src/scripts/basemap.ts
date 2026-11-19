@@ -29,7 +29,9 @@ const mapSource = {
     const hit = kept.get(key);
     if (!hit) return network.getBytes(offset, length, signal, etag);
     kept.delete(key);
-    return hit;
+    // Lecture préchargée en échec (coupure, réponse autre que 206) : la carte
+    // refait sa propre requête, sinon la tuile resterait vide à l'arrivée.
+    return hit.catch(() => network.getBytes(offset, length, signal, etag));
   },
 };
 
@@ -66,7 +68,12 @@ function prefetchSource(tracker: BytesTracker) {
 async function readRange(offset: number, length: number, tracker: BytesTracker): Promise<RangeResponse> {
   const part = tracker.part(length);
   try {
-    const res = await fetch(ARCHIVE, { headers: { Range: `bytes=${offset}-${offset + length - 1}` } });
+    // no-store : les octets sont gardés en mémoire ; et Chromium sous Windows
+    // ressert mal les plages en cache (FetchSource de pmtiles l'évite aussi).
+    const res = await fetch(ARCHIVE, {
+      headers: { Range: `bytes=${offset}-${offset + length - 1}` },
+      cache: "no-store",
+    });
     // 200 = serveur qui ignore la plage : on ne télécharge pas 18 Go.
     if (res.status !== 206 || !res.body) throw new Error(`plage refusée (${res.status})`);
     const data = new Uint8Array(length);
@@ -75,7 +82,8 @@ async function readRange(offset: number, length: number, tracker: BytesTracker):
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
-      data.set(value.subarray(0, length - at), at);
+      if (at + value.byteLength > length) throw new Error("plage plus longue que demandée");
+      data.set(value, at);
       at += value.byteLength;
       part.read(value.byteLength);
     }

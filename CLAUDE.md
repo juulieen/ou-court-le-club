@@ -46,7 +46,7 @@ frontend/                -- Astro static frontend project
     pages/index.astro    -- landing page structure & legal modals
     scripts/app.ts       # core TypeScript client logic (MapLibre GL, filters, bottom sheet)
     scripts/mapfx.ts     # map effects: globe intro, club→race arcs, reveal cascade,
-                         #   lighter basemap, season-film layers (feature-state)
+                         #   season-film layers (feature-state)
     scripts/markers.ts   # canvas-drawn race icons (trail/route/autre) and cluster icons
     scripts/basemap.ts   # basemap: juulieen style + Protomaps tiles from map.juulieen.fr,
                          #   pmtiles protocol, landing-view prefetch kept in memory
@@ -371,7 +371,7 @@ formes, avec le nombre de courses dans une pastille étirable (`mk-pill-*`,
 ### Intro, arcs, cascade
 - Intro à chaque chargement (jamais sur un lien `#race/…` ni avec « réduire
   les animations » ; `?intro` la force). Globe (projection interpolée globe → mercator entre les zooms
-  2 et 4 : en globe, le fond outdoor se dessine trop lentement), vol vers les
+  2 et 4 : en globe, le fond se dessine trop lentement), vol vers les
   courses, puis cascade. Plein écran pendant le globe et le vol
   (`setImmersive`) ; le panneau revient à l'atterrissage, et le vol est
   déjà cadré pour lui (`fitBounds(…, asIfShown)`).
@@ -394,7 +394,7 @@ formes, avec le nombre de courses dans une pastille étirable (`mk-pill-*`,
   MapLibre est chargé en `defer` pour ne pas retarder cet affichage.
 - Arcs club → courses à venir (source `arcs`, `line-gradient`) qui poussent
   pendant la cascade ; un éclat les parcourt 3 fois puis la carte redevient
-  immobile (redessiner en continu faisait saccader le fond outdoor). Le halo
+  immobile (redessiner en continu faisait saccader le fond). Le halo
   du club est un marqueur HTML animé en CSS, pour la même raison.
 - Cascade : `reveal_at` (rang de distance au club) piloté par des expressions
   `setPaintProperty`. **Ne convient qu'à caméra fixe** : changer à chaque image

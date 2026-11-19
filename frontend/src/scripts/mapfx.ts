@@ -621,7 +621,7 @@ export function playReveal(map: any) {
 }
 
 // --- Éclat sur les arcs après la cascade ---
-// Chaque mise à jour redessine toute la carte, coûteux avec le fond outdoor :
+// Chaque mise à jour redessine toute la carte, coûteux avec le fond :
 // l'éclat passe GLINT_COUNT fois puis la carte redevient immobile.
 
 const GLINT_MS = 1400;
