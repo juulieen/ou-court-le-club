@@ -140,8 +140,8 @@ function landingView(points: [number, number][], pad: Padding, w: number, h: num
   return { cx, cy, zoom };
 }
 
-// Tuiles que MapLibre demandera à l'arrivée (URL, ou z/x/y pour le fichier
-// PMTiles du fond) : pour chaque source
+// Tuiles que MapLibre demandera à l'arrivée (URL, ou fichier et z/x/y pour les
+// fichiers PMTiles du fond et du relief) : pour chaque source
 // qu'une couche affiche à ce zoom, les tuiles qui couvrent l'écran. Zoom des
 // tuiles comme MapLibre pour des tuiles de 512 px : arrondi inférieur pour
 // les tuiles vectorielles, au plus proche pour les images (relief).
@@ -224,12 +224,13 @@ async function fetchTracked(url: string, tracker: BytesTracker) {
 }
 
 // Avancement d'un lot de tuiles, en octets : une tuile du fond pèse 60 à
-// 130 Ko, une du relief jusqu'à 170 Ko en montagne ; compter les tuiles faisait stagner
-// puis sauter la barre. Chaque tâche (une tuile) a ses téléchargements
-// (« parts »), dont la taille est connue au départ : plage d'octets du
-// fichier PMTiles, ou Content-Length d'une tuile par URL. Tant qu'une tâche n'a pas
-// commencé la lecture de sa tuile, elle pèse la moyenne des tâches finies.
-const DEFAULT_TILE_BYTES = 300_000;
+// 130 Ko, une du relief jusqu'à 170 Ko en montagne ; compter les tuiles
+// faisait stagner puis sauter la barre. Chaque tâche (une tuile) a ses
+// téléchargements (« parts »), dont la taille est connue au départ : plage
+// d'octets d'un fichier PMTiles, ou Content-Length d'une tuile par URL. Tant
+// qu'une tâche n'a pas commencé la lecture de sa tuile, elle pèse la moyenne
+// des tâches finies (au départ, DEFAULT_TILE_BYTES).
+const DEFAULT_TILE_BYTES = 120_000;
 
 class DownloadProgress {
   private tasks: { parts: { expected: number; got: number }[]; done: boolean }[] = [];
