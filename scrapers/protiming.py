@@ -14,9 +14,12 @@ Protiming (protiming.fr) was rebuilt as a Tailwind SPA (Sept 2026). The old
 The club filter is what makes Protiming valuable: it finds members who are
 not in `known_members`, without downloading full participant lists.
 
-Since Nov 2026 the site is behind Cloudflare, which answers 403 to plain
-`requests` from GitHub Actions (home IPs still get 200). Requests go through
-a `cloudscraper` session, as for Chrono-Start.
+Since Nov 2026 the site is behind Cloudflare, which answers 403 ("Just a
+moment...") to GitHub Actions when the User-Agent looks like a bot or an old
+browser (home IPs still get 200). Requests send one fixed, recent Chrome
+User-Agent. Not cloudscraper: it draws a random User-Agent per session and
+about 60 % of them (old Chrome builds) were blocked, so discovery came back
+empty on 17-19 Nov 2026 after a week of lucky draws.
 """
 
 import re
@@ -24,11 +27,6 @@ from datetime import datetime, timezone
 
 import requests
 from bs4 import BeautifulSoup
-
-try:
-    import cloudscraper
-except ImportError:
-    cloudscraper = None
 
 from .base import BaseScraper, Member, RaceResult, matches_club, matches_known_member
 
@@ -52,14 +50,22 @@ MONTHS_FR = {
     "sept": "09", "oct": "10", "nov": "11", "dec": "12", "déc": "12",
 }
 
+BROWSER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+)
 _session = None
 
 
 def _get(url: str, **kwargs) -> requests.Response:
-    """GET through one shared cloudscraper session (plain requests without it)."""
+    """GET through one shared session that presents a recent Chrome UA."""
     global _session
     if _session is None:
-        _session = cloudscraper.create_scraper() if cloudscraper else requests.Session()
+        _session = requests.Session()
+        _session.headers.update({
+            "User-Agent": BROWSER_UA,
+            "Accept-Language": "fr-FR,fr;q=0.9",
+        })
     return _session.get(url, **kwargs)
 
 
