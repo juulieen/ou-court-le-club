@@ -26,7 +26,7 @@ Les resultats sont affiches sur une carte MapLibre GL avec les tuiles MapTiler. 
 | **OnSinscrit** | Techno Trail, Foulees du Maraisthon | HTML scraping |
 | **Protiming** | Trail des Chateaux de la Loire | Filtre club en URL |
 | **Chronometrage.com** | Corrida, courses regionales | Next.js JSON |
-| **Chrono-Start** | Trail de la Cascade d'Ars, Course d'Enfert | HTML + cloudscraper (Cloudflare) |
+| **Chrono-Start** | Trail de la Cascade d'Ars, Course d'Enfert | HTML (Cloudflare, User-Agent navigateur) |
 | **3wsport** | Courses departementales | HTML scraping |
 | **Espace-Competition** | Courses regionales | HTML pagine |
 | **Sportips** | Maxi-Race Annecy | API JSON recherche par nom |
@@ -79,7 +79,7 @@ Certaines courses utilisent des plateformes que le projet ne peut pas scanner :
 ## Stack technique
 
 - **Frontend** : MapLibre GL JS + MapTiler (outdoor-v2) + HTML/CSS/JS statique
-- **Backend** : Python (requests, BeautifulSoup, cloudscraper, xml.etree)
+- **Backend** : Python (requests, BeautifulSoup, xml.etree)
 - **Geocoding** : strict (commune existante dans le bon département, API BAN, Nominatim en repli), OVERRIDES manuels ; lieu des courses sans adresse cherché sur le web (Exa + modèle gratuit OpenRouter)
 - **Hebergement** : GitHub Pages (deploiement via GitHub Actions artifact — les prenoms ne sont jamais commites)
 - **CI/CD** : GitHub Actions (scraping quotidien a 6h UTC)

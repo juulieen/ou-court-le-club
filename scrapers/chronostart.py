@@ -7,12 +7,19 @@ Registration lists: chrono-start.fr/Inscription/Course/listing/c/{event_id}
     recent Chrome User-Agent passes (15/15 on 2026-11-19). Not cloudscraper:
     it draws a random User-Agent per session and 7 in 12 were challenged,
     the same flaw that left Protiming empty on 17-19 Nov 2026.
-  - Table #table_listing with Club column (index 7)
+  - Table #table_listing; the Club column moves (Dossard and Justificatif
+    are optional), so it is found by its header.
+
+A page that cannot be read raises ScrapeError rather than returning nothing:
+an unreadable list must not look like "no club member" (main.py then keeps
+the last good result). The two legitimate empty pages are recognised by their
+message: an expired listing ID, and a course nobody has registered for yet.
 """
 
 import html
 import json
 import re
+import time
 import zlib
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -20,7 +27,22 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
-from .base import BaseScraper, Member, RaceResult, matches_club, matches_known_member
+from .base import (
+    BaseScraper,
+    Member,
+    RaceResult,
+    ScrapeError,
+    matches_club,
+    matches_known_member,
+    record_failure,
+)
+
+# Legitimately empty listing pages (sampled 2026-11-19: 26 tables, 5 invalid
+# links, 1 course without registrations out of 30 listings).
+EMPTY_LISTING_MARKERS = (
+    "Ce lien n'est pas valide",
+    "Aucune Inscription n'a été effectuée",
+)
 
 
 class ChronoStartScraper(BaseScraper):
@@ -44,6 +66,20 @@ class ChronoStartScraper(BaseScraper):
             })
         return cls._session
 
+    @classmethod
+    def _fetch(cls, url: str, timeout: int = 15, attempts: int = 3) -> requests.Response:
+        """GET with the shared session, retrying; ScrapeError once all fail."""
+        for attempt in range(attempts):
+            try:
+                resp = cls._get_session().get(url, timeout=timeout)
+                resp.raise_for_status()
+                return resp
+            except requests.RequestException as e:
+                if attempt == attempts - 1:
+                    raise ScrapeError(f"{url}: {e}") from e
+                time.sleep(2 * (attempt + 1))
+        raise AssertionError("unreachable")
+
     def scrape(self, race_config: dict) -> RaceResult | None:
         url = race_config.get("url", "")
         name = race_config.get("name", "Course inconnue")
@@ -61,12 +97,9 @@ class ChronoStartScraper(BaseScraper):
 
         list_url = f"{self.BASE_FR}/Inscription/Course/listing/c/{event_id}"
 
-        # Cloudflare-protected: use the shared browser-UA session
-        try:
-            resp = self._get_session().get(list_url, timeout=15)
-            resp.raise_for_status()
-        except Exception:
-            return None
+        # Cloudflare-protected: the shared browser-UA session, with retries.
+        # Raises ScrapeError: an unreadable list is not an empty one.
+        resp = self._fetch(list_url)
 
         # Chrono-Start events can have multiple courses (distances) behind a
         # single listing ID.  The default page ("Tous les Listing") is
@@ -122,15 +155,12 @@ class ChronoStartScraper(BaseScraper):
         # Multiple courses: fetch each individually
         all_members = []
         seen = set()
-        session = self._get_session()
 
         for ep_id, course_name in courses:
             ep_url = f"{self.BASE_FR}/Inscription/course/listing?c={event_id}&idEp={ep_id}"
-            try:
-                resp = session.get(ep_url, timeout=15)
-                resp.raise_for_status()
-            except Exception:
-                continue
+            # No skipping a distance that fails: its members would vanish
+            # while the race stays on the map with the others.
+            resp = self._fetch(ep_url)
 
             for member in self._parse_table(resp.text, course_name=course_name):
                 if member.name not in seen:
@@ -140,12 +170,10 @@ class ChronoStartScraper(BaseScraper):
         return all_members
 
     def _resolve_listing_id(self, event_page_url: str) -> str | None:
-        """Fetch a chrono-start.com event page and extract the listing ID."""
-        try:
-            resp = requests.get(event_page_url, timeout=8)
-            resp.raise_for_status()
-        except requests.RequestException:
-            return None
+        """Fetch a chrono-start.com event page and extract the listing ID.
+
+        None when the page has no listing; ScrapeError when it is unreadable."""
+        resp = self._fetch(event_page_url)
         match = re.search(r"/listing/c/(\d+)", resp.text)
         return match.group(1) if match else None
 
@@ -168,7 +196,10 @@ class ChronoStartScraper(BaseScraper):
 
         table = soup.select_one("#table_listing")
         if not table:
-            return []
+            text = " ".join(soup.get_text(" ").split())
+            if any(marker in text for marker in EMPTY_LISTING_MARKERS):
+                return []
+            raise ScrapeError("page de liste sans tableau ni message connu")
 
         # Find club column index from headers
         headers = []
@@ -186,22 +217,24 @@ class ChronoStartScraper(BaseScraper):
                 nom_col = i
             elif "prenom" in h or "prénom" in h:
                 prenom_col = i
-
         if club_col is None:
-            # Default positions
-            nom_col, prenom_col, club_col = 1, 2, 7
+            # Relay courses list an "Equipe" instead of a club (event 5515):
+            # a team named after the club is still the club.
+            club_col = next(
+                (i for i, h in enumerate(headers) if h in ("equipe", "équipe")), None
+            )
 
-        if nom_col is None:
-            nom_col = 1
-        if prenom_col is None:
-            prenom_col = 2
+        if club_col is None or nom_col is None or prenom_col is None:
+            # The Club column moves between events: guessing a position
+            # would match the wrong column without a word.
+            raise ScrapeError(f"colonnes inattendues dans la liste: {headers}")
 
         for row in table.select("tbody tr"):
             cells = row.find_all("td")
-            if len(cells) <= max(club_col or 0, nom_col, prenom_col):
+            if len(cells) <= max(club_col, nom_col, prenom_col):
                 continue
 
-            club = cells[club_col].get_text(strip=True) if club_col is not None else ""
+            club = cells[club_col].get_text(strip=True)
             nom = cells[nom_col].get_text(strip=True)
             prenom = cells[prenom_col].get_text(strip=True)
             name = f"{prenom} {nom}".strip()
@@ -225,6 +258,31 @@ class ChronoStartScraper(BaseScraper):
 WP_API = "https://chrono-start.com/wp-json/wp/v2/mec-events"
 
 
+def _fetch_wp_page(page: int) -> requests.Response | None:
+    """Fetch one page of the WP API, retrying transient failures.
+
+    Returns None when the API says "no such page" (HTTP 400). Raises the
+    last RequestException after 3 failed attempts — a single network blip
+    must not mute the whole platform (incident du 2026-10-21 : page 1 en
+    échec sur le runner CI -> 0 événement, découverte muette sans erreur).
+    """
+    for attempt in range(3):
+        try:
+            resp = requests.get(
+                WP_API,
+                params={"per_page": 100, "page": page},
+                timeout=15,
+            )
+            if resp.status_code == 400:
+                return None
+            resp.raise_for_status()
+            return resp
+        except requests.RequestException:
+            if attempt == 2:
+                raise
+            time.sleep(2 * (attempt + 1))
+
+
 def discover_races() -> list[dict]:
     """Discover events from Chrono-Start's WordPress REST API.
 
@@ -235,22 +293,22 @@ def discover_races() -> list[dict]:
 
     # Step 1: Fetch all events from WP API
     event_links = []
+    wp_complete = False
     page = 1
     while True:
         try:
-            resp = requests.get(
-                WP_API,
-                params={"per_page": 100, "page": page},
-                timeout=15,
-            )
-            if resp.status_code == 400:
-                break
-            resp.raise_for_status()
-        except requests.RequestException:
+            resp = _fetch_wp_page(page)
+        except requests.RequestException as e:
+            print(f"  [chronostart] ERREUR WP API page {page}: {e}")
+            record_failure("Chrono-Start", f"API WordPress page {page}")
+            break
+        if resp is None:
+            wp_complete = True
             break
 
         events = resp.json()
         if not events:
+            wp_complete = True
             break
 
         for event in events:
@@ -263,6 +321,7 @@ def discover_races() -> list[dict]:
 
         total_pages = int(resp.headers.get("X-WP-TotalPages", 1))
         if page >= total_pages:
+            wp_complete = True
             break
         page += 1
 
@@ -275,7 +334,8 @@ def discover_races() -> list[dict]:
           f"{len(event_links) - len(to_check)} sans listing ignorés, resolution IDs de {len(to_check)}...")
 
     races = []
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    unreadable = 0
+    with ThreadPoolExecutor(max_workers=DISCOVERY_WORKERS) as executor:
         futures = {
             executor.submit(_resolve_event, title, link): link
             for title, link in to_check
@@ -288,11 +348,18 @@ def discover_races() -> list[dict]:
             elif race:
                 seen.pop(link, None)
                 races.append(race)
+            else:
+                unreadable += 1
 
-    if event_links:  # the WP API failed: keep the memory as it is
+    if wp_complete:
+        # Forget pages that left the agenda. Not after a partial WP list:
+        # the events of the missing pages would lose their memory too.
         live = {link for _, link in event_links}
         _save_seen({k: v for k, v in seen.items() if k in live})
-    print(f"  [chronostart] {len(races)} course(s) avec listing")
+    elif event_links:
+        _save_seen(seen)
+    print(f"  [chronostart] {len(races)} course(s) avec listing"
+          + (f", {unreadable} page(s) d'événement illisible(s)" if unreadable else ""))
     return races
 
 
@@ -303,6 +370,10 @@ def discover_races() -> list[dict]:
 SEEN_PATH = Path(__file__).resolve().parent.parent / "data" / "chronostart_seen.json"
 NO_LISTING = "no-listing"
 NO_LISTING_DAYS = 7
+# chrono-start.com (Apache) answers 503 to almost everything past ~3
+# concurrent requests: with 5, 501 of 637 event pages failed on 2026-11-19,
+# silently until then. 1, 2 or 3 at a time: 60/60. Two keeps a margin.
+DISCOVERY_WORKERS = 2
 
 
 def _load_seen() -> dict[str, str]:
@@ -327,11 +398,11 @@ def _resolve_event(title: str, event_page_url: str) -> dict | str | None:
     """Fetch an event page and extract the listing ID, date, and location.
 
     NO_LISTING when the page has no registration list; None when it could
-    not be read (asked again next run)."""
+    not be read after retries (asked again next run, and reported)."""
     try:
-        resp = requests.get(event_page_url, timeout=8)
-        resp.raise_for_status()
-    except requests.RequestException:
+        resp = ChronoStartScraper._fetch(event_page_url, timeout=10)
+    except ScrapeError as e:
+        record_failure("Chrono-Start", f"page d'événement {e}")
         return None
 
     match = re.search(r"/listing/c/(\d+)", resp.text)

@@ -21,7 +21,7 @@ from pathlib import Path
 import requests
 import yaml
 
-from .base import Member, RaceResult, normalize_text, matches_known_member, canonical_member_name
+from .base import Member, RaceResult, normalize_text, matches_known_member, canonical_member_name, pop_failures
 from .geocoder import geocode, override
 from .locate import event_key, find_location, found_this_run
 from .chronometrage import ChronometrageScraper
@@ -723,7 +723,10 @@ def process_manual_race(race_config: dict) -> RaceResult:
 
 
 def scrape_race(rc: dict, patterns: list[str], known_members: list[str]) -> dict | None:
-    """Scrape a single race. Returns data dict or None."""
+    """Scrape a single race. Returns data dict or None.
+
+    A scraper exception (ScrapeError or a bug) propagates: the caller must
+    tell "unreadable" from "no club member" (see the scraping loop)."""
     platform = rc.get("platform", "")
 
     if platform == "manual":
@@ -731,10 +734,7 @@ def scrape_race(rc: dict, patterns: list[str], known_members: list[str]) -> dict
     elif platform in SCRAPERS:
         cls = SCRAPERS[platform]
         scraper = cls(patterns, known_members=known_members)
-        try:
-            race = scraper.scrape(rc)
-        except Exception:
-            return None
+        race = scraper.scrape(rc)
     else:
         return None
 
@@ -894,6 +894,16 @@ def run():
             silent,
             run_warnings,
         )
+    for platform, items in sorted(pop_failures().items()):
+        # Pages a discovery skipped after retries: the platform is not silent,
+        # but the races behind them are missing from this run.
+        _warn(
+            "Découverte incomplète",
+            f"{platform}: {len(items)} page(s) illisible(s) pendant la découverte "
+            f"(ex. {items[0]})",
+            [platform],
+            run_warnings,
+        )
 
     # Merge: config takes priority, then discovered (deduplicated by URL)
     config_urls = {rc.get("url", "").rstrip("/") for rc in races_config}
@@ -948,6 +958,9 @@ def run():
         for rc in to_scrape
     }
     done = 0
+    attempts: dict[str, int] = {}
+    failures: dict[str, list[str]] = {}
+    kept = 0
     try:
         for future in as_completed(future_to_rc, timeout=budget_s):
             done += 1
@@ -955,10 +968,26 @@ def run():
             platform = rc.get("platform", "")
             name = rc.get("name", "?")
             url = rc.get("url", "")
+            attempts[platform] = attempts.get(platform, 0) + 1
 
             try:
                 data = future.result()
-            except Exception:
+            except Exception as e:
+                # Unreadable is not empty: writing "0 member" over a race with
+                # members would drop it off the map for two days
+                # (CACHE_TTL_EMPTY) without a word. Keep its last good entry
+                # untouched, so it stays on the map and is tried again next
+                # run. A race that had no member is cached as before: retrying
+                # hundreds of them every run would eat the scrape budget.
+                failures.setdefault(platform, []).append(f"{name[:45]} ({e})"[:160])
+                previous = scrape_cache.get(url, {})
+                if previous.get("member_count", 0) > 0 and previous.get("data"):
+                    results.append(previous["data"])
+                    found_count += 1
+                    kept += 1
+                    print(f"  ✗ [{platform}] {name[:45]} -> illisible, "
+                          f"{previous['member_count']} membre(s) du dernier scrape gardé(s)")
+                    continue
                 data = None
 
             member_count = data.get("member_count", 0) if data else 0
@@ -994,6 +1023,18 @@ def run():
 
     print(f"  ... {done}/{len(to_scrape)} traitées — {found_count} avec membres ({_elapsed(scrape_start)})")
     save_scrape_cache(scrape_cache)
+    if failures:
+        summary = ", ".join(
+            f"{p} {len(f)}/{attempts[p]}" for p, f in sorted(failures.items())
+        )
+        examples = "; ".join(f[0] for _, f in sorted(failures.items()))
+        _warn(
+            "Scrape en échec",
+            f"pages illisibles: {summary} — {kept} course(s) gardée(s) du "
+            f"dernier scrape. Ex.: {examples}",
+            sorted(failures),
+            run_warnings,
+        )
 
     # --- Geocode ---
     print(f"\n{'─'*60}")

@@ -32,6 +32,31 @@ Historique des évolutions notables. Format inspiré de
   chargement, plus seulement à la première visite (2026-11-05).
 
 ### Corrigé
+- **Protiming et Chrono-Start bloqués par Cloudflare au hasard** (2026-11-19).
+  `cloudscraper` tire un navigateur au hasard à chaque run, et Cloudflare en
+  refuse environ 6 sur 10 depuis les serveurs GitHub : Protiming est revenu
+  à 0 course les 17, 18 et 19 novembre (alerte « Découverte muette »), et
+  une partie des listes Chrono-Start échouait sans rien dire. Les deux
+  plateformes envoient maintenant toujours le même navigateur récent ;
+  `cloudscraper` n'est plus utilisé.
+- **Une liste illisible n'efface plus la course de la carte** (2026-11-19).
+  Un 403 ou un délai dépassé était enregistré comme « aucun membre » : la
+  course disparaissait pendant deux jours, sans message (aucune course
+  Chrono-Start avec membres les 15, 16 et 17 novembre). Le run garde
+  maintenant le dernier résultat connu, réessaie au run suivant et signale
+  les pages illisibles par plateforme (« Scrape en échec », « Découverte
+  incomplète »), dans le résumé GitHub et sur ntfy.
+- Chrono-Start : chaque page est réessayée 3 fois ; une distance illisible
+  fait échouer la course au lieu d'en retirer les membres ; une page de liste
+  inconnue ou un tableau sans colonne Club est signalé au lieu de rendre
+  0 membre ; les relais (colonne « Equipe ») sont lus ; l'API WordPress est
+  réessayée et une liste d'événements incomplète n'efface plus la mémoire
+  des pages sans liste.
+- **Chrono-Start : 4 pages d'événement sur 5 perdues chaque jour**
+  (2026-11-19). Au-delà de 3 accès simultanés, chrono-start.com répond 503 :
+  avec 5, 501 des 637 pages échouaient, sans un mot, d'où 59 à 138 courses
+  avec liste selon les jours au lieu de toutes. La découverte n'ouvre plus
+  que 2 pages à la fois.
 - Trail Insolite de Ligugé absent de la carte : OnSinscrit donne
   « Insolite Liguge » comme ville. Lieu forcé à Ligugé (86) (2026-11-11).
 - Protiming : 0 course depuis le 6 novembre, le site est passé derrière

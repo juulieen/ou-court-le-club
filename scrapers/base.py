@@ -1,9 +1,37 @@
 """Base scraper class and data structures."""
 
 import re
+import threading
 import unicodedata
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+
+
+class ScrapeError(Exception):
+    """A page could not be read (network, HTTP error, unknown layout).
+
+    Raise it instead of returning None or an empty member list: "unreadable"
+    must never look like "no club member", or the race silently drops off
+    the map until its cache entry expires.
+    """
+
+
+# Failures a discovery function swallowed to keep going (one unreadable event
+# page must not stop the platform). main.py turns them into a run warning.
+_failures: dict[str, list[str]] = {}
+_failures_lock = threading.Lock()
+
+
+def record_failure(platform: str, what: str) -> None:
+    with _failures_lock:
+        _failures.setdefault(platform, []).append(what)
+
+
+def pop_failures() -> dict[str, list[str]]:
+    with _failures_lock:
+        failures = dict(_failures)
+        _failures.clear()
+    return failures
 
 
 @dataclass
