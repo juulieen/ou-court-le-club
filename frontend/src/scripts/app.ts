@@ -94,6 +94,10 @@ declare const maplibregl: any;
   // Début du tour de globe visible : quand le logo s'efface.
   let introStart = performance.now();
   let splashGone: Promise<void> = Promise.resolve();
+  // Tuiles de la vue d'arrivée téléchargées (ou abandonnées) : le logo les
+  // attend. Résolue par le préchargement, une fois les courses connues.
+  let landingLoaded = () => {};
+  const landing = new Promise<void>((resolve) => (landingLoaded = resolve));
   let stopSpin = () => {};
   let tour: Tour;
 
@@ -135,7 +139,7 @@ declare const maplibregl: any;
   function setupIntro() {
     if (introState !== "spinning") return;
     stopSpin = fx.startSpin(map);
-    splashGone = fx.hideSplashWhenReady(map).then(() => {
+    splashGone = fx.hideSplashWhenReady(map, landing).then(() => {
       introStart = performance.now();
     });
     const btn = document.createElement("button");
@@ -364,6 +368,8 @@ declare const maplibregl: any;
           setupMapLayers();
           // Réapplique les filtres courants à la source fraîchement créée.
           renderAll();
+          if (introState === "spinning") prefetchLanding();
+          else landingLoaded();
           revealRaces();
           season = setupSeason({
             map,
@@ -381,6 +387,7 @@ declare const maplibregl: any;
       })
       .catch((err: Error) => {
         console.error("Erreur chargement donnees:", err);
+        landingLoaded(); // pas de vue d'arrivée à attendre
         document.getElementById("race-list")!.innerHTML =
           '<div class="empty-state"><div class="empty-icon">&#128683;</div>Impossible de charger les donnees</div>';
       });
@@ -821,6 +828,14 @@ declare const maplibregl: any;
     const bounds = new maplibregl.LngLatBounds();
     valid.forEach((r: any) => bounds.extend([r.lng, r.lat]));
     map.fitBounds(bounds, { padding: viewPadding(asIfShown), maxZoom: 12, pitch: 0, bearing: 0, ...anim });
+  }
+
+  // Précharge les tuiles de la vue où le vol de l'intro va se poser : mêmes
+  // courses et mêmes marges que fitBounds(shownRaces(), …, true).
+  function prefetchLanding() {
+    const valid = withoutOutliers(shownRaces().filter((r: any) => r.lat != null && r.lng != null));
+    const points = valid.map((r: any) => [r.lng, r.lat] as [number, number]);
+    fx.prefetchLanding(map, points, viewPadding(true), points.length === 1 ? 10 : 12).then(landingLoaded);
   }
 
   // Écarte les courses lointaines (outre-mer, étranger) : une seule course à

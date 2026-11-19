@@ -27,41 +27,64 @@ export function shouldPlayIntro(): boolean {
 // --- Écran du logo ---
 
 const SPLASH_MIN_MS = 1200; // le logo a le temps d'apparaître, même en cache
-const SPLASH_MAX_MS = 8000; // style ou tuiles qui ne répondent pas
+// Style ou tuiles qui ne répondent pas. En 4G lente, la vue d'arrivée sur la
+// France (3 à 4 Mo de tuiles) met 15 à 20 s : on l'attend, barre à l'appui.
+const SPLASH_MAX_MS = 25000; // filet CSS de global.css (splash-giveup) après
 const SPLASH_FADE_MS = 700; // doit suivre la transition de #splash.leaving
 
 let splashLeft: (() => void) | null = null;
 
-// Retire le logo une fois le globe dessiné : style chargé, au moins une tuile
-// reçue et plus aucune en attente. Résout quand il commence à s'effacer, ou
-// plus tôt si hideSplash() est appelé (intro passée).
-export function hideSplashWhenReady(map: any): Promise<void> {
+// Retire le logo quand deux choses sont prêtes : le globe dessiné (style
+// chargé, au moins une tuile reçue, plus aucune en attente) et `landing`, les
+// tuiles de la vue d'arrivée (prefetchLanding). Résout quand il commence à
+// s'effacer, ou plus tôt si hideSplash() est appelé (intro passée).
+export function hideSplashWhenReady(map: any, landing: Promise<void>): Promise<void> {
   return new Promise((resolve) => {
     let tiles = 0;
-    splashLeft = () => {
-      splashLeft = null;
+    let globeReady = false;
+    let landed = false;
+    let ready = false;
+    const stopWatching = () => {
       map.off("data", onData);
       map.off("render", onRender);
+    };
+    splashLeft = () => {
+      splashLeft = null;
+      stopWatching();
       clearTimeout(maxTimer);
       resolve();
     };
-    let ready = false;
     const finish = () => {
       if (ready) return;
       ready = true;
-      // Au moins SPLASH_MIN_MS depuis l'ouverture de la page.
-      setTimeout(hideSplash, Math.max(0, SPLASH_MIN_MS - performance.now()));
+      setSplashProgress(1);
+      // Au moins SPLASH_MIN_MS depuis l'ouverture de la page, et le temps de
+      // voir la barre pleine.
+      setTimeout(hideSplash, Math.max(400, SPLASH_MIN_MS - performance.now()));
+    };
+    const check = () => {
+      if (globeReady && landed) finish();
     };
     const onData = (e: any) => {
       if (e.dataType === "source" && e.tile) tiles++;
     };
     const onRender = () => {
+      if (globeReady || !(tiles > 0 && map.isStyleLoaded() && map.areTilesLoaded())) return;
       // La tuile est reçue ; on laisse passer l'image qui la dessine.
-      if (tiles > 0 && map.isStyleLoaded() && map.areTilesLoaded())
-        requestAnimationFrame(() => requestAnimationFrame(finish));
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          globeReady = true;
+          stopWatching();
+          check();
+        }),
+      );
     };
     map.on("data", onData);
     map.on("render", onRender);
+    landing.then(() => {
+      landed = true;
+      check();
+    });
     const maxTimer = setTimeout(finish, SPLASH_MAX_MS);
   });
 }
@@ -72,6 +95,169 @@ export function hideSplash() {
   if (!el || el.classList.contains("leaving")) return;
   el.classList.add("leaving");
   setTimeout(() => el.remove(), SPLASH_FADE_MS);
+}
+
+// Barre sous le logo, de 0 à 1 (elle part de 10 % en CSS : la page charge).
+function setSplashProgress(p: number) {
+  document.getElementById("splash")?.style.setProperty("--progress", String(p));
+}
+
+// --- Préchargement de la vue d'arrivée ---
+// Le vol de l'intro finit sur les courses. Sans préchargement, ses tuiles ne
+// partent qu'à l'atterrissage et la carte se remplit à vue ; on les demande
+// pendant le logo. Le navigateur les garde en cache (MapTiler : max-age 4 h,
+// 8 h pour le relief) et MapLibre les y retrouve.
+
+const MAX_PREFETCH = 80; // grand écran : on s'arrête là
+
+// Mercator normalisé (0 → 1), comme le monde de MapLibre à 512 px au zoom 0.
+const mercX = (lng: number) => (lng + 180) / 360;
+const mercY = (lat: number) => {
+  const s = Math.sin((lat * Math.PI) / 180);
+  return 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI);
+};
+
+type Padding = { top: number; bottom: number; left: number; right: number };
+
+// Même cadrage que map.fitBounds (sans rotation ni inclinaison), calculé à
+// part : pendant l'intro la carte est en globe, et cameraForBounds le suivrait.
+function landingView(points: [number, number][], pad: Padding, w: number, h: number, maxZoom: number) {
+  const xs = points.map(([lng]) => mercX(lng));
+  const ys = points.map(([, lat]) => mercY(lat));
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const availW = Math.max(1, w - pad.left - pad.right);
+  const availH = Math.max(1, h - pad.top - pad.bottom);
+  const span = Math.max((x1 - x0) / availW, (y1 - y0) / availH, 1e-9);
+  const zoom = Math.min(maxZoom, Math.log2(1 / (512 * span)));
+  const world = 512 * 2 ** zoom;
+  // Centre de la carte : celui des courses, décalé vers la partie visible.
+  const cx = (x0 + x1) / 2 - (pad.left - pad.right) / 2 / world;
+  const cy = (y0 + y1) / 2 - (pad.top - pad.bottom) / 2 / world;
+  return { cx, cy, zoom };
+}
+
+// URL des tuiles que MapLibre demandera à l'arrivée : pour chaque source
+// qu'une couche affiche à ce zoom, les tuiles qui couvrent l'écran. Zoom des
+// tuiles comme MapLibre pour des tuiles de 512 px : arrondi inférieur pour
+// les tuiles vectorielles, au plus proche pour les images (relief).
+function landingTiles(map: any, view: { cx: number; cy: number; zoom: number }, w: number, h: number): string[] {
+  const layers = map.getStyle().layers;
+  const urls: string[] = [];
+  for (const [id, def] of Object.entries<any>(map.getStyle().sources)) {
+    const src = map.getSource(id);
+    const template: string | undefined = src?.tiles?.[0];
+    if (!template || !/^(vector|raster|raster-dem)$/.test(def.type)) continue;
+    const shown = layers.some(
+      (l: any) =>
+        l.source === id &&
+        l.layout?.visibility !== "none" &&
+        (l.minzoom ?? 0) <= view.zoom &&
+        view.zoom < (l.maxzoom ?? 24),
+    );
+    if (!shown) continue;
+    const raw = def.type === "vector" ? Math.floor(view.zoom) : Math.round(view.zoom);
+    if (raw < (src.minzoom ?? 0)) continue;
+    const z = Math.min(raw, src.maxzoom ?? 22);
+    const n = 2 ** z;
+    const world = 512 * 2 ** view.zoom;
+    const tx = (x: number) => Math.floor(x * n);
+    const ty = (y: number) => Math.min(n - 1, Math.max(0, Math.floor(y * n)));
+    const [xa, xb] = [tx(view.cx - w / 2 / world), tx(view.cx + w / 2 / world)];
+    const [ya, yb] = [ty(view.cy - h / 2 / world), ty(view.cy + h / 2 / world)];
+    for (let x = xa; x <= xb; x++)
+      for (let y = ya; y <= yb; y++) {
+        const wx = ((x % n) + n) % n; // le monde se répète en longitude
+        const yy = src.scheme === "tms" ? n - 1 - y : y;
+        urls.push(template.replace("{z}", String(z)).replace("{x}", String(wx)).replace("{y}", String(yy)));
+      }
+  }
+  return urls.slice(0, MAX_PREFETCH);
+}
+
+// Télécharge les tuiles de la vue d'arrivée en faisant avancer la barre du
+// logo. Ne rejette jamais : une tuile en échec sera redemandée par MapLibre.
+export function prefetchLanding(map: any, points: [number, number][], pad: Padding, maxZoom: number): Promise<void> {
+  if (!points.length) return Promise.resolve();
+  const canvas = map.getCanvas();
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  const view = landingView(points, pad, w, h, maxZoom);
+  const urls = landingTiles(map, view, w, h);
+  const progress = new DownloadProgress(urls.length, (p) => setSplashProgress(0.1 + 0.9 * p));
+  return Promise.all(urls.map((url, i) => progress.fetch(url, i))).then(() => {});
+}
+
+// Avancement d'un lot de téléchargements, en octets transférés : une tuile
+// du fond pèse 300 à 550 Ko, une du relief 150 à 370 Ko, une de la couche
+// outdoor 15 à 50 Ko ; compter les tuiles faisait stagner puis sauter la
+// barre. Chaque tuile pèse son Content-Length (octets sur le réseau), connu
+// dès ses en-têtes ; avant, la moyenne des tailles déjà connues.
+//
+// Le corps lu est décompressé : pour le fond (gzip), les octets lus dépassent
+// le Content-Length. Le rapport lu / transféré s'apprend sur la première
+// tuile terminée de chaque type ; d'ici là, ~2,5 pour les tuiles vectorielles
+// (gzip chez MapTiler), 1 pour les images (webp, déjà compressées).
+class DownloadProgress {
+  private expected: (number | null)[];
+  private received: number[];
+  private ratio = new Map<string, number>();
+  private frame = 0;
+  private shown = 0;
+  private onProgress: (p: number) => void;
+
+  constructor(n: number, onProgress: (p: number) => void) {
+    this.onProgress = onProgress;
+    this.expected = Array(n).fill(null);
+    this.received = Array(n).fill(0);
+  }
+
+  async fetch(url: string, i: number): Promise<void> {
+    try {
+      const res = await fetch(url);
+      const size = Number(res.headers.get("content-length")) || null;
+      const type = res.headers.get("content-type") || "";
+      this.expected[i] = size;
+      if (!res.body) {
+        await res.arrayBuffer();
+        return;
+      }
+      // Lu jusqu'au bout, sinon le navigateur ne le met pas en cache.
+      const reader = res.body.getReader();
+      let read = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        read += value.byteLength;
+        if (size) {
+          const r = this.ratio.get(type) ?? (type.startsWith("image/") ? 1 : 2.5);
+          this.received[i] = Math.min(0.97 * size, read / r);
+          this.schedule();
+        }
+      }
+      if (size && !this.ratio.has(type)) this.ratio.set(type, read / size);
+    } catch {
+      // MapLibre la redemandera.
+    } finally {
+      this.received[i] = this.expected[i] ??= 1;
+      this.schedule();
+    }
+  }
+
+  // Une mise à jour de la barre par image, pas une par morceau reçu.
+  private schedule() {
+    if (this.frame) return;
+    this.frame = requestAnimationFrame(() => {
+      this.frame = 0;
+      const known = this.expected.filter((e): e is number => e !== null);
+      const guess = known.length ? known.reduce((a, b) => a + b, 0) / known.length : 1;
+      const total = this.expected.reduce<number>((a, e) => a + (e ?? guess), 0);
+      const got = this.received.reduce((a, b) => a + b, 0);
+      // Jamais en arrière : la taille d'une tuile qui remplace la moyenne
+      // estimée peut faire grossir le total.
+      this.shown = Math.max(this.shown, total ? Math.min(1, got / total) : 1);
+      this.onProgress(this.shown);
+    });
+  }
 }
 
 // --- Globe ---

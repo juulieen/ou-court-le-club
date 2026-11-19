@@ -6,6 +6,10 @@ Historique des évolutions notables. Format inspiré de
 ## [Non publié]
 
 ### Ajouté
+- Carte : pendant le logo d'ouverture, **préchargement des tuiles de la vue
+  d'arrivée** du vol, avec une barre de chargement ; le logo attend qu'elles
+  soient là (25 s au plus) pour qu'on atterrisse sur une carte complète,
+  même en 4G lente (2026-11-19).
 - Carte : **logo du club à l'ouverture**, le temps que le globe reçoive son
   fond de carte (au moins 1,2 s, au plus 8 s), puis il s'efface en
   grossissant ; le tour du globe commence après lui. MapLibre est chargé en

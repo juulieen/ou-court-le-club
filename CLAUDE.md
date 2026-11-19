@@ -363,7 +363,15 @@ voient leur zoom minimal relevé (`DETAIL_MINZOOM` dans `mapfx.ts`).
   déjà cadré pour lui (`fitBounds(…, asIfShown)`).
 - Logo d'ouverture (`#splash` dans `index.astro`) : il couvre le globe tant
   que ses tuiles arrivent (`hideSplashWhenReady` : au moins une tuile reçue,
-  plus aucune en attente ; entre 1,2 s et 8 s), puis s'efface en grossissant.
+  plus aucune en attente) **et** que celles de la vue d'arrivée du vol sont
+  téléchargées (`prefetchLanding`, barre de chargement sous le logo, en
+  octets transférés : `DownloadProgress`), entre
+  1,2 s et 25 s, puis s'efface en grossissant. `prefetchLanding` refait le
+  cadrage de `fitBounds(shownRaces(), …, true)` en Mercator (la carte est
+  encore en globe) et demande les mêmes tuiles que MapLibre à l'arrivée (zoom
+  arrondi en dessous pour le vectoriel, au plus proche pour le relief, tuiles
+  de 512 px) ; le cache HTTP (MapTiler : max-age 4 h) les lui resert. En 4G
+  lente, cette vue pèse 3 à 4 Mo (fond + relief).
   Le tour de globe de 1,5 s compte à partir de là. La règle « intro ou pas »
   est dans le script en ligne qui le précède (classe `intro` sur `<html>`,
   lue par `shouldPlayIntro`), pour qu'il s'affiche avant le premier rendu.
