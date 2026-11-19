@@ -85,7 +85,8 @@ export function hideSplashWhenReady(map: any, landing: Promise<void>): Promise<v
       landed = true;
       check();
     });
-    const maxTimer = setTimeout(finish, SPLASH_MAX_MS);
+    // Compté depuis l'ouverture de la page, comme le filet CSS.
+    const maxTimer = setTimeout(finish, Math.max(0, SPLASH_MAX_MS - performance.now()));
   });
 }
 
@@ -141,9 +142,9 @@ function landingView(points: [number, number][], pad: Padding, w: number, h: num
 // tuiles comme MapLibre pour des tuiles de 512 px : arrondi inférieur pour
 // les tuiles vectorielles, au plus proche pour les images (relief).
 function landingTiles(map: any, view: { cx: number; cy: number; zoom: number }, w: number, h: number): string[] {
-  const layers = map.getStyle().layers;
+  const { layers, sources } = map.getStyle(); // copie tout le style : une fois
   const urls: string[] = [];
-  for (const [id, def] of Object.entries<any>(map.getStyle().sources)) {
+  for (const [id, def] of Object.entries<any>(sources)) {
     const src = map.getSource(id);
     const template: string | undefined = src?.tiles?.[0];
     if (!template || !/^(vector|raster|raster-dem)$/.test(def.type)) continue;
