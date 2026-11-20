@@ -6,6 +6,10 @@ Historique des évolutions notables. Format inspiré de
 ## [Non publié]
 
 ### Ajouté
+- Carte : **relief détaillé en France** (2026-11-20). Jusqu'au zoom 15,
+  ~1,7 m par point (relevés IGN), au lieu de ~13 m : ravines, éboulis et
+  replats se voient en montagne. Hors de France, au-delà du zoom 12, le
+  relief du zoom 12 est agrandi en douceur au lieu de laisser un trou.
 - Carte : **relief auto-hébergé et plus précis** (2026-11-19). Altitudes
   Mapterhorn servies par map.juulieen.fr (planète en vue large, Europe de
   l'Ouest jusqu'à ~13 m par point) à la place des tuiles Terrarium d'AWS :

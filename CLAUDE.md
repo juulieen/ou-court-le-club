@@ -349,8 +349,14 @@ Auto-hébergé depuis novembre 2026, sans clé ni quota (MapTiler avant) : style
 public `juulieen/map`, généré par son `src/build-style.mjs`), tuiles Protomaps
 lues par plages d'octets dans `map.juulieen.fr/france.pmtiles` (protocole
 `pmtiles://`, paquet npm `pmtiles`), relief Mapterhorn dans
-`map.juulieen.fr/relief.pmtiles` (codage Terrarium, webp 512 px, ~13 m par
-point jusqu'au zoom 12). Les deux fichiers vivent sur l'ASUS
+`map.juulieen.fr/relief.pmtiles` (codage Terrarium, webp 512 px : France
+jusqu'au zoom 15, ~1,7 m par point ; reste de l'Europe de l'Ouest jusqu'au 12,
+~13 m ; planète jusqu'au 6). **Tuile de relief absente** (hors de France
+au-delà du zoom 12) : pmtiles répond `data: null` et MapLibre la laisse vide
+pour de bon, sans reprendre la tuile parente ; le protocole de `setupBasemap`
+agrandit donc la plus proche tuile ancêtre (`overzoomRelief`, interpolation
+bicubique des altitudes, ~15 ms par tuile). Même code dans
+`juulieen/map` (`site/overzoom.js`). Les deux fichiers vivent sur l'ASUS
 (`~/server/asus-1/tiles/`, partagés avec 4g-dans-le-train ; régénération :
 `asus-1/tiles-regen.sh AAAAMMJJ` et `asus-1/relief-regen.sh` du dépôt homelab,
 planète du zoom 0 au 6 + Europe de l'Ouest au-delà). Polices disponibles : Noto Sans
