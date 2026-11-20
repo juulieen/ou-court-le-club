@@ -77,6 +77,7 @@ async function upscaleTerrarium(data: ArrayBuffer, dz: number, ox: number, oy: n
   const canvas = new OffscreenCanvas(size, size);
   const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
   ctx.drawImage(image, 0, 0);
+  image.close();
   const src = ctx.getImageData(0, 0, size, size).data;
   const height = new Float32Array(size * size); // altitude + 32768
   for (let p = 0; p < height.length; p++) height[p] = src[p * 4] * 256 + src[p * 4 + 1] + src[p * 4 + 2] / 256;
